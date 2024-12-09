@@ -66,7 +66,7 @@ const Home = () => {
       <header className="relative z-10 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center">
-            <img src="/assets/logo.png" alt="Sport & Bike" className="h-20 sm:h-24 md:h-32" />
+            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-20 sm:h-24 md:h-32" />
           </div>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 text-center sm:text-left">
             <a 
@@ -210,7 +210,7 @@ const Home = () => {
         <div className="container mx-auto px-4 py-6 sm:py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             <div className="text-center md:text-left">
-              <img src="/assets/logo.png" alt="Sport & Bike" className="h-12 sm:h-16 mx-auto md:mx-0 mb-4" />
+              <img src="/assets/Logo.png" alt="Sport & Bike" className="h-12 sm:h-16 mx-auto md:mx-0 mb-4" />
               <p className="text-sm sm:text-base text-gray-600">
                 Loja de bicicletas desde 1999<br />
                 Vendas de bicicleta e artigos esportivos<br />

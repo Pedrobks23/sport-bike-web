@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from "jspdf";
 import { consultarOS } from "../config/firebase";
-import logo from '../../assets/Logo.png';
+const logo = '/assets/Logo.png';
 import { QRCodeSVG } from 'qrcode.react';
 
 const ConsultaOS = () => {
@@ -262,7 +262,7 @@ const ConsultaOS = () => {
             >
               ← Voltar
             </button>
-            <img src="/assets/logo.png" alt="Sport & Bike" className="h-16" />
+            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-16" />
           </div>
         </div>
       </header>
