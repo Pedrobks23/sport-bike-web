@@ -40,14 +40,14 @@ const ConsultaOS = () => {
     }
   };
   
-  const formatarData = (timestamp) => {
+  const formatarData = (timestamp, isAgendamento = false) => {
     if (!timestamp) return '-';
+    
     return new Date(timestamp).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      ...(isAgendamento ? {} : { hour: '2-digit', minute: '2-digit' })
     });
   };
 
@@ -360,7 +360,7 @@ const ConsultaOS = () => {
 
           <div>
             <h4 className="font-bold text-gray-700 mb-2">Datas</h4>
-            <p><strong>Agendamento:</strong> {formatarData(ordem.dataAgendamento)}</p>
+            <p><strong>Agendamento:</strong> {formatarData(ordem.dataAgendamento, true)}</p>
             <p><strong>Criação:</strong> {formatarData(ordem.dataCriacao)}</p>
             <p><strong>Última Atualização:</strong> {formatarData(ordem.dataAtualizacao)}</p>
           </div>

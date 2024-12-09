@@ -1,8 +1,7 @@
-import ConsultaOS from '../pages/ConsultaOS';
+import { createBrowserRouter } from 'react-router-dom';
 import Home from '../pages/Home';
-
-import { createBrowserRouter } from "react-router-dom";
-
+import Admin from '../pages/Admin';
+import ConsultaOS from '../pages/ConsultaOS';
 
 export const router = createBrowserRouter([
   {
@@ -13,4 +12,8 @@ export const router = createBrowserRouter([
     path: '/consulta',
     element: <ConsultaOS />
   },
+  {
+    path: '/admin',
+    element: <Admin />
+  }
 ]);

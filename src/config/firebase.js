@@ -19,23 +19,45 @@ export const consultarOS = async (tipo, valor) => {
     const osRef = collection(db, 'ordens');
     let q;
     const ordens = [];
-
+ 
     if (tipo === 'telefone') {
       if (!valor) {
-        // Se não for fornecido um valor, retorna array vazio
         return [];
       }
-
-      // Remove caracteres especiais do telefone
+ 
       const telefoneNumerico = valor.replace(/\D/g, '');
-      console.log('Buscando pelo telefone:', telefoneNumerico);
-      
-      // Filtra por telefone
-      q = query(
-        osRef,
-        where('cliente.telefone', '==', telefoneNumerico)
-      );
+console.log('Buscando pelo telefone:', telefoneNumerico);
 
+// Filtra por telefone
+q = query(
+ osRef,
+ where('cliente.telefone', '==', telefoneNumerico),
+ orderBy('dataCriacao', 'desc')
+);
+
+const querySnapshot = await getDocs(q);
+querySnapshot.forEach((doc) => {
+ ordens.push({
+   id: doc.id,
+   ...doc.data()
+ });
+});
+
+// Limita a 3 para consulta normal 
+return ordens.slice(0, 3);
+
+} else if (tipo === 'historico') {
+ if (!valor) {
+   return [];
+ }
+
+ const telefoneNumerico = valor.replace(/\D/g, '');
+ q = query(
+   osRef,
+   where('cliente.telefone', '==', telefoneNumerico), 
+   orderBy('dataCriacao', 'desc')
+ );
+ 
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
         ordens.push({
@@ -43,48 +65,18 @@ export const consultarOS = async (tipo, valor) => {
           ...doc.data()
         });
       });
-
-      // Ordena e limita a 3 para consulta normal
-      ordens.sort((a, b) => b.dataCriacao - a.dataCriacao);
-
-      return ordens.slice(0, 3);
-
-    } else if (tipo === 'historico') {
-      // Para histórico, o valor (telefone) precisa ser passado explicitamente
-      if (!valor) {
-        // Se não tiver telefone, retorna vazio
-        return [];
-      }
-
-      const telefoneNumerico = valor.replace(/\D/g, '');
-      q = query(
-        osRef,
-        where('cliente.telefone', '==', telefoneNumerico)
-      );
-
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        ordens.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      // Se não houver ordens encontradas, retorna array vazio
+ 
       if (ordens.length === 0) {
         return [];
       }
-
-      // Ordena as ordens
-      ordens.sort((a, b) => b.dataCriacao - a.dataCriacao);
+ 
       return ordens;
-
+ 
     } else {
-      // Busca por código da OS caso 'tipo' não seja telefone nem histórico
       if (!valor) {
         return [];
       }
-
+ 
       q = query(osRef, where('codigo', '==', valor));
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
@@ -93,15 +85,14 @@ export const consultarOS = async (tipo, valor) => {
           ...doc.data()
         });
       });
-
+ 
       return ordens;
     }
-
+ 
   } catch (error) {
     console.error('Erro ao consultar OS:', error);
-    // Em caso de erro, retorna array vazio para não exibir nada
     return [];
   }
-};
-
-export { db };
+ };
+ 
+ export { db };

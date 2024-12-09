@@ -49,13 +49,13 @@ const Home = () => {
     },
     {
       title: "Experiência",
-      description: "Mais de 20 anos no mesmo lugar",
+      description: "Mais de 25 anos no mercado",
       icon: "⭐"
     }
   ]
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] relative overflow-x-hidden">
+  <div className="min-h-screen bg-[#f5f5f5] relative overflow-hidden"> 
       {/* Gradientes de fundo */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] 
         bg-[#FFC107] rounded-full opacity-20 blur-3xl -translate-x-1/2 -translate-y-1/2" />
@@ -95,7 +95,7 @@ const Home = () => {
               Sport & Bike
             </h1>
             <p className="text-lg sm:text-xl text-gray-600 mb-4">
-              Desde 1999 - Há mais de 20 anos no mesmo lugar
+              Desde 1999 - Mais de 25 anos de história
             </p>
             <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-12">
               Sua loja especializada em bikes em Fortaleza
