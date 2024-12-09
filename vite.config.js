@@ -4,17 +4,14 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      external: [
-        /^@/assets/.*$/
-      ]
-    }
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@assets': path.resolve(__dirname, './assets')
+    }
+  },
+  build: {
+    rollupOptions: {
+      external: ['/assets/logo.png']
     }
   }
 })
