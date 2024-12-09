@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from "jspdf";
 import { consultarOS } from "../config/firebase";
-const logo = new URL('../../assets/Logo.png', import.meta.url).href;
+const logo = '/assets/Logo.png';
 import { QRCodeSVG } from 'qrcode.react';
 
 const ConsultaOS = () => {
