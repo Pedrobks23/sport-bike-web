@@ -11,7 +11,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['/assets/logo.png']
+      external: ['/assets/Logo.png']
     }
   }
 })
