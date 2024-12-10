@@ -43,7 +43,10 @@ const ConsultaOS = () => {
   const formatarData = (timestamp, isAgendamento = false) => {
     if (!timestamp) return '-';
     
-    return new Date(timestamp).toLocaleDateString('pt-BR', {
+    // Converte o timestamp para Date, verificando se é timestamp do Firestore
+    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+    
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -60,7 +63,8 @@ const ConsultaOS = () => {
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      
+      let yPos = 130; // Definir yPos aqui no escopo principal
+  
       // Função para centralizar texto
       const centerText = (text, y) => {
         const textWidth = doc.getStringUnitWidth(text) * doc.internal.getFontSize() / doc.internal.scaleFactor;
@@ -75,7 +79,7 @@ const ConsultaOS = () => {
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       centerText('ORDEM DE SERVIÇO', 20);
-      
+  
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       centerText('Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE', 30);
@@ -86,18 +90,24 @@ const ConsultaOS = () => {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text(`OS: ${ordem.codigo}`, 20, 60);
-      doc.text(`Criada em: ${formatarData(ordem.dataCriacao)}`, 20, 70);
-      doc.text(`Agendada para: ${formatarData(ordem.dataAgendamento)}`, 20, 80);
+      
+      // Formatação correta das datas
+      const dataCriacao = ordem.dataCriacao?.toDate ? ordem.dataCriacao.toDate() : new Date(ordem.dataCriacao);
+      const dataAgendamento = ordem.dataAgendamento?.toDate ? ordem.dataAgendamento.toDate() : new Date(ordem.dataAgendamento);
+      
+      doc.text(`Criada em: ${dataCriacao.toLocaleString('pt-BR')}`, 20, 70);
+      doc.text(`Agendada para: ${ordem.dataAgendamento ? dataAgendamento.toLocaleString('pt-BR') : 'Não agendado'}`, 20, 80);
   
       // Dados do Cliente
       doc.text('DADOS DO CLIENTE', 20, 95);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Nome: ${ordem.cliente?.nome}`, 20, 105);
-      doc.text(`Telefone: ${ordem.cliente?.telefone}`, 20, 115);
+      doc.text(`Nome: ${ordem.cliente?.nome || '-'}`, 20, 105);
+      doc.text(`Telefone: ${ordem.cliente?.telefone || '-'}`, 20, 115);
   
       // Bicicletas e Serviços
-      let yPos = 130;
-      ordem.bicicletas.forEach((bike, index) => {
+      let totalGeral = 0;
+  
+      ordem.bicicletas?.forEach((bike, index) => {
         doc.setFont('helvetica', 'bold');
         doc.text(`BICICLETA ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`, 20, yPos);
         yPos += 15;
@@ -109,26 +119,59 @@ const ConsultaOS = () => {
         doc.text('Valor', 150, yPos);
         yPos += 8;
   
+        let totalBike = 0;
+  
         // Serviços
         doc.setFont('helvetica', 'normal');
         if (bike.services) {
           Object.entries(bike.services)
             .filter(([_, quantity]) => quantity > 0)
             .forEach(([service, quantity]) => {
+              const valorServico = quantity * 70; // valor padrão do serviço
+              totalBike += valorServico;
               doc.text(`• ${service}`, 20, yPos);
               doc.text(`${quantity}`, 120, yPos);
-              doc.text(`R$ ${(quantity * 70).toFixed(2)}`, 150, yPos);
+              doc.text(`R$ ${valorServico.toFixed(2)}`, 150, yPos);
               yPos += 7;
             });
         }
   
-        doc.text(`Total: R$ ${bike.valorTotal?.toFixed(2) || '0.00'}`, 150, yPos);
+        // Peças
+        if (bike.pecas && bike.pecas.length > 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('PEÇAS:', 20, yPos);
+          yPos += 7;
+          doc.setFont('helvetica', 'normal');
+          
+          bike.pecas.forEach(peca => {
+            const valorPeca = parseFloat(peca.valor) || 0;
+            totalBike += valorPeca;
+            doc.text(`• ${peca.nome}`, 20, yPos);
+            doc.text(`R$ ${valorPeca.toFixed(2)}`, 150, yPos);
+            yPos += 7;
+          });
+        }
+  
+        totalGeral += totalBike;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 150, yPos);
         yPos += 15;
       });
   
       // Total Geral
       doc.setFont('helvetica', 'bold');
-      doc.text(`TOTAL GERAL: R$ ${ordem.valorTotal.toFixed(2)}`, 20, yPos + 10);
+      doc.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 20, yPos);
+      yPos += 10;
+  
+      // Observações da OS
+      if (ordem.observacoes) {
+        yPos += 10;
+        doc.setFont('helvetica', 'bold');
+        doc.text('OBSERVAÇÕES:', 20, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(ordem.observacoes, 20, yPos + 5);
+        yPos += 20;
+      }
   
       // QR Code
       try {
@@ -138,7 +181,7 @@ const ConsultaOS = () => {
         console.error('Erro ao adicionar QR Code:', err);
       }
   
-      // Observações
+      // Observações padrão
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text('• O prazo para conclusão do serviço pode ser estendido em até 2 dias após a data agendada.', 20, yPos + 25);

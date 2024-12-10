@@ -1,12 +1,23 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../config/firebase';
+import { signOut } from 'firebase/auth';
 
 const Admin = () => {
+  console.log('Componente Admin carregado');
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center">
@@ -14,7 +25,7 @@ const Admin = () => {
             <h1 className="ml-4 text-xl font-bold text-[#333]">Área Administrativa</h1>
           </div>
           <button 
-            onClick={() => navigate('/')}
+            onClick={handleLogout}
             className="text-gray-600 hover:text-[#FFC107] transition-colors"
           >
             Sair
@@ -22,7 +33,6 @@ const Admin = () => {
         </div>
       </header>
 
-      {/* Menu Principal */}
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div 
@@ -30,7 +40,7 @@ const Admin = () => {
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-[#333] mb-2">Ordens de Serviço</h2>
-            <p className="text-gray-600">Gerenciar ordens de serviço</p>
+            <p className="text-gray-600">Cadastrar e gerenciar ordens de serviço</p>
           </div>
 
           <div 
@@ -46,7 +56,7 @@ const Admin = () => {
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-[#333] mb-2">Serviços</h2>
-            <p className="text-gray-600">Gerenciar tipos de serviços</p>
+            <p className="text-gray-600">Configurar tipos de serviços</p>
           </div>
 
           <div 

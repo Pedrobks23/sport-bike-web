@@ -231,7 +231,7 @@ const Home = () => {
           <div className="border-t mt-8 pt-8">
             <div className="flex flex-col items-center gap-4">
               <button 
-                onClick={() => navigate('/admin')}
+                onClick={() => navigate('/admin/login')}
                 className="text-gray-600 hover:text-[#FFC107] transition-colors px-4 py-2 rounded-lg border border-gray-200 hover:border-[#FFC107]"
               >
                 Acesso Funcionários
