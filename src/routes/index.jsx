@@ -4,6 +4,8 @@ import ConsultaOS from '../pages/ConsultaOS';
 import AdminLogin from '../pages/AdminLogin';
 import Admin from '../pages/Admin';
 import WorkshopDashboard from '../pages/WorkshopDashboard';
+import CustomerList from '../pages/CustomerList';
+import PrivateRoute from '../components/PrivateRoute';
 
 export const router = createBrowserRouter([
   {
@@ -20,11 +22,14 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: <Admin />  
+    element: <PrivateRoute><Admin /></PrivateRoute>
   },
   {
     path: '/admin/orders',
-    element: <WorkshopDashboard />
+    element: <PrivateRoute><WorkshopDashboard /></PrivateRoute>
+  },
+  {
+    path: '/admin/customers',
+    element: <PrivateRoute><CustomerList /></PrivateRoute>
   }
-
 ]);

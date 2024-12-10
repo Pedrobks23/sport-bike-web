@@ -2,50 +2,57 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 const AdminLogin = () => {
- const navigate = useNavigate();
- const [email, setEmail] = useState('');
- const [password, setPassword] = useState('');
- const [error, setError] = useState('');
- const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
- const handleSubmit = async (e) => {
-   e.preventDefault();
-   setError('');
-   setLoading(true);
- 
-   try {
-     console.log('Tentando login com:', email);
-     await signInWithEmailAndPassword(auth, email, password);
-     console.log('Login bem sucedido');
-     setLoading(false);
-     window.location.href = '/admin';
-   } catch (err) {
-     console.error('Erro completo:', err);
-     let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
-     
-     switch (err.code) {
-       case 'auth/invalid-email':
-         errorMessage = 'E-mail inválido.';
-         break;
-       case 'auth/user-disabled':
-         errorMessage = 'Usuário desabilitado.';
-         break;
-       case 'auth/user-not-found':
-         errorMessage = 'Usuário não encontrado.';
-         break;
-       case 'auth/wrong-password':
-         errorMessage = 'Senha incorreta.';
-         break;
-       default:
-         errorMessage = 'Erro ao fazer login. Tente novamente.';
-     }
-     
-     setError(errorMessage);
-     setLoading(false);
-   }
- };
+  // Se já estiver autenticado, redireciona para /admin
+  React.useEffect(() => {
+    if (user) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // O useEffect acima cuidará do redirecionamento
+    } catch (err) {
+      console.error('Erro ao fazer login:', err);
+      let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
+      
+      switch (err.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'E-mail inválido.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'Usuário desabilitado.';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'Usuário não encontrado.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Senha incorreta.';
+          break;
+        default:
+          errorMessage = 'Erro ao fazer login. Tente novamente.';
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
  return (
    <div className="min-h-screen bg-[#f5f5f5] flex flex-col justify-center items-center px-4">
