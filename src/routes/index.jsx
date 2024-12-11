@@ -5,6 +5,8 @@ import AdminLogin from '../pages/AdminLogin';
 import Admin from '../pages/Admin';
 import WorkshopDashboard from '../pages/WorkshopDashboard';
 import CustomerList from '../pages/CustomerList';
+import ServicesManagement from '../pages/ServicesManagement';
+import ReportsManagement from '../pages/ReportsManagement';
 import PrivateRoute from '../components/PrivateRoute';
 
 export const router = createBrowserRouter([
@@ -31,5 +33,13 @@ export const router = createBrowserRouter([
   {
     path: '/admin/customers',
     element: <PrivateRoute><CustomerList /></PrivateRoute>
+  },
+  {
+    path: '/admin/services',
+    element: <PrivateRoute><ServicesManagement /></PrivateRoute>
+  },
+  {
+    path: '/admin/reports',
+    element: <PrivateRoute><ReportsManagement /></PrivateRoute>
   }
 ]);

@@ -364,27 +364,34 @@ const OrderDetails = ({ order }) => {
         </div>
       </div>
 
-      {showEditPartModal && selectedPeca && (
-  <EditPartModal
-    peca={selectedPeca}
-    onClose={() => {
-      setShowEditPartModal(false);
-      setSelectedPeca(null);
-    }}
-    onSave={async (updatedPart) => {
-      try {
-        await updateOrderPart(order.id, selectedBikeIndex, selectedPeca.index, updatedPart);
-        await loadOrders();
-        setShowEditPartModal(false);
-        setSelectedPeca(null);
-      } catch (error) {
-        console.error('Erro ao atualizar peça:', error);
-        alert('Erro ao atualizar peça.');
-      }
-    }}
-    loading={loading}
-  />
-)}
+      {showEditServiceModal && selectedService && (
+          <EditServiceModal
+            service={selectedService}
+            bikeIndex={selectedBikeIndex}
+            orderId={order.id}
+            onClose={() => {
+              setShowEditServiceModal(false);
+              setSelectedService(null);
+            }}
+            onSave={async (updatedService) => {
+              try {
+                await updateOrderService(
+                  order.id,
+                  selectedBikeIndex,
+                  selectedService.nome,
+                  updatedService
+                );
+                await loadOrders();
+                setShowEditServiceModal(false);
+                setSelectedService(null);
+              } catch (error) {
+                console.error('Erro ao atualizar serviço:', error);
+                alert('Erro ao atualizar serviço.');
+              }
+            }}
+            loading={loading}
+          />
+        )}
 
       {/* Modais de Adição */}
       {showServiceModal && (
@@ -708,86 +715,87 @@ const AddObservationModal = ({ onClose, onAdd, loading, currentObservation }) =>
     }
   };
 
-  // Adicione esse componente para edição de serviço
-const EditServiceModal = ({ service, onClose, onSave, loading }) => {
-  const [nome, setNome] = useState(service.nome);
-  const [quantidade, setQuantidade] = useState(service.quantidade);
-  const [valor, setValor] = useState(service.valor);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({
-      nome,
-      quantidade: Number(quantidade),
-      valor: Number(valor)
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-md p-6">
-        <h3 className="text-lg font-bold mb-4">Editar Serviço</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Nome do Serviço
-            </label>
-            <input
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
-              required
-            />
+  const EditServiceModal = ({ service, bikeIndex, orderId, onClose, onSave, loading }) => {
+    const [nome, setNome] = useState(service.nome);
+    const [quantidade, setQuantidade] = useState(service.quantidade);
+    const [valor, setValor] = useState(service.valor || 70); // valor padrão 70
+  
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      onSave({
+        nome,
+        quantidade: parseInt(quantidade),
+        valor: parseFloat(valor)
+      });
+    };
+  
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg w-full max-w-md">
+          <div className="p-6">
+            <h3 className="text-xl font-bold mb-4">Editar Serviço</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Serviço
+                </label>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className="w-full px-3 py-2 border rounded"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Quantidade
+                </label>
+                <input
+                  type="number"
+                  value={quantidade}
+                  onChange={(e) => setQuantidade(e.target.value)}
+                  min="1"
+                  className="w-full px-3 py-2 border rounded"
+                  required
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Valor Unitário
+                </label>
+                <input
+                  type="number"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border rounded"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {loading ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+            </form>
           </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Quantidade
-            </label>
-            <input
-              type="number"
-              value={quantidade}
-              onChange={(e) => setQuantidade(e.target.value)}
-              min="1"
-              className="w-full px-3 py-2 border rounded"
-              required
-            />
-          </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Valor Unitário
-            </label>
-            <input
-              type="number"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              min="0"
-              step="0.01"
-              className="w-full px-3 py-2 border rounded"
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-            >
-              {loading ? 'Salvando...' : 'Salvar'}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   // Handler para atualização de status
   const onDragEnd = async (result) => {

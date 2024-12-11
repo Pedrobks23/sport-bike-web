@@ -89,41 +89,53 @@ export const addServiceToBike = async (orderId, bikeIndex, newService) => {
   }
 };
 
-export const updateOrderService = async (orderId, bikeIndex, serviceIndex, updatedService) => {
+export const updateOrderService = async (orderId, bikeIndex, serviceName, updatedService) => {
   try {
-    const orderRef = doc(db, 'ordens', orderId);
+    const orderRef = doc(db, "ordens", orderId);
     const orderDoc = await getDoc(orderRef);
-    if (!orderDoc.exists()) throw new Error('Ordem não encontrada');
+
+    if (!orderDoc.exists()) {
+      throw new Error("Ordem não encontrada");
+    }
 
     const order = orderDoc.data();
     const bikes = [...order.bicicletas];
     
-    // Atualiza o serviço específico
-    if (!bikes[bikeIndex].services) bikes[bikeIndex].services = {};
-    const services = { ...bikes[bikeIndex].services };
-    
-    // Remove o serviço antigo e adiciona o atualizado
-    const oldService = services[serviceIndex];
-    delete services[serviceIndex];
-    services[updatedService.nome] = updatedService.quantidade;
-    
-    bikes[bikeIndex].services = services;
+    // Verifica se a bicicleta existe
+    if (!bikes[bikeIndex]) {
+      throw new Error("Bicicleta não encontrada");
+    }
+
+    // Garante que o objeto services existe
+    if (!bikes[bikeIndex].services) {
+      bikes[bikeIndex].services = {};
+    }
+
+    // Atualiza o serviço
+    bikes[bikeIndex].services[updatedService.nome] = updatedService.quantidade;
 
     // Recalcula o valor total
-    let novoTotal = order.valorTotal;
-    novoTotal -= (oldService * 70); // Remove valor antigo
-    novoTotal += (updatedService.quantidade * updatedService.valor); // Adiciona novo valor
+    let valorTotal = 0;
+    bikes.forEach(bike => {
+      Object.entries(bike.services || {}).forEach(([nome, quantidade]) => {
+        valorTotal += quantidade * (updatedService.valor || 70); // valor padrão 70 se não especificado
+      });
+    });
 
+    // Atualiza a ordem com os serviços atualizados
     await updateDoc(orderRef, {
       bicicletas: bikes,
-      valorTotal: novoTotal,
-      dataAtualizacao: serverTimestamp()
+      valorTotal,
+      dataAtualizacao: new Date()
     });
+
+    return { success: true };
   } catch (error) {
-    console.error('Erro ao atualizar serviço:', error);
+    console.error("Erro ao atualizar serviço:", error);
     throw error;
   }
 };
+
 // Adicionar essas funções ao arquivo orderService.js
 export const removeOrderPart = async (orderId, bikeIndex, partIndex) => {
   try {
