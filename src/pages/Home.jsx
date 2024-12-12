@@ -66,7 +66,7 @@ const Home = () => {
       <header className="relative z-10 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center">
-            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-20 sm:h-24 md:h-32" />
+            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-40 sm:h-34 md:h-42" />
           </div>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 text-center sm:text-left">
             <a 

@@ -242,20 +242,26 @@ const OrderDetails = ({ order }) => {
                 <div className="mt-3">
                   <p className="font-bold mb-1">Serviços:</p>
                   <ul className="list-disc list-inside">
-                    {bike.services && Object.entries(bike.services).map(([service, quantity]) => (
-                      <li key={service} className="flex items-center justify-between">
-                        <span>{service} - {quantity}x</span>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedBikeIndex(index);
-                              setSelectedService({ nome: service, quantidade: quantity });
-                              setShowEditServiceModal(true);
-                            }}
-                            className="text-blue-500 hover:text-blue-600 text-sm"
-                          >
-                            Editar
-                          </button>
+                  {bike.services && Object.entries(bike.services).map(([service, quantity]) => (
+                    <li key={service} className="flex items-center justify-between">
+                      <span>{service} - {quantity}x</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedBikeIndex(index);
+                            // Buscar o valor do serviço da tabela de preços no Firebase
+                            const serviceValue = order.valorServicos?.[service] || 50; // Usa o valor da tabela ou 50 como padrão
+                            setSelectedService({ 
+                              nome: service, 
+                              quantidade: quantity,
+                              valor: serviceValue // Inclui o valor do serviço
+                            });
+                            setShowEditServiceModal(true);
+                          }}
+                          className="text-blue-500 hover:text-blue-600 text-sm"
+                        >
+                          Editar
+                        </button>
                           <button
                             onClick={async () => {
                               if (window.confirm(`Remover o serviço ${service}?`)) {
@@ -718,7 +724,8 @@ const AddObservationModal = ({ onClose, onAdd, loading, currentObservation }) =>
   const EditServiceModal = ({ service, bikeIndex, orderId, onClose, onSave, loading }) => {
     const [nome, setNome] = useState(service.nome);
     const [quantidade, setQuantidade] = useState(service.quantidade);
-    const [valor, setValor] = useState(service.valor || 70); // valor padrão 70
+    // Pega o valor do serviço ou usa 70 como fallback apenas se não houver valor
+    const [valor, setValor] = useState(service.valor || 70);
   
     const handleSubmit = (e) => {
       e.preventDefault();
@@ -894,7 +901,7 @@ const AddObservationModal = ({ onClose, onAdd, loading, currentObservation }) =>
           />
         </div>
 
-     javascriptCopy{/* Grid de colunas */}
+     {/* Grid de colunas */}
 <DragDropContext onDragEnd={onDragEnd}>
  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
    {/* Coluna Pendente */}

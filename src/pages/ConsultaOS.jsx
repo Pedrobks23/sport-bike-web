@@ -63,7 +63,7 @@ const ConsultaOS = () => {
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 130; // Definir yPos aqui no escopo principal
+      let yPos = 50;
   
       // Função para centralizar texto
       const centerText = (text, y) => {
@@ -72,10 +72,10 @@ const ConsultaOS = () => {
         doc.text(text, x, y);
       };
   
-      // Logo
+      // Logo e Cabeçalho
       doc.addImage(logo, 'PNG', 20, 10, 40, 40);
   
-      // Título e Cabeçalho
+      // Título e informações da empresa
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       centerText('ORDEM DE SERVIÇO', 20);
@@ -89,30 +89,40 @@ const ConsultaOS = () => {
       // Informações da OS
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text(`OS: ${ordem.codigo}`, 20, 60);
-      
-      // Formatação correta das datas
+      doc.text(`OS: ${ordem.codigo}`, 20, yPos);
+      yPos += 10;
+  
+      // Formatação das datas
       const dataCriacao = ordem.dataCriacao?.toDate ? ordem.dataCriacao.toDate() : new Date(ordem.dataCriacao);
       const dataAgendamento = ordem.dataAgendamento?.toDate ? ordem.dataAgendamento.toDate() : new Date(ordem.dataAgendamento);
-      
-      doc.text(`Criada em: ${dataCriacao.toLocaleString('pt-BR')}`, 20, 70);
-      doc.text(`Agendada para: ${ordem.dataAgendamento ? dataAgendamento.toLocaleString('pt-BR') : 'Não agendado'}`, 20, 80);
+  
+      doc.text(`Criada em: ${dataCriacao.toLocaleString('pt-BR')}`, 20, yPos);
+      yPos += 10;
+  
+      if (ordem.dataAgendamento) {
+        doc.text(`Agendada para: ${dataAgendamento.toLocaleString('pt-BR')}`, 20, yPos);
+        yPos += 15;
+      }
   
       // Dados do Cliente
-      doc.text('DADOS DO CLIENTE', 20, 95);
+      doc.text('DADOS DO CLIENTE', 20, yPos);
+      yPos += 10;
       doc.setFont('helvetica', 'normal');
-      doc.text(`Nome: ${ordem.cliente?.nome || '-'}`, 20, 105);
-      doc.text(`Telefone: ${ordem.cliente?.telefone || '-'}`, 20, 115);
+      doc.text(`Nome: ${ordem.cliente?.nome || '-'}`, 20, yPos);
+      yPos += 7;
+      doc.text(`Telefone: ${ordem.cliente?.telefone || '-'}`, 20, yPos);
+      yPos += 15;
   
       // Bicicletas e Serviços
       let totalGeral = 0;
   
       ordem.bicicletas?.forEach((bike, index) => {
+        // Título da bicicleta
         doc.setFont('helvetica', 'bold');
         doc.text(`BICICLETA ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`, 20, yPos);
         yPos += 15;
   
-        // Tabela de serviços
+        // Cabeçalho da tabela de serviços
         doc.setFont('helvetica', 'bold');
         doc.text('Serviço', 20, yPos);
         doc.text('Qtd', 120, yPos);
@@ -127,8 +137,10 @@ const ConsultaOS = () => {
           Object.entries(bike.services)
             .filter(([_, quantity]) => quantity > 0)
             .forEach(([service, quantity]) => {
-              const valorServico = quantity * 70; // valor padrão do serviço
+              const valorUnitario = ordem.valorServicos?.[service] || 50; // Usa o valor armazenado ou 50 como padrão
+              const valorServico = quantity * valorUnitario;
               totalBike += valorServico;
+  
               doc.text(`• ${service}`, 20, yPos);
               doc.text(`${quantity}`, 120, yPos);
               doc.text(`R$ ${valorServico.toFixed(2)}`, 150, yPos);
@@ -138,11 +150,12 @@ const ConsultaOS = () => {
   
         // Peças
         if (bike.pecas && bike.pecas.length > 0) {
+          yPos += 5;
           doc.setFont('helvetica', 'bold');
           doc.text('PEÇAS:', 20, yPos);
           yPos += 7;
-          doc.setFont('helvetica', 'normal');
           
+          doc.setFont('helvetica', 'normal');
           bike.pecas.forEach(peca => {
             const valorPeca = parseFloat(peca.valor) || 0;
             totalBike += valorPeca;
@@ -153,40 +166,42 @@ const ConsultaOS = () => {
         }
   
         totalGeral += totalBike;
+        yPos += 5;
         doc.setFont('helvetica', 'bold');
-        doc.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 150, yPos);
+        doc.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 120, yPos);
         yPos += 15;
+  
+        // Verifica se precisa adicionar nova página
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
       });
   
       // Total Geral
       doc.setFont('helvetica', 'bold');
       doc.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 20, yPos);
-      yPos += 10;
+      yPos += 15;
   
-      // Observações da OS
+      // Observações
       if (ordem.observacoes) {
-        yPos += 10;
         doc.setFont('helvetica', 'bold');
         doc.text('OBSERVAÇÕES:', 20, yPos);
+        yPos += 7;
         doc.setFont('helvetica', 'normal');
-        doc.text(ordem.observacoes, 20, yPos + 5);
-        yPos += 20;
+        doc.text(ordem.observacoes, 20, yPos);
+        yPos += 15;
       }
   
-      // QR Code
-      try {
-        const qrCodeDataUrl = await generateQRCode(ordem);
-        doc.addImage(qrCodeDataUrl, 'SVG', 150, yPos - 20, 30, 30);
-      } catch (err) {
-        console.error('Erro ao adicionar QR Code:', err);
-      }
-  
-      // Observações padrão
+      // Termos e condições
+      yPos += 10;
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text('• O prazo para conclusão do serviço pode ser estendido em até 2 dias após a data agendada.', 20, yPos + 25);
-      doc.text('• Caso a bicicleta ou peças não sejam retiradas no prazo de 180 dias após o término', 20, yPos + 30);
-      doc.text('  do serviço, serão vendidas para custear as despesas.', 20, yPos + 35);
+      doc.text([
+        '• O prazo para conclusão do serviço pode ser estendido em até 2 dias após a data agendada.',
+        '• Caso a bicicleta ou peças não sejam retiradas no prazo de 180 dias após o término',
+        '  do serviço, serão vendidas para custear as despesas.'
+      ], 20, yPos);
   
       // Salvar PDF
       doc.save(`OS-${ordem.codigo}.pdf`);
@@ -225,7 +240,7 @@ const ConsultaOS = () => {
     // Se não é telefone, retorna o valor em maiúsculo sem modificar
     return valorLimpo.toUpperCase();
   };
-7770
+
   const handleInputChange = (e) => {
     const valorFormatado = formatarInput(e.target.value);
     setSearchValue(valorFormatado);
@@ -308,7 +323,7 @@ const ConsultaOS = () => {
             >
               ← Voltar
             </button>
-            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-16" />
+            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-36" />
           </div>
         </div>
       </header>

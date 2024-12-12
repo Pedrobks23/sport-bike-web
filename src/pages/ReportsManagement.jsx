@@ -213,7 +213,7 @@ Exportar PDF
 </div>
 </div>
 </header>
-Copy  <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+ <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
     <div className="bg-white shadow rounded-lg p-6 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
