@@ -1,8 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { PlusCircle, ArrowLeft, Edit, Trash, Clock, DollarSign, FileText } from 'lucide-react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, deleteField } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import {
+  PlusCircle,
+  ArrowLeft,
+  Edit,
+  Trash,
+  Clock,
+  DollarSign,
+  FileText,
+} from "lucide-react";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  deleteField,
+} from "firebase/firestore";
+import { db } from "../config/firebase";
+import { useNavigate } from "react-router-dom";
 
 const ServicesManagement = () => {
   const navigate = useNavigate();
@@ -17,26 +33,26 @@ const ServicesManagement = () => {
     try {
       const servicesRef = collection(db, "servicos");
       const snapshot = await getDocs(servicesRef);
-      
+
       const servicesData = [];
-      
+
       snapshot.forEach((doc) => {
         const data = doc.data();
         // Para cada campo no documento, criar um serviço
         Object.entries(data).forEach(([nome, valor]) => {
           // Remove as aspas do valor se existirem
-          const valorNumerico = parseFloat(valor.replace(/['"]/g, ''));
-          
+          const valorNumerico = parseFloat(valor.replace(/['"]/g, ""));
+
           servicesData.push({
             id: `${doc.id}_${nome}`,
             nome: nome,
             descricao: nome,
             valor: valorNumerico,
-            tempoEstimado: 30 // valor padrão
+            tempoEstimado: 30, // valor padrão
           });
         });
       });
-  
+
       console.log("Serviços carregados:", servicesData);
       setServices(servicesData);
     } catch (error) {
@@ -49,28 +65,28 @@ const ServicesManagement = () => {
   const handleAddService = async (serviceData) => {
     try {
       if (!serviceData.nome?.trim()) {
-        alert('O nome do serviço é obrigatório');
+        alert("O nome do serviço é obrigatório");
         return;
       }
-  
+
       // Pegar o documento existente
       const servicesRef = collection(db, "servicos");
       const snapshot = await getDocs(servicesRef);
       let docRef;
-      
+
       if (snapshot.empty) {
         // Se não existir documento, criar um novo
         docRef = await addDoc(servicesRef, {
-          [serviceData.nome]: serviceData.valor.toString()
+          [serviceData.nome]: serviceData.valor.toString(),
         });
       } else {
         // Se existir, atualizar o primeiro documento
         docRef = doc(db, "servicos", snapshot.docs[0].id);
         await updateDoc(docRef, {
-          [serviceData.nome]: serviceData.valor.toString()
+          [serviceData.nome]: serviceData.valor.toString(),
         });
       }
-  
+
       await loadServices();
       setShowAddModal(false);
     } catch (error) {
@@ -83,17 +99,17 @@ const ServicesManagement = () => {
     try {
       const servicesRef = collection(db, "servicos");
       const snapshot = await getDocs(servicesRef);
-      
+
       if (!snapshot.empty) {
         const docRef = doc(db, "servicos", snapshot.docs[0].id);
-        
+
         // Remover o serviço antigo e adicionar o novo
         const oldName = selectedService.nome;
         const updates = {
           [oldName]: deleteField(), // Remove o campo antigo
-          [serviceData.nome]: serviceData.valor.toString() // Adiciona o novo
+          [serviceData.nome]: serviceData.valor.toString(), // Adiciona o novo
         };
-        
+
         await updateDoc(docRef, updates);
         await loadServices();
         setShowEditModal(false);
@@ -108,47 +124,52 @@ const ServicesManagement = () => {
   // Adicione este componente dentro do ServicesManagement, antes do return
   const ServiceModal = ({ isEdit, onClose, onSave, selectedService }) => {
     const [formData, setFormData] = useState({
-      nome: isEdit && selectedService ? selectedService.nome : '',
-      descricao: isEdit && selectedService ? selectedService.descricao : '',
-      valor: isEdit && selectedService ? selectedService.valor.toString() : '0',
-      tempoEstimado: isEdit && selectedService ? selectedService.tempoEstimado.toString() : '0'
+      nome: isEdit && selectedService ? selectedService.nome : "",
+      descricao: isEdit && selectedService ? selectedService.descricao : "",
+      valor: isEdit && selectedService ? selectedService.valor.toString() : "0",
+      tempoEstimado:
+        isEdit && selectedService
+          ? selectedService.tempoEstimado.toString()
+          : "0",
     });
-   
+
     useEffect(() => {
       if (isEdit && selectedService) {
         setFormData({
           nome: selectedService.nome,
           descricao: selectedService.descricao,
           valor: selectedService.valor.toString(),
-          tempoEstimado: selectedService.tempoEstimado.toString()
+          tempoEstimado: selectedService.tempoEstimado.toString(),
         });
       }
     }, [isEdit, selectedService]);
-   
+
     const handleSubmit = (e) => {
       e.preventDefault();
       onSave(formData);
     };
-   
+
     const handleChange = (e) => {
       const { name, value } = e.target;
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     };
-   
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg w-full max-w-md">
           <div className="p-6">
             <h3 className="text-xl font-bold mb-4">
-              {isEdit ? 'Editar Serviço' : 'Novo Serviço'}
+              {isEdit ? "Editar Serviço" : "Novo Serviço"}
             </h3>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Nome</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Nome
+                  </label>
                   <input
                     type="text"
                     name="nome"
@@ -159,7 +180,9 @@ const ServicesManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Descrição</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Descrição
+                  </label>
                   <textarea
                     name="descricao"
                     value={formData.descricao}
@@ -170,7 +193,9 @@ const ServicesManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Valor (R$)
+                  </label>
                   <input
                     type="number"
                     name="valor"
@@ -183,7 +208,9 @@ const ServicesManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Tempo Estimado (minutos)</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tempo Estimado (minutos)
+                  </label>
                   <input
                     type="number"
                     name="tempoEstimado"
@@ -207,7 +234,7 @@ const ServicesManagement = () => {
                   type="submit"
                   className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
                 >
-                  {isEdit ? 'Atualizar' : 'Adicionar'}
+                  {isEdit ? "Atualizar" : "Adicionar"}
                 </button>
               </div>
             </form>
@@ -215,22 +242,26 @@ const ServicesManagement = () => {
         </div>
       </div>
     );
-   };
+  };
 
   const handleDeleteService = async (service) => {
-    if (window.confirm(`Tem certeza que deseja excluir o serviço "${service.nome}"?`)) {
+    if (
+      window.confirm(
+        `Tem certeza que deseja excluir o serviço "${service.nome}"?`
+      )
+    ) {
       try {
         const servicesRef = collection(db, "servicos");
         const snapshot = await getDocs(servicesRef);
-        
+
         if (!snapshot.empty) {
           const docRef = doc(db, "servicos", snapshot.docs[0].id);
-          
+
           // Criar um objeto com o campo a ser removido
           const updates = {
-            [service.nome]: deleteField()
+            [service.nome]: deleteField(),
           };
-          
+
           await updateDoc(docRef, updates);
           await loadServices();
         }
@@ -252,13 +283,15 @@ const ServicesManagement = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <button
-                onClick={() => navigate('/admin')}
+                onClick={() => navigate("/admin")}
                 className="mr-4 text-gray-600 hover:text-gray-900 flex items-center"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Voltar
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">Gerenciar Serviços</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Gerenciar Serviços
+              </h1>
             </div>
             <button
               onClick={() => setShowAddModal(true)}
@@ -276,48 +309,48 @@ const ServicesManagement = () => {
           <div>Carregando...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {services.map((service) => (
-                    <div
-                        key={service.id}
-                        className="bg-white overflow-hidden shadow rounded-lg"
-                    >
-                        <div className="px-4 py-5 sm:p-6">
-                        <div className="flex justify-between items-start">
-                            <h3 className="text-lg font-medium text-gray-900">
-                            {service.nome || 'Sem nome'}
-                            </h3>
-                            <div className="flex gap-2">
-                            <button
-                                onClick={() => {
-                                setSelectedService(service);
-                                setShowEditModal(true);
-                                }}
-                                className="text-blue-600 hover:text-blue-800"
-                            >
-                                <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => handleDeleteService(service)}
-                                className="text-red-600 hover:text-red-800"
-                            >
-                                <Trash className="w-5 h-5" />
-                            </button>
-                            </div>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-500">
-                            {service.descricao || 'Sem descrição'}
-                        </p>
-                        <div className="mt-4">
-                            <span className="text-xl font-semibold">
-                            R$ {(parseFloat(service.valor || 0)).toFixed(2)}
-                            </span>
-                        </div>
-                        <div className="mt-2 text-sm text-gray-500">
-                            Tempo estimado: {service.tempoEstimado || 0} minutos
-                        </div>
-                        </div>
+            {services.map((service) => (
+              <div
+                key={service.id}
+                className="bg-white overflow-hidden shadow rounded-lg"
+              >
+                <div className="px-4 py-5 sm:p-6">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      {service.nome || "Sem nome"}
+                    </h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedService(service);
+                          setShowEditModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteService(service)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash className="w-5 h-5" />
+                      </button>
                     </div>
-                    ))}
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {service.descricao || "Sem descrição"}
+                  </p>
+                  <div className="mt-4">
+                    <span className="text-xl font-semibold">
+                      R$ {parseFloat(service.valor || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-500">
+                    Tempo estimado: {service.tempoEstimado || 0} minutos
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </main>

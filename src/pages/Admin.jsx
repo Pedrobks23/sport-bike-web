@@ -1,18 +1,18 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { auth } from '../config/firebase';
-import { signOut } from 'firebase/auth';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { auth } from "../config/firebase";
+import { signOut } from "firebase/auth";
 
 const Admin = () => {
-  console.log('Componente Admin carregado');
+  console.log("Componente Admin carregado");
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate('/admin/login');
+      navigate("/admin/login");
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+      console.error("Erro ao fazer logout:", error);
     }
   };
 
@@ -22,9 +22,11 @@ const Admin = () => {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center">
             <img src="/assets/Logo.png" alt="Sport & Bike" className="h-10" />
-            <h1 className="ml-4 text-xl font-bold text-[#333]">Área Administrativa</h1>
+            <h1 className="ml-4 text-xl font-bold text-[#333]">
+              Área Administrativa
+            </h1>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="text-gray-600 hover:text-[#FFC107] transition-colors"
           >
@@ -35,36 +37,42 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div 
-            onClick={() => navigate('/admin/orders')}
+          <div
+            onClick={() => navigate("/admin/orders")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           >
-            <h2 className="text-xl font-bold text-[#333] mb-2">Ordens de Serviço</h2>
-            <p className="text-gray-600">Cadastrar e gerenciar ordens de serviço</p>
+            <h2 className="text-xl font-bold text-[#333] mb-2">
+              Ordens de Serviço
+            </h2>
+            <p className="text-gray-600">
+              Cadastrar e gerenciar ordens de serviço
+            </p>
           </div>
 
-          <div 
-            onClick={() => navigate('/admin/customers')}
+          <div
+            onClick={() => navigate("/admin/customers")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-[#333] mb-2">Clientes</h2>
             <p className="text-gray-600">Gerenciar cadastro de clientes</p>
           </div>
 
-          <div 
-            onClick={() => navigate('/admin/services')}
+          <div
+            onClick={() => navigate("/admin/services")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-[#333] mb-2">Serviços</h2>
             <p className="text-gray-600">Configurar tipos de serviços</p>
           </div>
 
-          <div 
-            onClick={() => navigate('/admin/reports')}
+          <div
+            onClick={() => navigate("/admin/reports")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           >
             <h2 className="text-xl font-bold text-[#333] mb-2">Relatórios</h2>
-            <p className="text-gray-600">Visualizar relatórios e estatísticas</p>
+            <p className="text-gray-600">
+              Visualizar relatórios e estatísticas
+            </p>
           </div>
         </div>
       </main>

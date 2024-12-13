@@ -1,6 +1,6 @@
 // src/hooks/useOrdens.js
-import { useState } from 'react';
-import { consultarOS } from '../config/firebase';
+import { useState } from "react";
+import { consultarOS } from "../config/firebase";
 
 export const useOrdens = () => {
   const [ordens, setOrdens] = useState([]);
@@ -24,6 +24,6 @@ export const useOrdens = () => {
     ordens,
     loading,
     error,
-    buscarOrdens
+    buscarOrdens,
   };
 };

@@ -60,12 +60,17 @@ export const updateOrderStatus = async (orderId, newStatus) => {
   }
 };
 
-export const addServiceToBike = async (orderId, bikeIndex, newService) => {
+export const addServiceToBike = async (orderId, bikeIndex, service) => {
   try {
-    const orderRef = doc(db, 'ordens', orderId);
+    console.log('Adicionando serviço:', { orderId, bikeIndex, service }); // Debug
+    
+    const orderRef = doc(db, "ordens", orderId);
     const orderDoc = await getDoc(orderRef);
-    if (!orderDoc.exists()) throw new Error('Ordem não encontrada');
-
+    
+    if (!orderDoc.exists()) {
+      throw new Error("Ordem não encontrada");
+    }
+    
     const order = orderDoc.data();
     const bikes = [...order.bicicletas];
     
@@ -73,47 +78,49 @@ export const addServiceToBike = async (orderId, bikeIndex, newService) => {
       bikes[bikeIndex].services = {};
     }
     
-    bikes[bikeIndex].services[newService.nome] = parseInt(newService.quantidade);
+    // Adiciona o serviço
+    bikes[bikeIndex].services[service.nome] = parseInt(service.quantidade);
     
-    // Recalcula o valor total
-    let valorTotal = 0;
-    bikes.forEach(bike => {
-      // Soma valores dos serviços
+    // Calcula o total para cada bicicleta
+    bikes.forEach((bike, index) => {
+      let bikeTotal = 0;
       if (bike.services) {
         Object.entries(bike.services).forEach(([nome, quantidade]) => {
-          valorTotal += quantidade * (newService.valor || 70);
+          const servicoValor = order.valorServicos?.[nome];
+          if (servicoValor) {
+            const valorCalculado = quantidade * servicoValor;
+            console.log(`Bike ${index} - Serviço ${nome}: ${quantidade} x ${servicoValor} = ${valorCalculado}`); // Debug
+            bikeTotal += valorCalculado;
+          }
         });
       }
-      
-      // Soma valores das peças
-      if (bike.pecas) {
-        bike.pecas.forEach(peca => {
-          valorTotal += parseFloat(peca.valor) || 0;
-        });
-      }
+      bike.total = bikeTotal;
+      console.log(`Total da bike ${index}:`, bikeTotal); // Debug
     });
-
-    await updateDoc(orderRef, { 
+    
+    // Calcula o valor total da ordem
+    const valorTotal = bikes.reduce((total, bike) => total + (bike.total || 0), 0);
+    console.log('Valor total calculado:', valorTotal); // Debug
+    
+    await updateDoc(orderRef, {
       bicicletas: bikes,
-      valorTotal: parseFloat(valorTotal.toFixed(2)),
+      valorTotal: valorTotal,
       dataAtualizacao: serverTimestamp()
     });
+    
+    return { success: true };
   } catch (error) {
-    console.error('Erro ao adicionar serviço:', error);
+    console.error("Erro ao adicionar serviço:", error);
     throw error;
   }
 };
 
 export const updateOrderService = async (orderId, bikeIndex, serviceName, updatedService) => {
   try {
-    console.log('Iniciando updateOrderService com:', {
-      orderId,
-      bikeIndex,
-      serviceName,
-      updatedService
-    });
+    if (typeof bikeIndex !== 'number' || bikeIndex < 0) {
+      throw new Error(`Índice da bicicleta inválido: ${bikeIndex}`);
+    }
 
-    // 1. Busca a ordem
     const orderRef = doc(db, "ordens", orderId);
     const orderDoc = await getDoc(orderRef);
 
@@ -121,64 +128,44 @@ export const updateOrderService = async (orderId, bikeIndex, serviceName, update
       throw new Error("Ordem não encontrada");
     }
 
-    // 2. Pega os dados da ordem e loga
     const orderData = orderDoc.data();
-    console.log('Dados da ordem:', orderData);
-
-    // 3. Verifica se bicicletas existe
-    if (!orderData.bicicletas) {
-      console.log('Array de bicicletas não existe, criando...');
-      orderData.bicicletas = [];
-    }
-
-    // 4. Loga o array de bicicletas
-    console.log('Array de bicicletas:', orderData.bicicletas);
-    console.log('Tentando acessar bicicleta no índice:', bikeIndex);
-
-    // 5. Verifica se a bicicleta existe no índice especificado
-    if (!orderData.bicicletas[bikeIndex]) {
-      console.log('Bicicleta não encontrada no índice:', bikeIndex);
-      console.log('Total de bicicletas:', orderData.bicicletas.length);
+    if (!orderData.bicicletas || !orderData.bicicletas[bikeIndex]) {
       throw new Error(`Bicicleta não encontrada no índice ${bikeIndex}`);
     }
 
-    // 6. Cria uma cópia do array de bicicletas
-    const bikes = [...orderData.bicicletas];
+    const bikes = JSON.parse(JSON.stringify(orderData.bicicletas));
 
-    // 7. Inicializa ou atualiza os serviços
     if (!bikes[bikeIndex].services) {
       bikes[bikeIndex].services = {};
     }
 
-    // 8. Atualiza o serviço
+    // Remove serviço antigo se o nome mudou
     if (serviceName !== updatedService.nome) {
       delete bikes[bikeIndex].services[serviceName];
     }
+
+    // Atualiza o serviço com a nova quantidade
     bikes[bikeIndex].services[updatedService.nome] = parseInt(updatedService.quantidade);
 
-    console.log('Bicicletas após atualização:', bikes);
+    // Atualiza o total da bicicleta
+    bikes[bikeIndex].total = parseFloat(updatedService.valor) * parseInt(updatedService.quantidade);
 
-    // 9. Atualiza o documento
+    // Calcula novo valor total da ordem
+    const novoValorTotal = bikes.reduce((total, bike) => total + (bike.total || 0), 0);
+
+    // Atualiza o documento
     await updateDoc(orderRef, {
       bicicletas: bikes,
+      valorTotal: novoValorTotal,
       dataAtualizacao: serverTimestamp()
     });
 
-    console.log('Documento atualizado com sucesso');
     return { success: true };
-
   } catch (error) {
-    console.error('Erro detalhado:', {
-      message: error.message,
-      orderId,
-      bikeIndex,
-      serviceName,
-      stack: error.stack
-    });
+    console.error("Erro ao atualizar serviço:", error);
     throw error;
   }
 };
-
 
 // Adicionar essas funções ao arquivo orderService.js
 export const removeOrderPart = async (orderId, bikeIndex, partIndex) => {
