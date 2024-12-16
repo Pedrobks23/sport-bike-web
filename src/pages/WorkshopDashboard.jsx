@@ -15,7 +15,7 @@ import {
   removeOrderPart,
   updateOrderPart,
   getOrder,
-  getServices, // Novo: buscar tabela de serviços
+  getServices, 
 } from "../services/orderService";
 
 const WorkshopDashboard = () => {

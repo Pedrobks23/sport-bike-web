@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { Instagram } from "lucide-react";
 
-// Correção para o ícone do marcador do Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -59,17 +59,11 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] relative overflow-hidden">
-      {/* Gradientes de fundo */}
-      <div
-        className="absolute top-0 left-0 w-[500px] h-[500px] 
-        bg-[#FFC107] rounded-full opacity-20 blur-3xl -translate-x-1/2 -translate-y-1/2"
-      />
-      <div
-        className="absolute bottom-0 right-0 w-[500px] h-[500px] 
-        bg-[#FFC107] rounded-full opacity-20 blur-3xl translate-x-1/2 translate-y-1/2"
-      />
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] 
+        bg-[#FFC107] rounded-full opacity-20 blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] 
+        bg-[#FFC107] rounded-full opacity-20 blur-3xl translate-x-1/2 translate-y-1/2" />
 
-      {/* Header */}
       <header className="relative z-10 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center">
@@ -90,15 +84,15 @@ const Home = () => {
               href="https://www.instagram.com/sportbike_fortaleza/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center sm:justify-start gap-2 text-[#333] hover:text-[#FFC107] transition-colors text-sm sm:text-base"
+              className="flex items-center justify-center sm:justify-start gap-2 px-4 py-2 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white rounded-lg hover:opacity-90 transition-opacity"
             >
-              📸 @sportbike_fortaleza
+              <Instagram className="w-5 h-5" />
+              <span>@sportbike_fortaleza</span>
             </a>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="relative z-10 py-10 sm:py-20 bg-gradient-to-b from-white to-transparent">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto">
@@ -113,7 +107,7 @@ const Home = () => {
             </p>
             <button
               onClick={() => navigate("/consulta")}
-              className="w-full sm:w-auto btn bg-[#FFC107] text-[#333] px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
+              className="w-full sm:w-auto btn bg-[#FFC107] text-[#333] px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-lg hover:bg-[#FFD54F] transition-colors"
             >
               Consultar Ordem de Serviço
             </button>
@@ -121,7 +115,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Serviços */}
       <section className="relative z-10 py-16 sm:py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-[#333] mb-12">
@@ -131,7 +124,7 @@ const Home = () => {
             {services.map((service, index) => (
               <div
                 key={index}
-                className="card hover:shadow-lg transition-shadow p-4 sm:p-6"
+                className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow p-4 sm:p-6"
               >
                 <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">
                   {service.icon}
@@ -148,7 +141,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA WhatsApp */}
       <section className="relative z-10 py-16 sm:py-20 bg-[#FFC107]/10">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-[#333] mb-6">
@@ -158,7 +150,7 @@ const Home = () => {
             Tire suas dúvidas, solicite orçamentos ou agende seu serviço
           </p>
           <a
-            href={`https://wa.me/558532677425`}
+            href="https://wa.me/558532677425"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BD5C] text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg shadow-lg hover:-translate-y-1 transition-all text-base sm:text-lg w-full sm:w-auto mx-4"
@@ -168,7 +160,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Localização com Mapa */}
       <section className="relative z-10 py-16 sm:py-20 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-[#333] mb-12">
@@ -209,7 +200,6 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Mapa */}
             <div className="h-[400px] rounded-lg overflow-hidden shadow-lg">
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d995.3399646620009!2d-38.48570288709533!3d-3.731500629550978!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7c74878a1947be5%3A0x26b8517840f9b106!2sSport%20%26%20Bike!5e0!3m2!1spt-BR!2sbr!4v1733699924589!5m2!1spt-BR!2sbr"
@@ -225,7 +215,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="relative z-10 bg-white border-t mt-auto">
         <div className="container mx-auto px-4 py-6 sm:py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
@@ -254,7 +243,14 @@ const Home = () => {
                 <br />
                 📱 WhatsApp: (85) 3267-7425
                 <br />
-                📸 @sportbike_fortaleza
+                <a
+                  href="https://www.instagram.com/sportbike_fortaleza/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[#833AB4] hover:text-[#FD1D1D] transition-colors"
+                >
+                  <Instagram className="w-4 h-4" /> @sportbike_fortaleza
+                </a>
               </p>
             </div>
           </div>
@@ -266,7 +262,6 @@ const Home = () => {
               >
                 Acesso Funcionários
               </button>
-              <p className="text-gray-500 text-sm"></p>
             </div>
             <p className="text-center text-gray-600 mt-4">
               © {new Date().getFullYear()} Sport & Bike. Todos os direitos

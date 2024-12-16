@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+
 const ReportsManagement = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,6 @@ const ReportsManagement = () => {
       const servicosData = [];
 
       querySnapshot.forEach((doc) => {
-        // Cada campo no documento é um serviço
         const data = doc.data();
         Object.keys(data).forEach((serviceName) => {
           servicosData.push({
@@ -62,16 +62,11 @@ const ReportsManagement = () => {
       const data = {};
   
       orders.forEach((order) => {
-        if (!order.data) {
-          console.log("Ordem sem data:", order);
-          return;
-        }
+        if (!order.data) return;
   
-        const orderDate = order.data instanceof Date ? 
-          order.data : 
-          (typeof order.data === 'string' ? new Date(order.data) : order.data.toDate());
-  
+        const orderDate = order.data;
         let key;
+        
         switch (type) {
           case "daily":
             key = orderDate.toLocaleDateString("pt-BR");
@@ -89,65 +84,44 @@ const ReportsManagement = () => {
             });
         }
   
+        // Inicializa o período se não existir
         if (!data[key]) {
           data[key] = { total: 0, quantity: 0 };
         }
   
-        // Usa o valor calculado na ordem
-        data[key].total += order.valor || 0;
-        
-        // Incrementa a quantidade baseada nos serviços da ordem
-        let servicesCount = 0;
-        if (order.bicicletas) {
-          order.bicicletas.forEach(bike => {
-            if (bike.services) {
-              if (selectedService === 'all') {
-                servicesCount += Object.keys(bike.services).length;
-              } else {
-                servicesCount += bike.services[selectedService] ? 1 : 0;
-              }
-            }
-          });
+        // Usa os valores diretos da ordem, sem acumular
+        if (order.valor > 0) {
+          data[key].total += Number(order.valor);
+          data[key].quantity = data[key].quantity + Number(order.quantidade);
         }
-        data[key].quantity += servicesCount || 1;
   
         console.log(`Acumulado para ${key}:`, {
           ordem: order.id,
-          valor: order.valor,
-          servicos: servicesCount,
-          totaisAtuais: data[key]
+          valorOriginal: order.valor,
+          servicosOriginal: order.quantidade,
+          valorAcumulado: data[key].total,
+          servicosAcumulados: data[key].quantity
         });
       });
   
+      // Remove períodos sem valores
       const result = Object.entries(data)
+        .filter(([_, values]) => values.total > 0)
         .map(([period, values]) => ({
           period,
           total: Number(values.total.toFixed(2)),
-          quantity: values.quantity,
+          quantity: values.quantity
         }))
-        .sort((a, b) => {
-          const [monthA, yearA] = a.period.split(" de ");
-          const [monthB, yearB] = b.period.split(" de ");
-          
-          if (yearA !== yearB) {
-            return Number(yearA) - Number(yearB);
-          }
-          
-          const months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
-                         "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-          return months.indexOf(monthA) - months.indexOf(monthB);
-        });
+        .sort((a, b) => new Date(a.period) - new Date(b.period));
   
       console.log("Resultado final processado:", result);
       return result;
-  
     } catch (error) {
       console.error("Erro ao processar ordens:", error);
-      console.error("Stack trace:", error.stack);
       return [];
     }
   };
-  
+
   const loadReportData = async () => {
     setLoading(true);
     try {
@@ -159,27 +133,47 @@ const ReportsManagement = () => {
         .map((doc) => {
           const data = doc.data();
           let totalValor = 0;
+          let totalServicos = 0;
           
-          console.log("Documento:", doc.id, "Dados:", data);
+          console.log("Processando ordem:", doc.id, data);
   
-          // Calcula o valor total considerando bicicletas e serviços
-          if (data.bicicletas) {
+          if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike, index) => {
-              console.log(`Bicicleta ${index}:`, bike);
+              console.log(`Processando bicicleta ${index}:`, bike);
               
-              if (bike.serviceValues) {
-                console.log(`Service Values da Bicicleta ${index}:`, bike.serviceValues);
-                Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
-                  console.log(`Serviço: ${serviceName}`, serviceData);
+              // Processa valorServicos (formato antigo)
+              if (bike.valorServicos) {
+                Object.entries(bike.valorServicos).forEach(([serviceName, valor]) => {
                   if (selectedService === "all" || serviceName === selectedService) {
-                    const valor = serviceData.valor || serviceData.valorFinal || 0;
+                    const quantidade = bike.services?.[serviceName] || 1;
+                    const servicoTotal = parseFloat(valor) * quantidade;
+                    totalValor += servicoTotal;
+                    totalServicos += quantidade;
+                    
+                    console.log(`Processando serviço (valorServicos) ${serviceName}:`, {
+                      valor,
+                      quantidade,
+                      servicoTotal,
+                      totalAcumulado: totalValor
+                    });
+                  }
+                });
+              }
+  
+              // Processa serviceValues (formato novo)
+              if (bike.serviceValues) {
+                Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
+                  if (selectedService === "all" || serviceName === selectedService) {
+                    const valor = serviceData.valorFinal || serviceData.valor || 0;
                     const quantidade = bike.services?.[serviceName] || 1;
                     const servicoTotal = valor * quantidade;
                     totalValor += servicoTotal;
-                    console.log(`Valor do serviço ${serviceName}:`, {
+                    totalServicos += quantidade;
+                    
+                    console.log(`Processando serviço (serviceValues) ${serviceName}:`, {
                       valor,
                       quantidade,
-                      total: servicoTotal,
+                      servicoTotal,
                       totalAcumulado: totalValor
                     });
                   }
@@ -188,45 +182,25 @@ const ReportsManagement = () => {
             });
           }
   
-          console.log("Total final para ordem:", doc.id, totalValor);
-  
-          // Pega a data no formato correto
-          const orderDate = data.dataCriacao ? 
-            (typeof data.dataCriacao === 'string' ? new Date(data.dataCriacao) : data.dataCriacao.toDate()) : 
-            new Date();
+          console.log("Totais finais para ordem:", doc.id, {
+            valor: totalValor,
+            servicos: totalServicos
+          });
   
           return {
             id: doc.id,
-            data: orderDate,
+            data: data.dataCriacao ? 
+              (typeof data.dataCriacao === 'string' ? new Date(data.dataCriacao) : data.dataCriacao.toDate()) : 
+              new Date(),
             valor: totalValor,
-            quantidade: data.bicicletas?.reduce((total, bike) => {
-              const servicesCount = selectedService === "all" 
-                ? Object.keys(bike.services || {}).length 
-                : (bike.services?.[selectedService] ? 1 : 0);
-              console.log("Contagem de serviços:", {
-                bike,
-                selectedService,
-                count: servicesCount
-              });
-              return total + servicesCount;
-            }, 0) || 0
+            quantidade: totalServicos
           };
         })
         .filter((order) => {
           const startDate = new Date(dateRange.start);
           const endDate = new Date(dateRange.end);
           endDate.setHours(23, 59, 59);
-  
-          const inRange = order.data >= startDate && order.data <= endDate;
-          console.log("Filtragem por data:", {
-            ordem: order.id,
-            data: order.data,
-            startDate,
-            endDate,
-            dentroDoRange: inRange
-          });
-  
-          return inRange;
+          return order.data >= startDate && order.data <= endDate;
         });
   
       const processedData = processOrders(orders, reportType);
