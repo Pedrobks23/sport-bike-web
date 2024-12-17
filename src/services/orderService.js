@@ -268,14 +268,25 @@ export const addServiceToBike = async (orderId, bikeIndex, newService) => {
     if (!bikes[bikeIndex].services) {
       bikes[bikeIndex].services = {};
     }
+
+    if (!bikes[bikeIndex].serviceValues) {
+      bikes[bikeIndex].serviceValues = {};
+    }
     
     // Adiciona o novo serviço
     bikes[bikeIndex].services[newService.nome] = parseInt(newService.quantidade);
     
+    // Adiciona os valores do serviço
+    bikes[bikeIndex].serviceValues[newService.nome] = {
+      valor: parseFloat(newService.valor || 0),
+      valorFinal: parseFloat(newService.valor || 0)
+    };
+    
     // Calcula o total para a bicicleta
     let bikeTotal = 0;
     Object.entries(bikes[bikeIndex].services).forEach(([nome, quantidade]) => {
-      const valorServico = parseFloat(newService.valor);
+      const serviceValue = bikes[bikeIndex].serviceValues[nome];
+      const valorServico = serviceValue ? parseFloat(serviceValue.valorFinal || serviceValue.valor || 0) : 0;
       bikeTotal += quantidade * valorServico;
     });
 

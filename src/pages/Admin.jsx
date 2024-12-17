@@ -4,7 +4,6 @@ import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
 
 const Admin = () => {
-  console.log("Componente Admin carregado");
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -37,6 +36,31 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Card Oficina */}
+          <div
+            onClick={() => navigate("/admin/workshop")}
+            className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          >
+            <h2 className="text-xl font-bold text-[#333] mb-2">Oficina</h2>
+            <p className="text-gray-600">
+              Visualizar e gerenciar fila de serviços por dia
+            </p>
+          </div>
+
+          {/* Card Nova Ordem de Serviço */}
+          <div
+            onClick={() => navigate("/admin/orders/new")}
+            className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          >
+            <h2 className="text-xl font-bold text-[#333] mb-2">
+              Nova Ordem de Serviço
+            </h2>
+            <p className="text-gray-600">
+              Criar nova ordem de serviço manualmente
+            </p>
+          </div>
+
+          {/* Card Ordens de Serviço */}
           <div
             onClick={() => navigate("/admin/orders")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -49,6 +73,7 @@ const Admin = () => {
             </p>
           </div>
 
+          {/* Card Clientes */}
           <div
             onClick={() => navigate("/admin/customers")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -57,6 +82,7 @@ const Admin = () => {
             <p className="text-gray-600">Gerenciar cadastro de clientes</p>
           </div>
 
+          {/* Card Serviços */}
           <div
             onClick={() => navigate("/admin/services")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -65,6 +91,7 @@ const Admin = () => {
             <p className="text-gray-600">Configurar tipos de serviços</p>
           </div>
 
+          {/* Card Relatórios */}
           <div
             onClick={() => navigate("/admin/reports")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"

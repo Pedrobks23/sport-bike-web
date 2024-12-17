@@ -41,6 +41,27 @@ export const updateOrderStatus = async (orderId, newStatus) => {
   }
 };
 
+export const updateOrdemURL = async (osCode) => {
+  try {
+    const ordensRef = collection(db, "ordens");
+    const q = query(ordensRef, where("codigo", "==", osCode));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const docRef = doc(db, "ordens", querySnapshot.docs[0].id);
+      // URL base será automaticamente a do ambiente onde está rodando
+      const baseURL = window.location.origin; // Pega automaticamente a URL base (localhost ou vercel)
+      const newURL = `${baseURL}/consulta/${osCode}`;
+      
+      await updateDoc(docRef, {
+        urlOS: newURL
+      });
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar URL:", error);
+  }
+};
+
 // Função para escutar mudanças em tempo real
 export const listenToOrders = (q, setOrdens) => {
   return onSnapshot(q, (snapshot) => {

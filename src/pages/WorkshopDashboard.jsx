@@ -472,19 +472,23 @@ const WorkshopDashboard = () => {
       try {
         await updateLocalAndParent(async () => {
           const serviceName = serviceData.nome;
+          const valor = parseFloat(serviceData.valor);
           const isDefaultService = serviceTable.hasOwnProperty(serviceName);
-
+    
           const serviceToAdd = {
             ...serviceData,
+            valor: valor,
+            valorFinal: valor,
             custom: serviceName === "custom" || !isDefaultService,
+            quantidade: parseInt(serviceData.quantidade)
           };
-
+    
           if (isDefaultService) {
             // Para serviços da tabela
             const valorPadrao = serviceTable[serviceName];
             serviceToAdd.valorPadrao = valorPadrao;
             serviceToAdd.valorFinal = valorPadrao;
-            serviceToAdd.valor = valorPadrao; // Adiciona também o valor base
+            serviceToAdd.valor = valorPadrao;
             serviceToAdd.desconto = 0;
           } else {
             // Para serviços personalizados
