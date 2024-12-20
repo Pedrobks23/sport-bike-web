@@ -33,15 +33,27 @@ const WorkshopDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Estados para filtro de ordens prontas
+  const [showAllCompleted, setShowAllCompleted] = useState(false);
+  const [daysToShow, setDaysToShow] = useState(3);
+
   // Estados para modais e seleção
   const [showEditServiceModal, setShowEditServiceModal] = useState(false);
   const [showEditPartModal, setShowEditPartModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBikeIndex, setSelectedBikeIndex] = useState(null);
   const [selectedPeca, setSelectedPeca] = useState(null);
-
-  // Novo: estado para tabela de serviços
   const [serviceTable, setServiceTable] = useState({});
+
+  // Função para verificar se uma data está dentro do período
+  const isWithinPeriod = (date, days) => {
+    const orderDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const limit = new Date(today);
+    limit.setDate(limit.getDate() - days);
+    return orderDate >= limit;
+  };
 
   // Carregar ordens e tabela de serviços ao montar o componente
   useEffect(() => {
@@ -149,12 +161,17 @@ const WorkshopDashboard = () => {
         order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.cliente?.telefone?.includes(searchTerm)
     ),
-    done: orders.done.filter(
-      (order) =>
-        order.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.cliente?.telefone?.includes(searchTerm)
-    ),
+    done: orders.done
+      .filter(
+        (order) =>
+          (order.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.cliente?.nome
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            order.cliente?.telefone?.includes(searchTerm)) &&
+          (showAllCompleted || isWithinPeriod(order.dataCriacao, daysToShow))
+      )
+      .sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao)), // Ordena por data, mais recente primeiro
   };
 
   // Manipulador de drag and drop
@@ -1396,23 +1413,49 @@ const WorkshopDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {Object.entries(filteredOrders).map(([status, orders]) => (
                 <div key={status}>
-                  <h2 className="text-lg font-bold mb-4 flex items-center">
-                    <span
-                      className={`w-3 h-3 rounded-full mr-2 ${
-                        status === "pending"
-                          ? "bg-yellow-400"
-                          : status === "inProgress"
-                          ? "bg-blue-400"
-                          : "bg-green-400"
-                      }`}
-                    ></span>
-                    {status === "pending"
-                      ? "Pendente"
-                      : status === "inProgress"
-                      ? "Em Andamento"
-                      : "Pronto"}{" "}
-                    ({orders.length})
-                  </h2>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold flex items-center">
+                      <span
+                        className={`w-3 h-3 rounded-full mr-2 ${
+                          status === "pending"
+                            ? "bg-yellow-400"
+                            : status === "inProgress"
+                            ? "bg-blue-400"
+                            : "bg-green-400"
+                        }`}
+                      ></span>
+                      {status === "pending"
+                        ? "Pendente"
+                        : status === "inProgress"
+                        ? "Em Andamento"
+                        : "Pronto"}{" "}
+                      ({orders.length})
+                    </h2>
+                    {status === "done" && (
+                      <div className="flex items-center gap-2">
+                        {!showAllCompleted && (
+                          <select
+                            value={daysToShow}
+                            onChange={(e) =>
+                              setDaysToShow(Number(e.target.value))
+                            }
+                            className="text-sm border rounded px-2 py-1"
+                          >
+                            <option value={3}>Últimos 3 dias</option>
+                            <option value={7}>Última semana</option>
+                            <option value={15}>Últimos 15 dias</option>
+                            <option value={30}>Último mês</option>
+                          </select>
+                        )}
+                        <button
+                          onClick={() => setShowAllCompleted(!showAllCompleted)}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          {showAllCompleted ? "Mostrar menos" : "Ver todas"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <Droppable droppableId={status}>
                     {(provided) => (
                       <div
@@ -1438,6 +1481,11 @@ const WorkshopDashboard = () => {
                           </Draggable>
                         ))}
                         {provided.placeholder}
+                        {status === "done" && !showAllCompleted && (
+                          <div className="text-center mt-4 text-gray-500 text-sm">
+                            Mostrando ordens dos últimos {daysToShow} dias
+                          </div>
+                        )}
                       </div>
                     )}
                   </Droppable>

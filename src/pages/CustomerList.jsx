@@ -8,10 +8,12 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
+  addDoc,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { Search, Bike } from "lucide-react";
 
+// Componente BikeEditModal
 const BikeEditModal = React.memo(
   ({ selectedBike, onUpdate, onClose, onChange }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -78,6 +80,8 @@ const BikeEditModal = React.memo(
 );
 const CustomerList = () => {
   const navigate = useNavigate();
+
+  // Estados
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,21 +92,109 @@ const CustomerList = () => {
   const [selectedBike, setSelectedBike] = useState(null);
   const [customerBikes, setCustomerBikes] = useState({});
   const [expandedCustomer, setExpandedCustomer] = useState(null);
+  const [showAddBikeModal, setShowAddBikeModal] = useState(false);
+  const [newBike, setNewBike] = useState({
+    marca: "",
+    modelo: "",
+    cor: "",
+  });
 
-  useEffect(() => {
-    const q = collection(db, "clientes");
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const customersArr = [];
-      querySnapshot.forEach((doc) => {
-        customersArr.push({ id: doc.id, ...doc.data() });
+  // Funções para manipulação de bicicletas
+  const handleAddBike = async (customerId) => {
+    try {
+      const bikesRef = collection(db, `clientes/${customerId}/bikes`);
+      await addDoc(bikesRef, {
+        ...newBike,
+        dataCriacao: new Date(),
+        dataAtualizacao: new Date(),
       });
-      setCustomers(customersArr);
-      setLoading(false);
-    });
 
-    return () => unsubscribe();
-  }, []);
+      // Atualiza a lista de bikes do cliente
+      const querySnapshot = await getDocs(bikesRef);
+      const bikes = [];
+      querySnapshot.forEach((doc) => {
+        bikes.push({ id: doc.id, ...doc.data() });
+      });
 
+      setCustomerBikes((prev) => ({
+        ...prev,
+        [customerId]: bikes,
+      }));
+
+      setShowAddBikeModal(false);
+      setNewBike({ marca: "", modelo: "", cor: "" });
+    } catch (error) {
+      console.error("Erro ao adicionar bicicleta:", error);
+      alert("Erro ao adicionar bicicleta. Tente novamente.");
+    }
+  };
+
+  const handleDeleteBike = async (customerId, bikeId) => {
+    if (!window.confirm("Tem certeza que deseja remover esta bicicleta?"))
+      return;
+
+    try {
+      const bikeRef = doc(db, `clientes/${customerId}/bikes`, bikeId);
+      await deleteDoc(bikeRef);
+
+      setCustomerBikes((prev) => ({
+        ...prev,
+        [customerId]: prev[customerId].filter((bike) => bike.id !== bikeId),
+      }));
+    } catch (error) {
+      console.error("Erro ao remover bicicleta:", error);
+      alert("Erro ao remover bicicleta. Tente novamente.");
+    }
+  };
+
+  const handleUpdateBike = async () => {
+    if (!selectedBike || !selectedCustomer) return;
+
+    try {
+      const bikeRef = doc(
+        db,
+        `clientes/${selectedCustomer.id}/bikes`,
+        selectedBike.id
+      );
+      await updateDoc(bikeRef, {
+        marca: selectedBike.marca,
+        modelo: selectedBike.modelo,
+        cor: selectedBike.cor,
+        dataAtualizacao: new Date(),
+      });
+
+      const updatedBikes = customerBikes[selectedCustomer.id].map((bike) =>
+        bike.id === selectedBike.id ? selectedBike : bike
+      );
+      setCustomerBikes((prev) => ({
+        ...prev,
+        [selectedCustomer.id]: updatedBikes,
+      }));
+
+      setIsEditingBike(false);
+      setSelectedBike(null);
+    } catch (error) {
+      console.error("Erro ao atualizar bicicleta:", error);
+      alert("Erro ao atualizar bicicleta. Tente novamente.");
+    }
+  };
+
+  // Hook personalizado e useEffects
+  const usePrevious = (value) => {
+    const ref = React.useRef();
+    React.useEffect(() => {
+      ref.current = value;
+    }, [value]);
+    return ref.current;
+  };
+
+  const prevIsEditingBike = usePrevious(isEditingBike);
+  useEffect(() => {
+    if (!isEditingBike && prevIsEditingBike) {
+      setSelectedBike(null);
+    }
+  }, [isEditingBike, prevIsEditingBike]);
+  // Funções para carregar dados
   const loadCustomerBikes = async (customerId) => {
     try {
       if (expandedCustomer === customerId) {
@@ -150,6 +242,7 @@ const CustomerList = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     loadCustomers();
   }, []);
@@ -174,39 +267,6 @@ const CustomerList = () => {
     }
   };
 
-  const handleUpdateBike = async () => {
-    if (!selectedBike || !selectedCustomer) return;
-
-    try {
-      const bikeRef = doc(
-        db,
-        `clientes/${selectedCustomer.id}/bikes`,
-        selectedBike.id
-      );
-      await updateDoc(bikeRef, {
-        marca: selectedBike.marca,
-        modelo: selectedBike.modelo,
-        cor: selectedBike.cor,
-        dataAtualizacao: new Date(),
-      });
-
-      // Atualiza o estado local das bikes
-      const updatedBikes = customerBikes[selectedCustomer.id].map((bike) =>
-        bike.id === selectedBike.id ? selectedBike : bike
-      );
-      setCustomerBikes((prev) => ({
-        ...prev,
-        [selectedCustomer.id]: updatedBikes,
-      }));
-
-      setIsEditingBike(false);
-      setSelectedBike(null);
-    } catch (error) {
-      console.error("Erro ao atualizar bicicleta:", error);
-      alert("Erro ao atualizar bicicleta. Tente novamente.");
-    }
-  };
-
   const handleDeleteCustomer = async (customerId) => {
     if (!window.confirm("Tem certeza que deseja remover este cliente?")) return;
 
@@ -214,7 +274,7 @@ const CustomerList = () => {
       await deleteDoc(doc(db, "clientes", customerId));
       await loadCustomers();
       setSelectedCustomer(null);
-      // Limpa as bikes do cliente removido
+
       setCustomerBikes((prev) => {
         const updated = { ...prev };
         delete updated[customerId];
@@ -225,22 +285,6 @@ const CustomerList = () => {
       alert("Erro ao remover cliente. Tente novamente.");
     }
   };
-
-  // Hook personalizado para controlar renderizações
-  const usePrevious = (value) => {
-    const ref = React.useRef();
-    React.useEffect(() => {
-      ref.current = value;
-    }, [value]);
-    return ref.current;
-  };
-
-  const prevIsEditingBike = usePrevious(isEditingBike);
-  useEffect(() => {
-    if (!isEditingBike && prevIsEditingBike) {
-      setSelectedBike(null);
-    }
-  }, [isEditingBike, prevIsEditingBike]);
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       <header className="bg-white shadow-sm">
@@ -298,21 +342,31 @@ const CustomerList = () => {
                   Endereço: {customer.endereco || "-"}
                 </p>
 
-                {/* Bikes Section */}
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium text-gray-800 flex items-center">
                       <Bike className="w-4 h-4 mr-2" />
                       Bicicletas
                     </h4>
-                    <button
-                      onClick={() => loadCustomerBikes(customer.id)}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      {expandedCustomer === customer.id
-                        ? "Ocultar bikes"
-                        : "Ver bikes"}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowAddBikeModal(true);
+                        }}
+                        className="text-sm text-green-600 hover:text-green-800"
+                      >
+                        Adicionar
+                      </button>
+                      <button
+                        onClick={() => loadCustomerBikes(customer.id)}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {expandedCustomer === customer.id
+                          ? "Ocultar bikes"
+                          : "Ver bikes"}
+                      </button>
+                    </div>
                   </div>
                   {expandedCustomer === customer.id &&
                     customerBikes[customer.id]?.map((bike) => (
@@ -328,16 +382,26 @@ const CustomerList = () => {
                             Cor: {bike.cor}
                           </p>
                         </div>
-                        <button
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setSelectedBike(bike);
-                            setIsEditingBike(true);
-                          }}
-                          className="text-yellow-600 hover:text-yellow-700"
-                        >
-                          Editar
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setSelectedBike(bike);
+                              setIsEditingBike(true);
+                            }}
+                            className="text-yellow-600 hover:text-yellow-700"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDeleteBike(customer.id, bike.id)
+                            }
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       </div>
                     ))}
                 </div>
@@ -471,10 +535,76 @@ const CustomerList = () => {
               </button>
               <button
                 onClick={handleUpdateCustomer}
-                className="px-6 py-2 bg-blue-500 text-white rounded-md 
-                  hover:bg-blue-600 transition-colors"
+                className="px-6 py-2 bg-blue-500 text-white rounded-md
+                    hover:bg-blue-600 transition-colors"
               >
                 Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddBikeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Adicionar Bicicleta</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Marca
+                </label>
+                <input
+                  type="text"
+                  value={newBike.marca}
+                  onChange={(e) =>
+                    setNewBike({ ...newBike, marca: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Modelo
+                </label>
+                <input
+                  type="text"
+                  value={newBike.modelo}
+                  onChange={(e) =>
+                    setNewBike({ ...newBike, modelo: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cor
+                </label>
+                <input
+                  type="text"
+                  value={newBike.cor}
+                  onChange={(e) =>
+                    setNewBike({ ...newBike, cor: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowAddBikeModal(false);
+                  setNewBike({ marca: "", modelo: "", cor: "" });
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-700"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleAddBike(selectedCustomer.id)}
+                className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+              >
+                Adicionar
               </button>
             </div>
           </div>
