@@ -15,7 +15,7 @@ import {
   removeOrderPart,
   updateOrderPart,
   getOrder,
-  getServices, 
+  getServices,
 } from "../services/orderService";
 
 const WorkshopDashboard = () => {
@@ -97,6 +97,19 @@ const WorkshopDashboard = () => {
     return serviceTable[serviceName] || null;
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Pendente":
+        return "bg-yellow-100 text-yellow-800";
+      case "Em Andamento":
+        return "bg-blue-100 text-blue-800";
+      case "Pronto":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   // Atualização de ordem
   const handleOrderUpdate = async () => {
     try {
@@ -143,6 +156,7 @@ const WorkshopDashboard = () => {
         order.cliente?.telefone?.includes(searchTerm)
     ),
   };
+
   // Manipulador de drag and drop
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
@@ -154,6 +168,13 @@ const WorkshopDashboard = () => {
     if (sourceColumn === destColumn) return;
 
     try {
+      // Mapeamento correto de status
+      const statusMap = {
+        pending: "Pendente",
+        inProgress: "Em Andamento",
+        done: "Pronto",
+      };
+
       // Atualização local primeiro para UI responsiva
       const newOrders = { ...orders };
       const movedOrder = orders[sourceColumn].find(
@@ -163,24 +184,18 @@ const WorkshopDashboard = () => {
       newOrders[sourceColumn] = orders[sourceColumn].filter(
         (order) => order.id !== draggableId
       );
-      newOrders[destColumn] = [
-        ...orders[destColumn],
-        { ...movedOrder, status: destColumn },
-      ];
-
-      setOrders(newOrders);
-
-      // Mapeamento de colunas para status
-      const statusMap = {
-        pending: "Pendente",
-        inProgress: "Em Andamento",
-        done: "Pronto",
-      };
 
       const newStatus = statusMap[destColumn];
       if (!newStatus) {
         throw new Error(`Status inválido: ${destColumn}`);
       }
+
+      newOrders[destColumn] = [
+        ...orders[destColumn],
+        { ...movedOrder, status: newStatus }, // Usar o status mapeado aqui
+      ];
+
+      setOrders(newOrders);
 
       await updateOrderStatus(draggableId, newStatus);
     } catch (error) {
@@ -340,13 +355,9 @@ const WorkshopDashboard = () => {
 
           <div className="flex items-center justify-between mt-2 text-sm">
             <span
-              className={`px-2 py-1 rounded-full text-xs ${
-                order.status === "Pendente"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : order.status === "Em Andamento"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-green-100 text-green-800"
-              }`}
+              className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
+                order.status
+              )}`}
             >
               {order.status}
             </span>
@@ -474,15 +485,15 @@ const WorkshopDashboard = () => {
           const serviceName = serviceData.nome;
           const valor = parseFloat(serviceData.valor);
           const isDefaultService = serviceTable.hasOwnProperty(serviceName);
-    
+
           const serviceToAdd = {
             ...serviceData,
             valor: valor,
             valorFinal: valor,
             custom: serviceName === "custom" || !isDefaultService,
-            quantidade: parseInt(serviceData.quantidade)
+            quantidade: parseInt(serviceData.quantidade),
           };
-    
+
           if (isDefaultService) {
             // Para serviços da tabela
             const valorPadrao = serviceTable[serviceName];

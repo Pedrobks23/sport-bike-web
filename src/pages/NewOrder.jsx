@@ -17,6 +17,7 @@ import { db } from "../config/firebase";
 import { ArrowLeft, PlusCircle, Trash, Edit } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+const logo = new URL('/assets/Logo.png', import.meta.url).href;
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -95,6 +96,11 @@ const NewOrder = () => {
         setClientData(null);
         setBikes([]);
         setShowClientForm(true);
+        // Atualiza o estado do novo cliente com o telefone da busca
+        setNewClient((prev) => ({
+          ...prev,
+          telefone: telefone,
+        }));
       }
     } catch (error) {
       console.error("Erro ao buscar cliente:", error);
@@ -202,33 +208,48 @@ const NewOrder = () => {
         doc.text(text, x, y);
       };
   
-      // Adiciona o logo
-      doc.addImage(logo, "PNG", 20, 10, 40, 40);
+      // Carrega a imagem dinamicamente
+      const logoImg = new Image();
+      logoImg.src = '/assets/Logo.png';
       
+      await new Promise((resolve) => {
+        logoImg.onload = resolve;
+      });
+  
+      // Adiciona o logo
+      doc.addImage(logoImg, "PNG", 20, 10, 40, 40);
+
       // Cabeçalho
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
       centerText("ORDEM DE SERVIÇO", 20);
-      
+
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
-      centerText("Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425", 35);
+      centerText(
+        "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
+        35
+      );
       centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
-  
+
       // Informações da OS
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.text(`OS: ${ordem.codigo}`, 20, yPos);
       yPos += 10;
-  
+
       const dataCriacao = new Date(ordem.dataCriacao);
       const dataAgendamento = new Date(ordem.dataAgendamento);
-  
+
       doc.text(`Criada em: ${dataCriacao.toLocaleString("pt-BR")}`, 20, yPos);
       yPos += 10;
-  
-      doc.text(`Agendada para: ${dataAgendamento.toLocaleString("pt-BR")}`, 20, yPos);
+
+      doc.text(
+        `Agendada para: ${dataAgendamento.toLocaleString("pt-BR")}`,
+        20,
+        yPos
+      );
       yPos += 15;
       doc.text("DADOS DO CLIENTE", 20, yPos);
       yPos += 10;
@@ -237,36 +258,44 @@ const NewOrder = () => {
       yPos += 7;
       doc.text(`Telefone: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
       yPos += 15;
-  
+
       let totalGeral = 0;
-  
+
       // Processamento de cada bicicleta
       ordem.bicicletas?.forEach((bike, index) => {
         doc.setFont("helvetica", "bold");
-        doc.text(`BICICLETA ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`, 20, yPos);
+        doc.text(
+          `BICICLETA ${index + 1}: ${bike.marca} - ${bike.modelo} - ${
+            bike.cor
+          }`,
+          20,
+          yPos
+        );
         yPos += 15;
-  
+
         // Cabeçalho da tabela de serviços
         doc.setFont("helvetica", "bold");
         doc.text("Serviço", 20, yPos);
         doc.text("Qtd", 120, yPos);
         doc.text("Valor", 150, yPos);
         yPos += 8;
-  
+
         let totalBike = 0;
-  
+
         // Lista de serviços
         doc.setFont("helvetica", "normal");
         if (bike.services) {
           Object.entries(bike.services).forEach(([serviceName, quantity]) => {
             if (quantity > 0) {
-              const serviceValue = bike.serviceValues?.[serviceName]?.valorFinal || 
-                                 bike.serviceValues?.[serviceName]?.valor ||
-                                 availableServices[serviceName] || 0;
-              
+              const serviceValue =
+                bike.serviceValues?.[serviceName]?.valorFinal ||
+                bike.serviceValues?.[serviceName]?.valor ||
+                availableServices[serviceName] ||
+                0;
+
               const subtotal = serviceValue * quantity;
               totalBike += subtotal;
-  
+
               doc.text(`• ${serviceName}`, 20, yPos);
               doc.text(`${quantity}`, 120, yPos);
               doc.text(`R$ ${subtotal.toFixed(2)}`, 150, yPos);
@@ -274,26 +303,26 @@ const NewOrder = () => {
             }
           });
         }
-  
+
         // Adiciona o subtotal da bicicleta
         totalGeral += totalBike;
         yPos += 5;
         doc.setFont("helvetica", "bold");
         doc.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 120, yPos);
         yPos += 15;
-  
+
         // Verifica se precisa adicionar nova página
         if (yPos > 250) {
           doc.addPage();
           yPos = 20;
         }
       });
-  
+
       // Total geral e observações
       doc.setFont("helvetica", "bold");
       doc.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 20, yPos);
       yPos += 15;
-  
+
       if (ordem.observacoes) {
         doc.setFont("helvetica", "bold");
         doc.text("OBSERVAÇÕES:", 20, yPos);
@@ -302,24 +331,28 @@ const NewOrder = () => {
         doc.text(ordem.observacoes, 20, yPos);
         yPos += 15;
       }
-  
+
       // Termos e condições
       yPos += 10;
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
-      doc.text([
-        "• O prazo para conclusão do serviço pode ser estendido em até 2 dias após a data agendada.",
-        "• Caso a bicicleta ou peças não sejam retiradas no prazo de 180 dias após o término",
-        "  do serviço, serão vendidas para custear as despesas.",
-      ], 20, yPos);
-  
+      doc.text(
+        [
+          "• O prazo para conclusão do serviço pode ser estendido em até 2 dias após a data agendada.",
+          "• Caso a bicicleta ou peças não sejam retiradas no prazo de 180 dias após o término",
+          "  do serviço, serão vendidas para custear as despesas.",
+        ],
+        20,
+        yPos
+      );
+
       doc.save(`OS-${ordem.codigo}.pdf`);
-  
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
       alert("Erro ao gerar PDF. Tente novamente.");
     }
   };
+
   // Calcular total da ordem
   useEffect(() => {
     let total = 0;
@@ -522,7 +555,7 @@ const NewOrder = () => {
                 />
                 <input
                   type="text"
-                  value={newClient.telefone || telefone}
+                  value={newClient.telefone || telefone} // Usar o telefone do estado ou da busca
                   onChange={(e) =>
                     setNewClient((prev) => ({
                       ...prev,
