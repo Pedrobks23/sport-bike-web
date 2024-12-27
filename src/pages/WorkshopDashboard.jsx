@@ -18,6 +18,11 @@ import {
   getServices,
 } from "../services/orderService";
 
+// -------- ADAPTAÇÃO: Importação para PDF (sem remover nada do seu código) --------
+import { jsPDF } from "jspdf";
+import "jspdf-autotable"; 
+// ---------------------------------------------------------------------------------
+
 const WorkshopDashboard = () => {
   const navigate = useNavigate();
 
@@ -222,6 +227,121 @@ const WorkshopDashboard = () => {
       setError("Erro ao atualizar status da ordem");
     }
   };
+
+  // -------- ADAPTAÇÃO: Função para gerar PDF da Loja (sem remover nada) --------
+  const generatePDFStore = (order) => {
+    try {
+      const docPDF = new jsPDF();
+
+      let yPos = 20; // posição vertical inicial
+
+      // Nome/telefone do cliente em fonte grande
+      docPDF.setFont("helvetica", "bold");
+      docPDF.setFontSize(18);
+      docPDF.text(`CLIENTE: ${order.cliente?.nome || "-"}`, 20, yPos);
+      yPos += 10;
+      docPDF.text(`TEL: ${order.cliente?.telefone || "-"}`, 20, yPos);
+      yPos += 15;
+
+      // Para cada bicicleta, imprimir dados em fonte grande,
+      // se ultrapassar o limite, criamos uma nova página
+      order.bicicletas?.forEach((bike, index) => {
+        if (yPos > 250) {
+          docPDF.addPage();
+          yPos = 20;
+        }
+
+        docPDF.setFontSize(16);
+        docPDF.text(
+          `Bike ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
+          20,
+          yPos
+        );
+        yPos += 10;
+
+        // Observações (opcional)
+        if (order.observacoes) {
+          docPDF.setFontSize(14);
+          docPDF.setFont("helvetica", "bold");
+          docPDF.text("Observações:", 20, yPos);
+          yPos += 8;
+
+          docPDF.setFont("helvetica", "normal");
+          docPDF.text(`${order.observacoes}`, 20, yPos);
+          yPos += 12;
+        }
+
+        // Serviços
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(15);
+        docPDF.text("SERVIÇOS:", 20, yPos);
+        yPos += 10;
+
+        docPDF.setFont("helvetica", "normal");
+        docPDF.setFontSize(14);
+
+        let totalBike = 0;
+        if (bike.services) {
+          Object.entries(bike.services).forEach(([serviceName, quantity]) => {
+            if (quantity > 0) {
+              const serviceValue = parseFloat(
+                bike.serviceValues?.[serviceName]?.valorFinal ||
+                  bike.serviceValues?.[serviceName]?.valor ||
+                  0
+              );
+              const subtotal = serviceValue * quantity;
+              totalBike += subtotal;
+
+              if (yPos > 270) {
+                docPDF.addPage();
+                yPos = 20;
+              }
+              docPDF.text(
+                `• ${serviceName} (${quantity}x) = R$ ${subtotal.toFixed(2)}`,
+                20,
+                yPos
+              );
+              yPos += 8;
+            }
+          });
+        }
+
+        // Peças (opcional)
+        if (bike.pecas && bike.pecas.length > 0) {
+          docPDF.setFont("helvetica", "bold");
+          docPDF.setFontSize(15);
+          yPos += 8;
+          docPDF.text("PEÇAS:", 20, yPos);
+          yPos += 10;
+
+          docPDF.setFont("helvetica", "normal");
+          docPDF.setFontSize(14);
+          bike.pecas.forEach((peca) => {
+            if (yPos > 270) {
+              docPDF.addPage();
+              yPos = 20;
+            }
+            const valorPeca = parseFloat(peca.valor || 0);
+            totalBike += valorPeca;
+            docPDF.text(`• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`, 20, yPos);
+            yPos += 8;
+          });
+        }
+
+        yPos += 5;
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(14);
+        docPDF.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 20, yPos);
+        yPos += 15;
+      });
+
+      docPDF.save(`OS-Loja-${order.codigo}.pdf`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF (Loja):", err);
+      alert("Erro ao gerar PDF da loja. Tente novamente.");
+    }
+  };
+  // --------------------------------------------------------------------------------
 
   // Componente OrderCard
   const OrderCard = ({ order }) => {
@@ -432,12 +552,6 @@ const WorkshopDashboard = () => {
       oldServiceName,
       updatedService
     ) => {
-      console.log("Início handleEditService", {
-        bikeIndex,
-        oldServiceName,
-        updatedService,
-      });
-
       try {
         const serviceToUpdate = {
           ...updatedService,
@@ -447,22 +561,16 @@ const WorkshopDashboard = () => {
           valorFinal: parseFloat(updatedService.valor || 0),
         };
 
-        console.log("serviceToUpdate:", serviceToUpdate);
-
         await updateLocalAndParent(async () => {
-          console.log("Iniciando updateOrderService");
           await updateOrderService(
             localOrder.id,
             bikeIndex,
             oldServiceName,
             serviceToUpdate
           );
-          console.log("updateOrderService concluído");
 
           // Atualiza estado local
           const updatedOrder = { ...localOrder };
-          console.log("Order antes da atualização:", updatedOrder);
-
           const bike = updatedOrder.bicicletas[bikeIndex];
 
           // Remove serviço antigo se nome mudou
@@ -483,11 +591,9 @@ const WorkshopDashboard = () => {
             valor: serviceToUpdate.valor,
           };
 
-          console.log("Order depois da atualização:", updatedOrder);
           setLocalOrder(updatedOrder);
         });
 
-        console.log("Fechando modal");
         setShowEditServiceModal(false);
       } catch (error) {
         console.error("Erro ao editar serviço:", error);
@@ -553,7 +659,6 @@ const WorkshopDashboard = () => {
         alert("Erro ao adicionar serviço. Por favor, tente novamente.");
       }
     };
-    // Continuação do OrderDetails
 
     // Manipulador de remoção de serviço
     const handleRemoveService = async (bikeIndex, serviceName) => {
@@ -712,12 +817,6 @@ const WorkshopDashboard = () => {
       );
     };
 
-    // Verifica se um serviço pode ter seu valor editado
-    const canEditServiceValue = (serviceName) => {
-      return !serviceTable.hasOwnProperty(serviceName);
-    };
-
-    // Continuação do OrderDetails - Renderização
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
@@ -805,7 +904,7 @@ const WorkshopDashboard = () => {
                                         bike.serviceValues?.[serviceName]
                                           ?.valorFinal ||
                                         0,
-                                      isCustom: true, // Agora todos os serviços são editáveis
+                                      isCustom: true, // todos editáveis
                                     });
                                     setSelectedBikeIndex(bikeIndex);
                                     setShowEditServiceModal(true);
@@ -832,8 +931,7 @@ const WorkshopDashboard = () => {
                   {/* Subtotal de Serviços */}
                   {bike.services && Object.keys(bike.services).length > 0 && (
                     <div className="mt-2 text-right text-sm text-gray-600">
-                      Subtotal Serviços:{" "}
-                      {formatCurrency(calculateBikeTotal(bike))}
+                      Subtotal Serviços: {formatCurrency(calculateBikeTotal(bike))}
                     </div>
                   )}
 
@@ -912,8 +1010,6 @@ const WorkshopDashboard = () => {
               ))}
             </div>
 
-            {/* Continuação do OrderDetails - Rodapé e Modais */}
-
             {/* Rodapé com Total e Observações */}
             <div className="border-t pt-4">
               <div className="flex justify-between items-center mb-4">
@@ -937,6 +1033,15 @@ const WorkshopDashboard = () => {
                     ? "Editar Observação"
                     : "Adicionar Observação"}
                 </button>
+
+                {/* -------- ADAPTAÇÃO: Botão de Impressão da Loja -------- */}
+                <button
+                  onClick={() => generatePDFStore(localOrder)}
+                  className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700"
+                >
+                  Imprimir Versão Loja
+                </button>
+                {/* ----------------------------------------------------- */}
               </div>
             </div>
           </div>
@@ -956,17 +1061,11 @@ const WorkshopDashboard = () => {
                   onSubmit={(e) => {
                     e.preventDefault();
                     const formData = new FormData(e.target);
-                    console.log("Valores do formulário:", {
-                      nome: formData.get("nome"),
-                      quantidade: formData.get("quantidade"),
-                      valor: formData.get("valor"),
-                    });
                     const updatedService = {
                       nome: formData.get("nome"),
                       quantidade: parseInt(formData.get("quantidade")),
                       valor: parseFloat(formData.get("valor")),
                     };
-                    console.log("Serviço atualizado:", updatedService);
                     handleEditService(
                       selectedBikeIndex,
                       selectedService.nome,
@@ -1163,6 +1262,7 @@ const WorkshopDashboard = () => {
             </div>
           </div>
         )}
+
         {/* Modal de Edição de Peça */}
         {showEditPartModal && selectedPeca && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

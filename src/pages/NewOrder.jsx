@@ -14,17 +14,23 @@ import {
   limit,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
-import { ArrowLeft, PlusCircle, Trash, Edit } from "lucide-react";
+import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-const logo = new URL('/assets/Logo.png', import.meta.url).href;
 
-const NewOrder = () => {
+// Ajuste o caminho do logo conforme a estrutura do seu projeto
+const logo = new URL("/assets/Logo.png", import.meta.url).href;
+
+function NewOrder() {
   const navigate = useNavigate();
+
+  // -----------------------------
+  // ESTADOS GERAIS
+  // -----------------------------
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Estados para o cliente
+  // Estados do cliente
   const [telefone, setTelefone] = useState("");
   const [clientData, setClientData] = useState(null);
   const [showClientForm, setShowClientForm] = useState(false);
@@ -34,7 +40,7 @@ const NewOrder = () => {
     endereco: "",
   });
 
-  // Estados para as bicicletas
+  // Estados das bicicletas
   const [bikes, setBikes] = useState([]);
   const [selectedBikes, setSelectedBikes] = useState([]);
   const [showBikeForm, setShowBikeForm] = useState(false);
@@ -44,46 +50,106 @@ const NewOrder = () => {
     cor: "",
   });
 
-  // Estados para os serviços
+  // Estados dos serviços
   const [availableServices, setAvailableServices] = useState({});
   const [selectedServices, setSelectedServices] = useState({});
 
-  // Estado para agendamento e observações
+  // -----------------------------
+  // NOVO: ESTADO PARA PEÇAS
+  // -----------------------------
+  // Guardamos as peças em um objeto onde cada chave = bikeId e valor = array de peças
+  const [selectedParts, setSelectedParts] = useState({});
+
+  // Formulário de nova peça (por bike)
+  // Ex.: newPart[bikeId] = { nome: "", valor: "" }
+  const [newPart, setNewPart] = useState({});
+
+  // Estado de agendamento e observações
   const [scheduledDate, setScheduledDate] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
   // Total da ordem
   const [orderTotal, setOrderTotal] = useState(0);
 
+  // Armazena a ordem criada para imprimir depois
+  const [createdOrder, setCreatedOrder] = useState(null);
+
+  // -----------------------------
+  // EFFECTS
+  // -----------------------------
+  // Carrega serviços ao montar
   useEffect(() => {
     loadServices();
   }, []);
-  // Função para carregar a tabela de serviços
-  const loadServices = async () => {
+
+  // Recalcula total sempre que serviços selecionados ou tabela de serviços mudar
+  useEffect(() => {
+    let total = 0;
+
+    // Soma de serviços
+    Object.entries(selectedServices).forEach(([bikeId, services]) => {
+      Object.entries(services).forEach(([serviceName, quantity]) => {
+        const serviceValue = availableServices[serviceName] || 0;
+        total += serviceValue * quantity;
+      });
+    });
+
+    // Soma de peças
+    Object.entries(selectedParts).forEach(([bikeId, partsArray]) => {
+      partsArray.forEach((part) => {
+        total += parseFloat(part.valor) || 0;
+      });
+    });
+
+    setOrderTotal(total);
+  }, [selectedServices, selectedParts, availableServices]);
+
+  // -----------------------------
+  // FUNÇÕES DE CARREGAR DADOS
+  // -----------------------------
+  async function loadServices() {
     try {
       const servicosRef = collection(db, "servicos");
       const snapshot = await getDocs(servicosRef);
       const servicesData = {};
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
         Object.entries(data).forEach(([nome, valor]) => {
+          // Remove R$, aspas e espaços, e troca vírgula por ponto
           const valorLimpo = valor.replace(/['"R$\s]/g, "").replace(",", ".");
           servicesData[nome] = parseFloat(valorLimpo);
         });
       });
 
       setAvailableServices(servicesData);
-    } catch (error) {
-      console.error("Erro ao carregar serviços:", error);
+    } catch (err) {
+      console.error("Erro ao carregar serviços:", err);
       setError("Erro ao carregar tabela de serviços");
     }
-  };
+  }
 
-  // Buscar cliente pelo telefone
-  const searchClient = async () => {
+  // Carrega bicicletas do cliente
+  async function loadClientBikes(clientPhone) {
+    try {
+      const bikesRef = collection(db, "clientes", clientPhone, "bikes");
+      const snapshot = await getDocs(bikesRef);
+      const bikesData = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+      setBikes(bikesData);
+    } catch (err) {
+      console.error("Erro ao carregar bicicletas:", err);
+      setError("Erro ao carregar bicicletas do cliente");
+    }
+  }
+
+  // -----------------------------
+  // FUNÇÕES DO CLIENTE
+  // -----------------------------
+  async function searchClient() {
     if (!telefone) return;
-
     try {
       setLoading(true);
       const clientRef = doc(db, "clientes", telefone);
@@ -96,45 +162,24 @@ const NewOrder = () => {
         setClientData(null);
         setBikes([]);
         setShowClientForm(true);
-        // Atualiza o estado do novo cliente com o telefone da busca
-        setNewClient((prev) => ({
-          ...prev,
-          telefone: telefone,
-        }));
+        setNewClient((prev) => ({ ...prev, telefone: telefone }));
       }
-    } catch (error) {
-      console.error("Erro ao buscar cliente:", error);
+    } catch (err) {
+      console.error("Erro ao buscar cliente:", err);
       setError("Erro ao buscar cliente");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // Carregar bicicletas do cliente
-  const loadClientBikes = async (clientPhone) => {
-    try {
-      const bikesRef = collection(db, "clientes", clientPhone, "bikes");
-      const snapshot = await getDocs(bikesRef);
-      const bikesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setBikes(bikesData);
-    } catch (error) {
-      console.error("Erro ao carregar bicicletas:", error);
-      setError("Erro ao carregar bicicletas do cliente");
-    }
-  };
-
-  // Funções para manipular o cliente
-  const handleCreateClient = async () => {
+  async function handleCreateClient() {
     try {
       if (!newClient.nome || !newClient.telefone) {
         setError("Nome e telefone são obrigatórios");
         return;
       }
-
       setLoading(true);
+
       const clientRef = doc(db, "clientes", newClient.telefone);
       await setDoc(clientRef, {
         ...newClient,
@@ -143,19 +188,20 @@ const NewOrder = () => {
 
       setClientData(newClient);
       setShowClientForm(false);
-      // Carregar bicicletas após criar cliente
       await loadClientBikes(newClient.telefone);
       setTelefone(newClient.telefone);
-    } catch (error) {
-      console.error("Erro ao criar cliente:", error);
+    } catch (err) {
+      console.error("Erro ao criar cliente:", err);
       setError("Erro ao criar novo cliente");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // Funções para manipular bicicletas
-  const handleAddBike = async () => {
+  // -----------------------------
+  // FUNÇÕES DAS BICICLETAS
+  // -----------------------------
+  async function handleAddBike() {
     try {
       setLoading(true);
       const bikesRef = collection(db, "clientes", telefone, "bikes");
@@ -167,25 +213,27 @@ const NewOrder = () => {
       await loadClientBikes(telefone);
       setNewBike({ marca: "", modelo: "", cor: "" });
       setShowBikeForm(false);
-    } catch (error) {
-      console.error("Erro ao adicionar bicicleta:", error);
+    } catch (err) {
+      console.error("Erro ao adicionar bicicleta:", err);
       setError("Erro ao adicionar nova bicicleta");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleSelectBike = (bikeId) => {
+  function handleSelectBike(bikeId) {
     setSelectedBikes((prev) => {
       if (prev.includes(bikeId)) {
         return prev.filter((id) => id !== bikeId);
       }
       return [...prev, bikeId];
     });
-  };
+  }
 
-  // Funções para manipular serviços
-  const handleServiceChange = (bikeId, serviceName, quantity) => {
+  // -----------------------------
+  // FUNÇÕES DOS SERVIÇOS
+  // -----------------------------
+  function handleServiceChange(bikeId, serviceName, quantity) {
     setSelectedServices((prev) => ({
       ...prev,
       [bikeId]: {
@@ -193,39 +241,99 @@ const NewOrder = () => {
         [serviceName]: quantity,
       },
     }));
-  };
+  }
 
-  // Função para gerar PDF
-  const generatePDF = async (ordem) => {
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 50;
-  
-      const centerText = (text, y) => {
-        const textWidth = (doc.getStringUnitWidth(text) * doc.internal.getFontSize()) / doc.internal.scaleFactor;
-        const x = (pageWidth - textWidth) / 2;
-        doc.text(text, x, y);
+  // -----------------------------
+  // FUNÇÕES DE PEÇAS
+  // -----------------------------
+  function handleNewPartChange(bikeId, field, value) {
+    // Exemplo: newPart[bikeId] = {nome: "", valor: ""}
+    setNewPart((prev) => ({
+      ...prev,
+      [bikeId]: {
+        ...prev[bikeId],
+        [field]: value,
+      },
+    }));
+  }
+
+  function handleAddPart(bikeId) {
+    const partData = newPart[bikeId];
+    if (!partData || !partData.nome || !partData.valor) {
+      setError("Preencha nome e valor da peça");
+      return;
+    }
+
+    // Limpamos a mensagem de erro
+    setError(null);
+
+    // Adiciona a peça no selectedParts
+    setSelectedParts((prev) => {
+      const currentBikeParts = prev[bikeId] || [];
+      return {
+        ...prev,
+        [bikeId]: [
+          ...currentBikeParts,
+          { nome: partData.nome, valor: partData.valor },
+        ],
       };
-  
+    });
+
+    // Limpa o formulário
+    setNewPart((prev) => ({
+      ...prev,
+      [bikeId]: { nome: "", valor: "" },
+    }));
+  }
+
+  function handleRemovePart(bikeId, index) {
+    setSelectedParts((prev) => {
+      const currentBikeParts = [...(prev[bikeId] || [])];
+      currentBikeParts.splice(index, 1); // remove a peça
+      return {
+        ...prev,
+        [bikeId]: currentBikeParts,
+      };
+    });
+  }
+
+  // -----------------------------
+  // IMPRESSÃO: VERSÃO DO CLIENTE
+  // -----------------------------
+  async function generatePDFClient(ordem) {
+    try {
+      const docPDF = new jsPDF();
+      const pageWidth = docPDF.internal.pageSize.getWidth();
+      let yPos = 50;
+
+      // Helper para centralizar texto
+      const centerText = (text, y) => {
+        const textWidth =
+          (docPDF.getStringUnitWidth(text) * docPDF.internal.getFontSize()) /
+          docPDF.internal.scaleFactor;
+        const x = (pageWidth - textWidth) / 2;
+        docPDF.text(text, x, y);
+      };
+
       // Carrega a imagem dinamicamente
       const logoImg = new Image();
-      logoImg.src = '/assets/Logo.png';
-      
+      logoImg.src = "/assets/Logo.png";
+
+      // Aguarda a imagem carregar
       await new Promise((resolve) => {
         logoImg.onload = resolve;
       });
-  
-      // Adiciona o logo
-      doc.addImage(logoImg, "PNG", 20, 10, 40, 40);
+
+      // Adiciona logo
+      docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
 
       // Cabeçalho
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
+      docPDF.setFontSize(16);
+      docPDF.setFont("helvetica", "bold");
       centerText("ORDEM DE SERVIÇO", 20);
 
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
+      docPDF.setFontSize(10);
+      docPDF.setFont("helvetica", "normal");
       centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
       centerText(
         "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
@@ -233,57 +341,61 @@ const NewOrder = () => {
       );
       centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
 
-      // Informações da OS
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text(`OS: ${ordem.codigo}`, 20, yPos);
+      // Info da OS
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`OS: ${ordem.codigo}`, 20, yPos);
       yPos += 10;
 
       const dataCriacao = new Date(ordem.dataCriacao);
       const dataAgendamento = new Date(ordem.dataAgendamento);
 
-      doc.text(`Criada em: ${dataCriacao.toLocaleString("pt-BR")}`, 20, yPos);
+      docPDF.text(`Criada em: ${dataCriacao.toLocaleString("pt-BR")}`, 20, yPos);
       yPos += 10;
 
-      doc.text(
-        `Agendada para: ${dataAgendamento.toLocaleString("pt-BR")}`,
+      docPDF.text(
+        `Agendada para: ${dataAgendamento.toLocaleDateString("pt-BR")}`,
         20,
         yPos
       );
       yPos += 15;
-      doc.text("DADOS DO CLIENTE", 20, yPos);
+
+      docPDF.text("DADOS DO CLIENTE", 20, yPos);
       yPos += 10;
-      doc.setFont("helvetica", "normal");
-      doc.text(`Nome: ${ordem.cliente?.nome || "-"}`, 20, yPos);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.text(`Nome: ${ordem.cliente?.nome || "-"}`, 20, yPos);
       yPos += 7;
-      doc.text(`Telefone: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
-      yPos += 15;
+      docPDF.text(`Telefone: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
+      yPos += 7;
+
+      docPDF.text(
+        `Consulte o andamento no site: ${window.location.origin}/consulta?os=${ordem.codigo}`,
+        20,
+        (yPos += 10)
+      );
+      yPos += 10;
 
       let totalGeral = 0;
 
-      // Processamento de cada bicicleta
       ordem.bicicletas?.forEach((bike, index) => {
-        doc.setFont("helvetica", "bold");
-        doc.text(
-          `BICICLETA ${index + 1}: ${bike.marca} - ${bike.modelo} - ${
-            bike.cor
-          }`,
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text(
+          `Bicicleta ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
           20,
           yPos
         );
-        yPos += 15;
+        yPos += 10;
 
-        // Cabeçalho da tabela de serviços
-        doc.setFont("helvetica", "bold");
-        doc.text("Serviço", 20, yPos);
-        doc.text("Qtd", 120, yPos);
-        doc.text("Valor", 150, yPos);
+        // Cabeçalho da tabela
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text("Serviço", 20, yPos);
+        docPDF.text("Qtd", 120, yPos);
+        docPDF.text("Valor", 150, yPos);
         yPos += 8;
 
         let totalBike = 0;
 
-        // Lista de serviços
-        doc.setFont("helvetica", "normal");
+        docPDF.setFont("helvetica", "normal");
         if (bike.services) {
           Object.entries(bike.services).forEach(([serviceName, quantity]) => {
             if (quantity > 0) {
@@ -296,94 +408,223 @@ const NewOrder = () => {
               const subtotal = serviceValue * quantity;
               totalBike += subtotal;
 
-              doc.text(`• ${serviceName}`, 20, yPos);
-              doc.text(`${quantity}`, 120, yPos);
-              doc.text(`R$ ${subtotal.toFixed(2)}`, 150, yPos);
+              docPDF.text(`• ${serviceName}`, 20, yPos);
+              docPDF.text(`${quantity}`, 120, yPos);
+              docPDF.text(`R$ ${subtotal.toFixed(2)}`, 150, yPos);
               yPos += 7;
             }
           });
         }
 
-        // Adiciona o subtotal da bicicleta
+        // Se houver peças
+        if (bike.pecas && bike.pecas.length > 0) {
+          yPos += 5;
+          docPDF.setFont("helvetica", "bold");
+          docPDF.text("PEÇAS:", 20, yPos);
+          yPos += 7;
+
+          docPDF.setFont("helvetica", "normal");
+          bike.pecas.forEach((peca) => {
+            const valorPeca = parseFloat(peca.valor) || 0;
+            totalBike += valorPeca;
+            docPDF.text(`• ${peca.nome}`, 20, yPos);
+            docPDF.text(`R$ ${valorPeca.toFixed(2)}`, 150, yPos);
+            yPos += 7;
+          });
+        }
+
         totalGeral += totalBike;
         yPos += 5;
-        doc.setFont("helvetica", "bold");
-        doc.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 120, yPos);
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 120, yPos);
         yPos += 15;
 
-        // Verifica se precisa adicionar nova página
+        // Verifica se precisa mudar de página
         if (yPos > 250) {
-          doc.addPage();
+          docPDF.addPage();
           yPos = 20;
         }
       });
 
-      // Total geral e observações
-      doc.setFont("helvetica", "bold");
-      doc.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 20, yPos);
-      yPos += 15;
+      // Total geral + Observações
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 20, yPos);
+      yPos += 10;
 
       if (ordem.observacoes) {
-        doc.setFont("helvetica", "bold");
-        doc.text("OBSERVAÇÕES:", 20, yPos);
+        docPDF.text("OBSERVAÇÕES:", 20, yPos);
         yPos += 7;
-        doc.setFont("helvetica", "normal");
-        doc.text(ordem.observacoes, 20, yPos);
+        docPDF.setFont("helvetica", "normal");
+        docPDF.text(ordem.observacoes, 20, yPos);
         yPos += 15;
       }
 
       // Termos e condições
-      yPos += 10;
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.text(
+      docPDF.setFontSize(9);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.text(
         [
           "• O prazo para conclusão do serviço pode ser estendido em até 2 dias após a data agendada.",
-          "• Caso a bicicleta ou peças não sejam retiradas no prazo de 180 dias após o término",
-          "  do serviço, serão vendidas para custear as despesas.",
+          "• Caso a bicicleta ou peças não sejam retiradas no prazo de 180 dias após o término do serviço,",
+          "  serão vendidas para custear as despesas.",
         ],
         20,
-        yPos
+        (yPos += 10)
       );
 
-      doc.save(`OS-${ordem.codigo}.pdf`);
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      alert("Erro ao gerar PDF. Tente novamente.");
+      docPDF.save(`OS-Cliente-${ordem.codigo}.pdf`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF (Cliente):", err);
+      alert("Erro ao gerar PDF do cliente. Tente novamente.");
     }
-  };
+  }
 
-  // Calcular total da ordem
-  useEffect(() => {
-    let total = 0;
-    Object.entries(selectedServices).forEach(([bikeId, services]) => {
-      Object.entries(services).forEach(([serviceName, quantity]) => {
-        const serviceValue = availableServices[serviceName] || 0;
-        total += serviceValue * quantity;
+  // -----------------------------
+  // IMPRESSÃO: VERSÃO DA LOJA
+  // -----------------------------
+  async function generatePDFStore(ordem) {
+    try {
+      const docPDF = new jsPDF();
+      const pageWidth = docPDF.internal.pageSize.getWidth();
+      let yPos = 20; // um pouco mais no alto para caber mais conteúdo
+
+      // Helper para centralizar texto (se precisar)
+      const centerText = (text, y, fontSize = 16) => {
+        docPDF.setFontSize(fontSize);
+        const textWidth =
+          (docPDF.getStringUnitWidth(text) * docPDF.internal.getFontSize()) /
+          docPDF.internal.scaleFactor;
+        const x = (pageWidth - textWidth) / 2;
+        docPDF.text(text, x, y);
+      };
+
+      // Nome/telefone do cliente em fonte grande
+      docPDF.setFont("helvetica", "bold");
+      docPDF.setFontSize(18);
+      docPDF.text(`CLIENTE: ${ordem.cliente?.nome || "-"}`, 20, yPos);
+      yPos += 10;
+      docPDF.text(`TEL: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
+      yPos += 15;
+
+      ordem.bicicletas?.forEach((bike, index) => {
+        if (yPos > 250) {
+          docPDF.addPage();
+          yPos = 20;
+        }
+
+        docPDF.setFontSize(16);
+        docPDF.text(
+          `Bike ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
+          20,
+          yPos
+        );
+        yPos += 10;
+
+        // Observações gerais
+        if (ordem.observacoes) {
+          docPDF.setFontSize(14);
+          docPDF.setFont("helvetica", "bold");
+          docPDF.text("Observações Gerais:", 20, yPos);
+          yPos += 8;
+
+          docPDF.setFont("helvetica", "normal");
+          docPDF.text(`${ordem.observacoes}`, 20, yPos);
+          yPos += 12;
+        }
+
+        // Lista de serviços em fonte grande
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(15);
+        docPDF.text("SERVIÇOS:", 20, yPos);
+        yPos += 10;
+
+        docPDF.setFont("helvetica", "normal");
+        docPDF.setFontSize(14);
+
+        let totalBike = 0;
+        if (bike.services) {
+          Object.entries(bike.services).forEach(([serviceName, quantity]) => {
+            if (quantity > 0) {
+              const serviceValue =
+                bike.serviceValues?.[serviceName]?.valorFinal ||
+                bike.serviceValues?.[serviceName]?.valor ||
+                availableServices[serviceName] ||
+                0;
+              const subtotal = serviceValue * quantity;
+              totalBike += subtotal;
+
+              if (yPos > 270) {
+                docPDF.addPage();
+                yPos = 20;
+              }
+
+              docPDF.text(
+                `• ${serviceName} (${quantity}x) = R$ ${subtotal.toFixed(2)}`,
+                20,
+                yPos
+              );
+              yPos += 8;
+            }
+          });
+        }
+
+        // Se tiver peças
+        if (bike.pecas && bike.pecas.length > 0) {
+          docPDF.setFont("helvetica", "bold");
+          docPDF.setFontSize(15);
+          yPos += 8;
+          docPDF.text("PEÇAS:", 20, yPos);
+          yPos += 10;
+
+          docPDF.setFont("helvetica", "normal");
+          docPDF.setFontSize(14);
+          bike.pecas.forEach((peca) => {
+            if (yPos > 270) {
+              docPDF.addPage();
+              yPos = 20;
+            }
+            const valorPeca = parseFloat(peca.valor || 0);
+            totalBike += valorPeca;
+            docPDF.text(`• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`, 20, yPos);
+            yPos += 8;
+          });
+        }
+
+        yPos += 5;
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(14);
+        docPDF.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 20, yPos);
+        yPos += 15;
       });
-    });
-    setOrderTotal(total);
-  }, [selectedServices, availableServices]);
 
-  // Criar ordem de serviço
-  const handleCreateOrder = async () => {
+      docPDF.save(`OS-Loja-${ordem.codigo}.pdf`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF (Loja):", err);
+      alert("Erro ao gerar PDF da loja. Tente novamente.");
+    }
+  }
+
+  // -----------------------------
+  // CRIAR ORDEM DE SERVIÇO
+  // -----------------------------
+  async function handleCreateOrder() {
     if (!clientData || selectedBikes.length === 0) {
-      setError("Selecione um cliente e pelo menos uma bicicleta");
+      setError("Selecione um cliente e pelo menos uma bicicleta.");
       return;
     }
 
     if (!scheduledDate) {
-      setError("Selecione uma data de agendamento");
+      setError("Selecione uma data de agendamento.");
       return;
     }
 
     try {
       setLoading(true);
 
-      // Gerar código da OS
+      // Gera código da OS
       const now = new Date();
       const ano = now.getFullYear();
-      const mes = (now.getMonth() + 1).toString().padStart(2, "0");
+      const mes = String(now.getMonth() + 1).padStart(2, "0");
 
       const ordensRef = collection(db, "ordens");
       const mesAtualQuery = query(
@@ -398,18 +639,15 @@ const NewOrder = () => {
       const ultimaOrdem = mesAtualSnap.docs[0]?.data();
       const sequencial = (ultimaOrdem?.sequencial || 0) + 1;
 
-      const codigoOS = `OS-${ano}${mes}${sequencial
-        .toString()
-        .padStart(3, "0")}`;
+      const codigoOS = `OS-${ano}${mes}${String(sequencial).padStart(3, "0")}`;
       const urlOS = `${window.location.origin}/consulta?os=${codigoOS}`;
 
-      // Preparar bicicletas com serviços
-      // Preparar bicicletas com serviços
+      // Prepara as bicicletas selecionadas
       const bicicletasOrdem = bikes
         .filter((bike) => selectedBikes.includes(bike.id))
         .map((bike) => {
-          // Calcula o total dos serviços para esta bike
           const bikeServices = selectedServices[bike.id] || {};
+          // Soma serviços
           const servicosTotal = Object.entries(bikeServices).reduce(
             (total, [serviceName, quantity]) => {
               return total + (availableServices[serviceName] || 0) * quantity;
@@ -417,28 +655,41 @@ const NewOrder = () => {
             0
           );
 
+          // Soma peças (do selectedParts)
+          const bikeParts = selectedParts[bike.id] || [];
+          const pecasTotal = bikeParts.reduce((acc, part) => {
+            return acc + (parseFloat(part.valor) || 0);
+          }, 0);
+
           return {
             id: bike.id,
             marca: bike.marca,
             modelo: bike.modelo,
             cor: bike.cor,
-            services: selectedServices[bike.id] || {},
-            serviceValues: Object.entries(
-              selectedServices[bike.id] || {}
-            ).reduce((acc, [serviceName, quantity]) => {
-              const valor = availableServices[serviceName] || 0;
-              acc[serviceName] = {
-                valor: valor,
-                valorFinal: valor,
-                quantidade: quantity,
-              };
-              return acc;
-            }, {}),
-            total: servicosTotal,
+            services: bikeServices,
+            serviceValues: Object.entries(bikeServices).reduce(
+              (acc, [serviceName, quantity]) => {
+                const valor = availableServices[serviceName] || 0;
+                acc[serviceName] = {
+                  valor: valor,
+                  valorFinal: valor,
+                  quantidade: quantity,
+                };
+                return acc;
+              },
+              {}
+            ),
+            pecas: bikeParts, // aqui estão as peças adicionadas
+            total: servicosTotal + pecasTotal,
           };
         });
 
-      // Criar ordem
+      // Calcula valor total final
+      const valorTotal = bicicletasOrdem.reduce(
+        (acc, bike) => acc + bike.total,
+        0
+      );
+
       const newOrder = {
         codigo: codigoOS,
         urlOS,
@@ -449,30 +700,37 @@ const NewOrder = () => {
           endereco: clientData.endereco,
         },
         bicicletas: bicicletasOrdem,
-        valorTotal: orderTotal,
+        valorTotal: valorTotal,
         observacoes,
         status: "Pendente",
-        dataCriacao: new Date().toISOString(), // Modificado
+        dataCriacao: new Date().toISOString(),
         dataAgendamento: new Date(scheduledDate + "T12:00:00").toISOString(),
-        dataAtualizacao: new Date().toISOString(), // Modificado
+        dataAtualizacao: new Date().toISOString(),
       };
 
-      const docRef = await addDoc(ordensRef, newOrder);
+      // Salva no Firestore
+      await addDoc(ordensRef, newOrder);
 
-      // Gerar PDF
-      await generatePDF(newOrder);
+      // Armazena a ordem para imprimir
+      setCreatedOrder(newOrder);
 
-      navigate("/admin/orders");
-    } catch (error) {
-      console.error("Erro ao criar ordem:", error);
+      // Caso queira voltar para a listagem automaticamente, descomente:
+      // navigate("/admin/orders");
+
+    } catch (err) {
+      console.error("Erro ao criar ordem:", err);
       setError("Erro ao criar ordem de serviço");
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  // -----------------------------
+  // RENDER DO COMPONENTE
+  // -----------------------------
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
+      {/* HEADER */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
@@ -492,6 +750,7 @@ const NewOrder = () => {
         </div>
       </header>
 
+      {/* MAIN */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 pb-24">
         {error && (
           <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -499,7 +758,7 @@ const NewOrder = () => {
           </div>
         )}
 
-        {/* Seção Cliente */}
+        {/* SEÇÃO CLIENTE */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">Cliente</h2>
 
@@ -521,7 +780,7 @@ const NewOrder = () => {
             </button>
           </div>
 
-          {/* Dados do Cliente Encontrado */}
+          {/* DADOS DO CLIENTE ENCONTRADO */}
           {clientData && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-bold mb-2">Dados do Cliente</h3>
@@ -539,7 +798,7 @@ const NewOrder = () => {
             </div>
           )}
 
-          {/* Formulário Novo Cliente */}
+          {/* FORMULÁRIO NOVO CLIENTE */}
           {showClientForm && (
             <div className="mt-4">
               <h3 className="font-bold mb-2">Novo Cliente</h3>
@@ -555,7 +814,7 @@ const NewOrder = () => {
                 />
                 <input
                   type="text"
-                  value={newClient.telefone || telefone} // Usar o telefone do estado ou da busca
+                  value={newClient.telefone || telefone}
                   onChange={(e) =>
                     setNewClient((prev) => ({
                       ...prev,
@@ -590,252 +849,298 @@ const NewOrder = () => {
           )}
         </div>
 
-        {/* Seção Bicicletas */}
-        {clientData && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Bicicletas</h2>
-              <button
-                onClick={() => setShowBikeForm(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center"
-              >
-                <PlusCircle className="w-5 h-5 mr-2" />
-                Nova Bicicleta
-              </button>
-            </div>
+        {/* SEÇÃO BICICLETAS */}
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold mb-4">Bicicletas do Cliente</h2>
 
-            {showBikeForm && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-bold mb-4">Nova Bicicleta</h3>
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    value={newBike.marca}
-                    onChange={(e) =>
-                      setNewBike((prev) => ({ ...prev, marca: e.target.value }))
-                    }
-                    placeholder="Marca"
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                  <input
-                    type="text"
-                    value={newBike.modelo}
-                    onChange={(e) =>
-                      setNewBike((prev) => ({
-                        ...prev,
-                        modelo: e.target.value,
-                      }))
-                    }
-                    placeholder="Modelo"
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                  <input
-                    type="text"
-                    value={newBike.cor}
-                    onChange={(e) =>
-                      setNewBike((prev) => ({ ...prev, cor: e.target.value }))
-                    }
-                    placeholder="Cor"
-                    className="w-full px-4 py-2 border rounded-lg"
-                  />
-                  <div className="flex gap-4">
-                    <button
-                      onClick={handleAddBike}
-                      disabled={
-                        loading ||
-                        !newBike.marca ||
-                        !newBike.modelo ||
-                        !newBike.cor
-                      }
-                      className="flex-1 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
-                    >
-                      Adicionar Bicicleta
-                    </button>
-                    <button
-                      onClick={() => setShowBikeForm(false)}
-                      className="px-6 py-2 border rounded-lg hover:bg-gray-50"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Lista de Bicicletas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {bikes.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {bikes.map((bike) => (
                 <div
                   key={bike.id}
-                  className={`p-4 border rounded-lg cursor-pointer ${
+                  className={`border rounded-lg p-4 ${
                     selectedBikes.includes(bike.id)
                       ? "border-blue-500 bg-blue-50"
-                      : "hover:bg-gray-50"
-                  }`}
+                      : "border-gray-300"
+                  } cursor-pointer`}
                   onClick={() => handleSelectBike(bike.id)}
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold">
-                        {bike.marca} {bike.modelo}
-                      </h3>
-                      <p className="text-gray-600">{bike.cor}</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={selectedBikes.includes(bike.id)}
-                      onChange={() => handleSelectBike(bike.id)}
-                      className="h-5 w-5"
-                    />
-                  </div>
+                  <h3 className="font-semibold mb-2">
+                    {bike.marca} - {bike.modelo}
+                  </h3>
+                  <p className="text-sm text-gray-600">Cor: {bike.cor}</p>
                 </div>
               ))}
             </div>
+          )}
+
+          <div className="mt-4">
+            <button
+              onClick={() => setShowBikeForm(!showBikeForm)}
+              className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+            >
+              <PlusCircle className="w-5 h-5 mr-2" />
+              Adicionar Bicicleta
+            </button>
           </div>
+
+          {showBikeForm && (
+            <div className="mt-4 space-y-4">
+              <input
+                type="text"
+                value={newBike.marca}
+                onChange={(e) =>
+                  setNewBike((prev) => ({ ...prev, marca: e.target.value }))
+                }
+                placeholder="Marca"
+                className="w-full px-4 py-2 border rounded-lg"
+              />
+              <input
+                type="text"
+                value={newBike.modelo}
+                onChange={(e) =>
+                  setNewBike((prev) => ({ ...prev, modelo: e.target.value }))
+                }
+                placeholder="Modelo"
+                className="w-full px-4 py-2 border rounded-lg"
+              />
+              <input
+                type="text"
+                value={newBike.cor}
+                onChange={(e) =>
+                  setNewBike((prev) => ({ ...prev, cor: e.target.value }))
+                }
+                placeholder="Cor"
+                className="w-full px-4 py-2 border rounded-lg"
+              />
+              <button
+                onClick={handleAddBike}
+                disabled={loading || !newBike.marca || !newBike.modelo}
+                className="w-full bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+              >
+                Salvar Bicicleta
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* SEÇÃO SERVIÇOS/PEÇAS - exibe apenas se houver bikes selecionadas */}
+        {selectedBikes.length > 0 && (
+          <>
+            {/* SERVIÇOS */}
+            <div className="bg-white shadow rounded-lg p-6 mb-6">
+              <h2 className="text-xl font-bold mb-4">Serviços</h2>
+              <p className="mb-4 text-sm text-gray-700">
+                Selecione a quantidade de cada serviço para cada bicicleta.
+              </p>
+              {selectedBikes.map((bikeId, index) => {
+                const bikeInfo = bikes.find((b) => b.id === bikeId);
+                if (!bikeInfo) return null;
+
+                return (
+                  <div key={bikeId} className="mb-6 border rounded-lg p-4">
+                    <h3 className="font-semibold mb-2">
+                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${bikeInfo.modelo} - ${bikeInfo.cor}`}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {Object.entries(availableServices).map(
+                        ([serviceName, price]) => {
+                          const quantity =
+                            selectedServices[bikeId]?.[serviceName] || 0;
+                          return (
+                            <div
+                              key={serviceName}
+                              className="flex items-center border rounded-md p-2"
+                            >
+                              <div className="flex-1">
+                                <p className="font-semibold">{serviceName}</p>
+                                <p className="text-sm text-gray-500">
+                                  R$ {price.toFixed(2)}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleServiceChange(
+                                      bikeId,
+                                      serviceName,
+                                      quantity > 0 ? quantity - 1 : 0
+                                    )
+                                  }
+                                  className="px-2 py-1 border rounded hover:bg-gray-100"
+                                >
+                                  -
+                                </button>
+                                <span>{quantity}</span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleServiceChange(
+                                      bikeId,
+                                      serviceName,
+                                      quantity + 1
+                                    )
+                                  }
+                                  className="px-2 py-1 border rounded hover:bg-gray-100"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* PEÇAS */}
+            <div className="bg-white shadow rounded-lg p-6 mb-6">
+              <h2 className="text-xl font-bold mb-4">Peças</h2>
+              {selectedBikes.map((bikeId, index) => {
+                const bikeInfo = bikes.find((b) => b.id === bikeId);
+                if (!bikeInfo) return null;
+
+                // array de peças já adicionadas a esta bike
+                const bikeParts = selectedParts[bikeId] || [];
+                const partForm = newPart[bikeId] || { nome: "", valor: "" };
+
+                return (
+                  <div key={bikeId} className="mb-6 border rounded-lg p-4">
+                    <h3 className="font-semibold mb-2">
+                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${bikeInfo.modelo} - ${bikeInfo.cor}`}
+                    </h3>
+
+                    {/* Listar peças já adicionadas */}
+                    {bikeParts.length > 0 && (
+                      <div className="mb-4">
+                        <p className="font-bold">Peças já adicionadas:</p>
+                        <ul className="list-disc list-inside">
+                          {bikeParts.map((part, idx) => (
+                            <li key={idx} className="flex justify-between">
+                              <div>
+                                {part.nome} - R$ {parseFloat(part.valor).toFixed(2)}
+                              </div>
+                              <button
+                                onClick={() => handleRemovePart(bikeId, idx)}
+                                className="text-red-500 hover:text-red-700 text-sm"
+                              >
+                                Remover
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Formulário para adicionar nova peça */}
+                    <div className="mt-2 space-y-2 border p-3 rounded">
+                      <input
+                        type="text"
+                        placeholder="Nome da Peça"
+                        className="w-full px-3 py-2 border rounded"
+                        value={partForm.nome || ""}
+                        onChange={(e) =>
+                          handleNewPartChange(bikeId, "nome", e.target.value)
+                        }
+                      />
+                      <input
+                        type="number"
+                        placeholder="Valor da Peça (R$)"
+                        className="w-full px-3 py-2 border rounded"
+                        min="0"
+                        step="0.01"
+                        value={partForm.valor || ""}
+                        onChange={(e) =>
+                          handleNewPartChange(bikeId, "valor", e.target.value)
+                        }
+                      />
+                      <button
+                        onClick={() => handleAddPart(bikeId)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      >
+                        Adicionar Peça
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
-        {/* Seção Serviços */}
+        {/* SEÇÃO AGENDAMENTO E OBSERVAÇÕES (apenas se houver bikes selecionadas) */}
         {selectedBikes.length > 0 && (
           <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4">Serviços</h2>
-
-            {selectedBikes.map((bikeId) => {
-              const bike = bikes.find((b) => b.id === bikeId);
-              return (
-                <div key={bikeId} className="mb-6 last:mb-0 border-b pb-6">
-                  <h3 className="font-bold mb-2">
-                    {bike.marca} {bike.modelo} - {bike.cor}
-                  </h3>
-
-                  <div className="space-y-2">
-                    {Object.entries(availableServices).map(
-                      ([serviceName, valor]) => (
-                        <div
-                          key={serviceName}
-                          className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg"
-                        >
-                          <div>
-                            <p className="font-medium">{serviceName}</p>
-                            <p className="text-sm text-gray-600">
-                              R$ {valor.toFixed(2)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                const currentQty =
-                                  selectedServices[bikeId]?.[serviceName] || 0;
-                                handleServiceChange(
-                                  bikeId,
-                                  serviceName,
-                                  Math.max(0, currentQty - 1)
-                                );
-                              }}
-                              className="w-8 h-8 flex items-center justify-center border rounded-lg hover:bg-gray-100"
-                            >
-                              -
-                            </button>
-                            <span className="w-8 text-center">
-                              {selectedServices[bikeId]?.[serviceName] || 0}
-                            </span>
-                            <button
-                              onClick={() => {
-                                const currentQty =
-                                  selectedServices[bikeId]?.[serviceName] || 0;
-                                handleServiceChange(
-                                  bikeId,
-                                  serviceName,
-                                  currentQty + 1
-                                );
-                              }}
-                              className="w-8 h-8 flex items-center justify-center border rounded-lg hover:bg-gray-100"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
-
-                  <div className="mt-4 text-right">
-                    <p className="font-bold">
-                      Subtotal: R${" "}
-                      {Object.entries(selectedServices[bikeId] || {})
-                        .reduce((total, [serviceName, quantity]) => {
-                          return (
-                            total +
-                            (availableServices[serviceName] || 0) * quantity
-                          );
-                        }, 0)
-                        .toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Seção Agendamento e Observações */}
-        {selectedBikes.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6 mb-20">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h2 className="text-xl font-bold mb-4">Agendamento</h2>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data de Agendamento
-                  </label>
-                  <input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold mb-4">Observações</h2>
-                <textarea
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Observações adicionais"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 h-32 resize-none"
-                />
-              </div>
+            <h2 className="text-xl font-bold mb-4">Agendamento</h2>
+            <div className="mb-4">
+              <label htmlFor="scheduledDate" className="font-semibold block mb-2">
+                Data de Agendamento
+              </label>
+              <input
+                type="date"
+                id="scheduledDate"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className="px-4 py-2 border rounded-lg w-full"
+              />
             </div>
-          </div>
-        )}
 
-        {/* Footer com Total */}
-        {selectedBikes.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t">
-            <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600">Total da Ordem</p>
-                  <p className="text-2xl font-bold">
-                    R$ {orderTotal.toFixed(2)}
-                  </p>
-                </div>
+            <div className="mb-4">
+              <label htmlFor="observacoes" className="font-semibold block mb-2">
+                Observações (opcional)
+              </label>
+              <textarea
+                id="observacoes"
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                rows={4}
+                className="px-4 py-2 border rounded-lg w-full"
+                placeholder="Ex: Descrever observações adicionais ou peças solicitadas"
+              />
+            </div>
+
+            <div className="mb-4">
+              <h3 className="font-semibold text-lg">Total da Ordem:</h3>
+              <p className="text-xl font-bold text-green-600">
+                R$ {orderTotal.toFixed(2)}
+              </p>
+            </div>
+
+            <button
+              onClick={handleCreateOrder}
+              disabled={loading}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              Criar Ordem de Serviço
+            </button>
+
+            {/* Se a ordem foi criada, mostramos botões de impressão */}
+            {createdOrder && (
+              <div className="mt-6 space-x-4">
                 <button
-                  onClick={handleCreateOrder}
-                  disabled={loading || !scheduledDate || orderTotal === 0}
-                  className="bg-green-500 text-white px-8 py-3 rounded-lg hover:bg-green-600 disabled:opacity-50"
+                  onClick={() => generatePDFClient(createdOrder)}
+                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
                 >
-                  {loading ? "Criando..." : "Finalizar Ordem"}
+                  Imprimir Versão Cliente
+                </button>
+                <button
+                  onClick={() => generatePDFStore(createdOrder)}
+                  className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
+                >
+                  Imprimir Versão Loja
                 </button>
               </div>
-            </div>
+            )}
           </div>
         )}
       </main>
     </div>
   );
-};
+}
 
 export default NewOrder;
