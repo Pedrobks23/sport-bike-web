@@ -350,7 +350,11 @@ function NewOrder() {
       const dataCriacao = new Date(ordem.dataCriacao);
       const dataAgendamento = new Date(ordem.dataAgendamento);
 
-      docPDF.text(`Criada em: ${dataCriacao.toLocaleString("pt-BR")}`, 20, yPos);
+      docPDF.text(
+        `Criada em: ${dataCriacao.toLocaleString("pt-BR")}`,
+        20,
+        yPos
+      );
       yPos += 10;
 
       docPDF.text(
@@ -380,7 +384,9 @@ function NewOrder() {
       ordem.bicicletas?.forEach((bike, index) => {
         docPDF.setFont("helvetica", "bold");
         docPDF.text(
-          `Bicicleta ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
+          `Bicicleta ${index + 1}: ${bike.marca} - ${bike.modelo} - ${
+            bike.cor
+          }`,
           20,
           yPos
         );
@@ -498,21 +504,62 @@ function NewOrder() {
         docPDF.text(text, x, y);
       };
 
-      // Nome/telefone do cliente em fonte grande
+      // ------------------------------------------
+      // Data de agendamento formatada
+      // Exemplo de resultado: "02/02/2025 QUARTA-FEIRA"
+      // ------------------------------------------
+      const dataAgendamento = new Date(ordem.dataAgendamento);
+
+      // Formata dia, mês e ano
+      const dayNumber = dataAgendamento.getDate().toString().padStart(2, "0");
+      const monthNumber = (dataAgendamento.getMonth() + 1)
+        .toString()
+        .padStart(2, "0");
+      const year = dataAgendamento.getFullYear();
+
+      // Nome do dia da semana em português, em caixa alta
+      const dayName = dataAgendamento
+        .toLocaleDateString("pt-BR", { weekday: "long" })
+        .toUpperCase();
+
+      // Monta a string final
+      // Ficará algo como "02/02/2025 QUARTA-FEIRA"
+      const dataFormatada = `${dayNumber}/${monthNumber}/${year} ${dayName}`;
+
+      // ------------------------------------------
+      // Início do PDF
+      // ------------------------------------------
+
+      // Número da OS
       docPDF.setFont("helvetica", "bold");
       docPDF.setFontSize(18);
+      docPDF.text(`OS: ${ordem.codigo}`, 20, yPos);
+      yPos += 10;
+
+      // Nome e telefone do cliente
       docPDF.text(`CLIENTE: ${ordem.cliente?.nome || "-"}`, 20, yPos);
       yPos += 10;
       docPDF.text(`TEL: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
+      yPos += 10;
+
+      // Data no formato desejado
+      docPDF.setFontSize(14);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.text(`Data: ${dataFormatada}`, 20, yPos);
       yPos += 15;
 
+      // ------------------------------------------
+      // Listagem das bicicletas/serviços/peças
+      // ------------------------------------------
       ordem.bicicletas?.forEach((bike, index) => {
+        // Se estiver muito embaixo na página, pula pra próxima
         if (yPos > 250) {
           docPDF.addPage();
           yPos = 20;
         }
 
         docPDF.setFontSize(16);
+        docPDF.setFont("helvetica", "bold");
         docPDF.text(
           `Bike ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
           20,
@@ -532,7 +579,7 @@ function NewOrder() {
           yPos += 12;
         }
 
-        // Lista de serviços em fonte grande
+        // Lista de serviços
         docPDF.setFont("helvetica", "bold");
         docPDF.setFontSize(15);
         docPDF.text("SERVIÇOS:", 20, yPos);
@@ -550,6 +597,7 @@ function NewOrder() {
                 bike.serviceValues?.[serviceName]?.valor ||
                 availableServices[serviceName] ||
                 0;
+
               const subtotal = serviceValue * quantity;
               totalBike += subtotal;
 
@@ -585,7 +633,11 @@ function NewOrder() {
             }
             const valorPeca = parseFloat(peca.valor || 0);
             totalBike += valorPeca;
-            docPDF.text(`• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`, 20, yPos);
+            docPDF.text(
+              `• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`,
+              20,
+              yPos
+            );
             yPos += 8;
           });
         }
@@ -597,6 +649,7 @@ function NewOrder() {
         yPos += 15;
       });
 
+      // Salva o PDF
       docPDF.save(`OS-Loja-${ordem.codigo}.pdf`);
     } catch (err) {
       console.error("Erro ao gerar PDF (Loja):", err);
@@ -716,7 +769,6 @@ function NewOrder() {
 
       // Caso queira voltar para a listagem automaticamente, descomente:
       // navigate("/admin/orders");
-
     } catch (err) {
       console.error("Erro ao criar ordem:", err);
       setError("Erro ao criar ordem de serviço");
@@ -940,7 +992,9 @@ function NewOrder() {
                 return (
                   <div key={bikeId} className="mb-6 border rounded-lg p-4">
                     <h3 className="font-semibold mb-2">
-                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${bikeInfo.modelo} - ${bikeInfo.cor}`}
+                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${
+                        bikeInfo.modelo
+                      } - ${bikeInfo.cor}`}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {Object.entries(availableServices).map(
@@ -1011,7 +1065,9 @@ function NewOrder() {
                 return (
                   <div key={bikeId} className="mb-6 border rounded-lg p-4">
                     <h3 className="font-semibold mb-2">
-                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${bikeInfo.modelo} - ${bikeInfo.cor}`}
+                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${
+                        bikeInfo.modelo
+                      } - ${bikeInfo.cor}`}
                     </h3>
 
                     {/* Listar peças já adicionadas */}
@@ -1022,7 +1078,8 @@ function NewOrder() {
                           {bikeParts.map((part, idx) => (
                             <li key={idx} className="flex justify-between">
                               <div>
-                                {part.nome} - R$ {parseFloat(part.valor).toFixed(2)}
+                                {part.nome} - R${" "}
+                                {parseFloat(part.valor).toFixed(2)}
                               </div>
                               <button
                                 onClick={() => handleRemovePart(bikeId, idx)}
@@ -1077,7 +1134,10 @@ function NewOrder() {
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <h2 className="text-xl font-bold mb-4">Agendamento</h2>
             <div className="mb-4">
-              <label htmlFor="scheduledDate" className="font-semibold block mb-2">
+              <label
+                htmlFor="scheduledDate"
+                className="font-semibold block mb-2"
+              >
                 Data de Agendamento
               </label>
               <input

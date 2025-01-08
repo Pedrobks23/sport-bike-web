@@ -428,4 +428,5 @@ const ReportsManagement = () => {
     </div>
   );
 };
+
 export default ReportsManagement;
