@@ -20,7 +20,7 @@ import {
 
 // -------- ADAPTAÇÃO: Importação para PDF (sem remover nada do seu código) --------
 import { jsPDF } from "jspdf";
-import "jspdf-autotable"; 
+import "jspdf-autotable";
 // ---------------------------------------------------------------------------------
 
 const WorkshopDashboard = () => {
@@ -228,62 +228,86 @@ const WorkshopDashboard = () => {
     }
   };
 
-  // -------- ADAPTAÇÃO: Função para gerar PDF da Loja (sem remover nada) --------
+  // Dentro do WorkshopDashboard, localize e substitua APENAS a função generatePDFStore:
   const generatePDFStore = (order) => {
     try {
       const docPDF = new jsPDF();
+      let yPos = 10; // posição vertical inicial
 
-      let yPos = 20; // posição vertical inicial
+      // Função auxiliar para formatar data no estilo "DD/MM/YYYY DIA-DA-SEMANA"
+      const formatDate = (dateString) => {
+        if (!dateString) return "";
+        const data = new Date(dateString);
+        const dia = data.getDate().toString().padStart(2, "0");
+        const mes = (data.getMonth() + 1).toString().padStart(2, "0");
+        const ano = data.getFullYear();
+        const diaDaSemana = data
+          .toLocaleDateString("pt-BR", { weekday: "long" })
+          .toUpperCase();
+        return `${dia}/${mes}/${ano} ${diaDaSemana}`;
+      };
 
-      // Nome/telefone do cliente em fonte grande
-      docPDF.setFont("helvetica", "bold");
-      docPDF.setFontSize(18);
-      docPDF.text(`CLIENTE: ${order.cliente?.nome || "-"}`, 20, yPos);
-      yPos += 10;
-      docPDF.text(`TEL: ${order.cliente?.telefone || "-"}`, 20, yPos);
-      yPos += 15;
+      // Pega a dataAgendamento formatada (ou dataCriacao caso queira)
+      const dataFormatada = formatDate(order.dataAgendamento);
 
-      // Para cada bicicleta, imprimir dados em fonte grande,
-      // se ultrapassar o limite, criamos uma nova página
+      // Para cada bicicleta, vamos imprimir esse "bloco" de informações
       order.bicicletas?.forEach((bike, index) => {
+        // Antes de cada bike, checa se precisa criar nova página
         if (yPos > 250) {
           docPDF.addPage();
-          yPos = 20;
+          yPos = 10;
         }
 
-        docPDF.setFontSize(16);
+        // OS e Bike
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(12);
+        docPDF.text(`OS: ${order.codigo} | Bike ${index + 1}`, 10, yPos);
+        yPos += 6;
+
+        // Cliente e Telefone
         docPDF.text(
-          `Bike ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
-          20,
+          `Cliente: ${order.cliente?.nome || "-"} | Tel: ${
+            order.cliente?.telefone || "-"
+          }`,
+          10,
           yPos
         );
-        yPos += 10;
+        yPos += 6;
 
-        // Observações (opcional)
-        if (order.observacoes) {
-          docPDF.setFontSize(14);
-          docPDF.setFont("helvetica", "bold");
-          docPDF.text("Observações:", 20, yPos);
-          yPos += 8;
-
-          docPDF.setFont("helvetica", "normal");
-          docPDF.text(`${order.observacoes}`, 20, yPos);
-          yPos += 12;
+        // Data
+        if (dataFormatada) {
+          docPDF.text(`Data: ${dataFormatada}`, 10, yPos);
+          yPos += 6;
         }
 
-        // Serviços
-        docPDF.setFont("helvetica", "bold");
-        docPDF.setFontSize(15);
-        docPDF.text("SERVIÇOS:", 20, yPos);
-        yPos += 10;
+        // Bicicleta
+        docPDF.text(
+          `Bicicleta: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
+          10,
+          yPos
+        );
+        yPos += 8;
+
+        // SERVIÇOS
+        docPDF.text("SERVIÇOS:", 10, yPos);
+        yPos += 5;
 
         docPDF.setFont("helvetica", "normal");
-        docPDF.setFontSize(14);
+        docPDF.setFontSize(11);
 
         let totalBike = 0;
+
         if (bike.services) {
-          Object.entries(bike.services).forEach(([serviceName, quantity]) => {
-            if (quantity > 0) {
+          const servicesArray = Object.entries(bike.services).filter(
+            ([, qty]) => qty > 0
+          );
+
+          if (servicesArray.length === 0) {
+            docPDF.text("Nenhum serviço.", 10, yPos);
+            yPos += 5;
+          } else {
+            servicesArray.forEach(([serviceName, quantity]) => {
+              // Valor do serviço
               const serviceValue = parseFloat(
                 bike.serviceValues?.[serviceName]?.valorFinal ||
                   bike.serviceValues?.[serviceName]?.valor ||
@@ -292,55 +316,106 @@ const WorkshopDashboard = () => {
               const subtotal = serviceValue * quantity;
               totalBike += subtotal;
 
+              // Verifica se precisa criar nova página
               if (yPos > 270) {
                 docPDF.addPage();
-                yPos = 20;
+                yPos = 10;
               }
+
               docPDF.text(
-                `• ${serviceName} (${quantity}x) = R$ ${subtotal.toFixed(2)}`,
-                20,
+                `- ${serviceName} (${quantity}x) = R$ ${subtotal.toFixed(2)}`,
+                10,
                 yPos
               );
-              yPos += 8;
-            }
-          });
+              yPos += 5;
+            });
+          }
+        } else {
+          docPDF.text("Nenhum serviço.", 10, yPos);
+          yPos += 5;
         }
 
-        // Peças (opcional)
-        if (bike.pecas && bike.pecas.length > 0) {
-          docPDF.setFont("helvetica", "bold");
-          docPDF.setFontSize(15);
-          yPos += 8;
-          docPDF.text("PEÇAS:", 20, yPos);
-          yPos += 10;
+        // PEÇAS
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(12);
+        docPDF.text("PEÇAS:", 10, yPos);
+        yPos += 5;
 
-          docPDF.setFont("helvetica", "normal");
-          docPDF.setFontSize(14);
+        docPDF.setFont("helvetica", "normal");
+        docPDF.setFontSize(11);
+
+        if (bike.pecas && bike.pecas.length > 0) {
           bike.pecas.forEach((peca) => {
             if (yPos > 270) {
               docPDF.addPage();
-              yPos = 20;
+              yPos = 10;
             }
             const valorPeca = parseFloat(peca.valor || 0);
             totalBike += valorPeca;
-            docPDF.text(`• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`, 20, yPos);
-            yPos += 8;
+
+            docPDF.text(
+              `- ${peca.nome} = R$ ${valorPeca.toFixed(2)}`,
+              10,
+              yPos
+            );
+            yPos += 5;
           });
+        } else {
+          docPDF.text("Nenhuma peça.", 10, yPos);
+          yPos += 5;
         }
 
-        yPos += 5;
+        // Subtotal da Bike
         docPDF.setFont("helvetica", "bold");
-        docPDF.setFontSize(14);
-        docPDF.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 20, yPos);
-        yPos += 15;
+        docPDF.setFontSize(12);
+        docPDF.text(
+          `Subtotal (Bike ${index + 1}): R$ ${totalBike.toFixed(2)}`,
+          10,
+          yPos
+        );
+        yPos += 10;
+
+        // Pequeno espaço entre as bikes
+      });
+      let totalGeral = 0;
+      order.bicicletas?.forEach((bike) => {
+        let subtotal = 0;
+        // Soma serviços
+        if (bike.services) {
+          Object.entries(bike.services).forEach(([serviceName, quantity]) => {
+            const serviceValue = parseFloat(
+              bike.serviceValues?.[serviceName]?.valorFinal ||
+                bike.serviceValues?.[serviceName]?.valor ||
+                0
+            );
+            subtotal += serviceValue * quantity;
+          });
+        }
+        // Soma peças
+        if (bike.pecas) {
+          bike.pecas.forEach((peca) => {
+            subtotal += parseFloat(peca.valor || 0);
+          });
+        }
+        totalGeral += subtotal;
       });
 
+      if (yPos > 270) {
+        docPDF.addPage();
+        yPos = 10;
+      }
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`Total da Ordem: R$ ${totalGeral.toFixed(2)}`, 10, yPos);
+
+      // Salva o PDF
       docPDF.save(`OS-Loja-${order.codigo}.pdf`);
     } catch (err) {
       console.error("Erro ao gerar PDF (Loja):", err);
       alert("Erro ao gerar PDF da loja. Tente novamente.");
     }
   };
+
   // --------------------------------------------------------------------------------
 
   // Componente OrderCard
@@ -931,7 +1006,8 @@ const WorkshopDashboard = () => {
                   {/* Subtotal de Serviços */}
                   {bike.services && Object.keys(bike.services).length > 0 && (
                     <div className="mt-2 text-right text-sm text-gray-600">
-                      Subtotal Serviços: {formatCurrency(calculateBikeTotal(bike))}
+                      Subtotal Serviços:{" "}
+                      {formatCurrency(calculateBikeTotal(bike))}
                     </div>
                   )}
 

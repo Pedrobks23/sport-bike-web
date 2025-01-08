@@ -372,12 +372,20 @@ function NewOrder() {
       docPDF.text(`Telefone: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
       yPos += 7;
 
-      docPDF.text(
-        `Consulte o andamento no site: ${window.location.origin}/consulta?os=${ordem.codigo}`,
-        20,
-        (yPos += 10)
-      );
+      // Link simplificado + mini tutorial
       yPos += 10;
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text("COMO CONSULTAR O ANDAMENTO DA SUA OS:", 20, yPos);
+      yPos += 7;
+
+      docPDF.setFont("helvetica", "normal");
+      const tutorialLinhas = [
+        "1. Acesse: https://sportbikece.vercel.app/consulta",
+        "2. Digite o número da OS (ex.: OS-202401001) ou seu telefone.",
+        "3. Clique no botão 'Consultar' para ver o status.",
+      ];
+      docPDF.text(tutorialLinhas, 20, yPos);
+      yPos += 20;
 
       let totalGeral = 0;
 
@@ -392,7 +400,7 @@ function NewOrder() {
         );
         yPos += 10;
 
-        // Cabeçalho da tabela
+        // Cabeçalho da "tabela"
         docPDF.setFont("helvetica", "bold");
         docPDF.text("Serviço", 20, yPos);
         docPDF.text("Qtd", 120, yPos);
@@ -491,18 +499,8 @@ function NewOrder() {
   async function generatePDFStore(ordem) {
     try {
       const docPDF = new jsPDF();
-      const pageWidth = docPDF.internal.pageSize.getWidth();
-      let yPos = 20; // um pouco mais no alto para caber mais conteúdo
-
-      // Helper para centralizar texto (se precisar)
-      const centerText = (text, y, fontSize = 16) => {
-        docPDF.setFontSize(fontSize);
-        const textWidth =
-          (docPDF.getStringUnitWidth(text) * docPDF.internal.getFontSize()) /
-          docPDF.internal.scaleFactor;
-        const x = (pageWidth - textWidth) / 2;
-        docPDF.text(text, x, y);
-      };
+      let yPos = 10; // posição vertical inicial
+      let totalGeral = 0; // soma de todos os subtotais de bikes
 
       // ------------------------------------------
       // Data de agendamento formatada
@@ -522,132 +520,180 @@ function NewOrder() {
         .toLocaleDateString("pt-BR", { weekday: "long" })
         .toUpperCase();
 
-      // Monta a string final
-      // Ficará algo como "02/02/2025 QUARTA-FEIRA"
+      // Ex.: "02/02/2025 QUARTA-FEIRA"
       const dataFormatada = `${dayNumber}/${monthNumber}/${year} ${dayName}`;
 
-      // ------------------------------------------
-      // Início do PDF
-      // ------------------------------------------
-
-      // Número da OS
-      docPDF.setFont("helvetica", "bold");
-      docPDF.setFontSize(18);
-      docPDF.text(`OS: ${ordem.codigo}`, 20, yPos);
-      yPos += 10;
-
-      // Nome e telefone do cliente
-      docPDF.text(`CLIENTE: ${ordem.cliente?.nome || "-"}`, 20, yPos);
-      yPos += 10;
-      docPDF.text(`TEL: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
-      yPos += 10;
-
-      // Data no formato desejado
-      docPDF.setFontSize(14);
-      docPDF.setFont("helvetica", "normal");
-      docPDF.text(`Data: ${dataFormatada}`, 20, yPos);
-      yPos += 15;
-
-      // ------------------------------------------
-      // Listagem das bicicletas/serviços/peças
-      // ------------------------------------------
+      // Percorre cada bicicleta para gerar um “bloco” separado
       ordem.bicicletas?.forEach((bike, index) => {
-        // Se estiver muito embaixo na página, pula pra próxima
-        if (yPos > 250) {
+        // Se estiver muito embaixo na página, cria nova página
+        if (yPos > 220) {
           docPDF.addPage();
-          yPos = 20;
+          yPos = 10;
         }
 
-        docPDF.setFontSize(16);
+        // ------------------------------------------
+        // Cabeçalho básico da bike
+        // ------------------------------------------
+        // Linha 1: OS + Índice da bike
         docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(11);
+        docPDF.text(`OS: ${ordem.codigo}  |  Bike ${index + 1}`, 10, yPos);
+        yPos += 5;
+
+        // Linha 2: Cliente + Telefone
         docPDF.text(
-          `Bike ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
-          20,
+          `Cliente: ${ordem.cliente?.nome || "-"}  |  Tel: ${
+            ordem.cliente?.telefone || "-"
+          }`,
+          10,
           yPos
         );
-        yPos += 10;
+        yPos += 5;
 
-        // Observações gerais
+        // Linha 3: Data
+        docPDF.setFont("helvetica", "normal");
+        docPDF.setFontSize(10);
+        docPDF.text(`Data: ${dataFormatada}`, 10, yPos);
+        yPos += 5;
+
+        // Linha 4: Detalhes da Bike
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(10);
+        docPDF.text(
+          `Bicicleta: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
+          10,
+          yPos
+        );
+        yPos += 5;
+
+        // ------------------------------------------
+        // Observações gerais (se existirem)
+        // ------------------------------------------
         if (ordem.observacoes) {
-          docPDF.setFontSize(14);
-          docPDF.setFont("helvetica", "bold");
-          docPDF.text("Observações Gerais:", 20, yPos);
-          yPos += 8;
+          docPDF.setFontSize(9);
+          docPDF.text("Observações Gerais:", 10, yPos);
+          yPos += 4;
 
           docPDF.setFont("helvetica", "normal");
-          docPDF.text(`${ordem.observacoes}`, 20, yPos);
-          yPos += 12;
+          const obsLinhas = docPDF.splitTextToSize(ordem.observacoes, 190);
+          obsLinhas.forEach((linha) => {
+            docPDF.text(linha, 10, yPos);
+            yPos += 4;
+          });
         }
 
-        // Lista de serviços
+        // ------------------------------------------
+        // Serviços
+        // ------------------------------------------
         docPDF.setFont("helvetica", "bold");
-        docPDF.setFontSize(15);
-        docPDF.text("SERVIÇOS:", 20, yPos);
-        yPos += 10;
+        docPDF.setFontSize(9);
+        yPos += 5;
+        docPDF.text("SERVIÇOS:", 10, yPos);
+        yPos += 4;
+
+        let totalBike = 0; // subtotal desta bike
 
         docPDF.setFont("helvetica", "normal");
-        docPDF.setFontSize(14);
-
-        let totalBike = 0;
         if (bike.services) {
-          Object.entries(bike.services).forEach(([serviceName, quantity]) => {
-            if (quantity > 0) {
+          const servicosEntries = Object.entries(bike.services).filter(
+            ([, quantity]) => quantity > 0
+          );
+
+          if (servicosEntries.length === 0) {
+            docPDF.text("Nenhum serviço selecionado.", 10, yPos);
+            yPos += 4;
+          } else {
+            servicosEntries.forEach(([serviceName, quantity]) => {
+              // Valor do serviço
               const serviceValue =
                 bike.serviceValues?.[serviceName]?.valorFinal ||
                 bike.serviceValues?.[serviceName]?.valor ||
                 availableServices[serviceName] ||
                 0;
-
               const subtotal = serviceValue * quantity;
               totalBike += subtotal;
 
               if (yPos > 270) {
                 docPDF.addPage();
-                yPos = 20;
+                yPos = 10;
               }
 
               docPDF.text(
                 `• ${serviceName} (${quantity}x) = R$ ${subtotal.toFixed(2)}`,
-                20,
+                10,
                 yPos
               );
-              yPos += 8;
-            }
-          });
+              yPos += 4;
+            });
+          }
+        } else {
+          docPDF.text("Nenhum serviço selecionado.", 10, yPos);
+          yPos += 4;
         }
 
-        // Se tiver peças
-        if (bike.pecas && bike.pecas.length > 0) {
-          docPDF.setFont("helvetica", "bold");
-          docPDF.setFontSize(15);
-          yPos += 8;
-          docPDF.text("PEÇAS:", 20, yPos);
-          yPos += 10;
+        // ------------------------------------------
+        // Peças
+        // ------------------------------------------
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(9);
+        yPos += 4;
+        docPDF.text("PEÇAS:", 10, yPos);
+        yPos += 4;
 
-          docPDF.setFont("helvetica", "normal");
-          docPDF.setFontSize(14);
+        docPDF.setFont("helvetica", "normal");
+        if (bike.pecas && bike.pecas.length > 0) {
           bike.pecas.forEach((peca) => {
             if (yPos > 270) {
               docPDF.addPage();
-              yPos = 20;
+              yPos = 10;
             }
             const valorPeca = parseFloat(peca.valor || 0);
             totalBike += valorPeca;
             docPDF.text(
               `• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`,
-              20,
+              10,
               yPos
             );
-            yPos += 8;
+            yPos += 4;
           });
+        } else {
+          docPDF.text("Nenhuma peça.", 10, yPos);
+          yPos += 4;
         }
 
-        yPos += 5;
+        // ------------------------------------------
+        // Subtotal da Bike
+        // ------------------------------------------
+        yPos += 4;
         docPDF.setFont("helvetica", "bold");
-        docPDF.setFontSize(14);
-        docPDF.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 20, yPos);
-        yPos += 15;
+        docPDF.setFontSize(9);
+        docPDF.text(
+          `Subtotal (Bike ${index + 1}): R$ ${totalBike.toFixed(2)}`,
+          10,
+          yPos
+        );
+        yPos += 8;
+
+        // Soma esse subtotal ao total geral
+        totalGeral += totalBike;
       });
+
+      // ------------------------------------------
+      // TOTAL GERAL
+      // ------------------------------------------
+      // Checa se precisamos de uma nova página
+      if (yPos > 270) {
+        docPDF.addPage();
+        yPos = 10;
+      }
+
+      docPDF.setFont("helvetica", "bold");
+      docPDF.setFontSize(10);
+      docPDF.text(
+        `VALOR TOTAL DA ORDEM: R$ ${totalGeral.toFixed(2)}`,
+        10,
+        yPos
+      );
 
       // Salva o PDF
       docPDF.save(`OS-Loja-${ordem.codigo}.pdf`);
