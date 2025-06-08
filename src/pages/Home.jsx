@@ -42,6 +42,90 @@ export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [showFeatured, setShowFeatured] = useState(true);
 
+  const services = [
+    {
+      icon: <Bike className="w-8 h-8" />,
+      title: "Vendas de Bikes",
+      description: "Bikes de alta qualidade para todos os perfis e modalidades",
+    },
+    {
+      icon: <Wrench className="w-8 h-8" />,
+      title: "Oficina Especializada",
+      description: "Manutenção e reparo com 25 anos de experiência",
+    },
+    {
+      icon: <Trophy className="w-8 h-8" />,
+      title: "Aluguel de Bikes",
+      description: "Alugue bikes premium para suas aventuras",
+    },
+    {
+      icon: <Settings className="w-8 h-8" />,
+      title: "Peças e Acessórios",
+      description: "Componentes originais e acessórios de qualidade",
+    },
+  ];
+
+  const testimonials = [
+    {
+      name: "Carlos Silva",
+      text: "Excelente atendimento! Comprei minha bike aqui e o suporte pós-venda é excepcional.",
+      rating: 5,
+    },
+    {
+      name: "Ana Costa",
+      text: "25 anos de tradição fazem toda a diferença. Profissionais experientes e produtos de qualidade.",
+      rating: 5,
+    },
+    {
+      name: "João Santos",
+      text: "A oficina é top! Minha bike ficou como nova. Recomendo para todos os ciclistas.",
+      rating: 5,
+    },
+  ];
+
+  const benefits = [
+    { icon: <Truck className="w-5 h-5" />, text: "Frete Grátis Fortaleza" },
+    { icon: <Shield className="w-5 h-5" />, text: "Garantia" },
+    { icon: <CreditCard className="w-5 h-5" />, text: "12x Sem Juros" },
+    { icon: <Award className="w-5 h-5" />, text: "25 Anos de Tradição" },
+  ];
+
+  const faqData = [
+    {
+      question: "Como funciona o aluguel de bikes?",
+      answer:
+        "Oferecemos aluguel por dia ou semana. Reservas podem ser feitas via WhatsApp ou presencialmente. ",
+    },
+    {
+      question: "Qual a garantia dos produtos?",
+      answer:
+        "Bikes novas têm garantia de 2 anos para quadro e 1 ano para componentes. Peças e acessórios seguem garantia do fabricante. Oferecemos suporte técnico completo.",
+    },
+    {
+      question: "Fazem revisão de bikes?",
+      answer:
+        "Sim! Nossa oficina atende bikes de qualquer modelo ou marca. Temos 25 anos de experiência e técnicos especializados em todas as modalidades.",
+    },
+    {
+      question: "Posso parcelar minha compra?",
+      answer:
+        "Sim! Aceitamos cartão em até 12x sem juros para bikes. Também trabalhamos com PIX à vista com desconto especial.",
+    },
+  ];
+
+  const officeServices = [
+    "Manutenção preventiva completa",
+    "Troca de pneus e câmaras",
+    "Ajuste de freios e marchas",
+    "Limpeza e lubrificação da corrente",
+    "Regulagem de suspensão",
+    "Troca de cabos e conduítes",
+    "Centramento de rodas",
+    "Substituição de peças desgastadas",
+    "Revisão geral da bike",
+    "Upgrade de componentes",
+  ];
+
   // access admin area shortcut
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -107,91 +191,6 @@ export default function Home() {
     }
   };
 
-  const services = [
-    {
-      icon: <Bike className="w-8 h-8" />,
-      title: "Vendas de Bikes",
-      description: "Bikes de alta qualidade para todos os perfis e modalidades",
-    },
-    {
-      icon: <Wrench className="w-8 h-8" />,
-      title: "Oficina Especializada",
-      description: "Manuten\u00e7\u00e3o e reparo com 25 anos de experi\u00eancia",
-    },
-    {
-      icon: <Trophy className="w-8 h-8" />,
-      title: "Aluguel de Bikes",
-      description: "Alugue bikes premium para suas aventuras",
-    },
-    {
-      icon: <Settings className="w-8 h-8" />,
-      title: "Pe\u00e7as e Acess\u00f3rios",
-      description: "Componentes originais e acess\u00f3rios de qualidade",
-    },
-  ];
-
-  // produtos em destaque carregados do banco
-
-  const testimonials = [
-    {
-      name: "Carlos Silva",
-      text: "Excelente atendimento! Comprei minha bike aqui e o suporte p\u00f3s-venda \u00e9 excepcional.",
-      rating: 5,
-    },
-    {
-      name: "Ana Costa",
-      text: "25 anos de tradi\u00e7\u00e3o fazem toda a diferen\u00e7a. Profissionais experientes e produtos de qualidade.",
-      rating: 5,
-    },
-    {
-      name: "Jo\u00e3o Santos",
-      text: "A oficina \u00e9 top! Minha bike ficou como nova. Recomendo para todos os ciclistas.",
-      rating: 5,
-    },
-  ];
-
-  const benefits = [
-    { icon: <Truck className="w-5 h-5" />, text: "Frete Gr\u00e1tis Fortaleza" },
-    { icon: <Shield className="w-5 h-5" />, text: "Garantia" },
-    { icon: <CreditCard className="w-5 h-5" />, text: "12x Sem Juros" },
-    { icon: <Award className="w-5 h-5" />, text: "25 Anos de Tradi\u00e7\u00e3o" },
-  ];
-
-  const faqData = [
-    {
-      question: "Como funciona o aluguel de bikes?",
-      answer:
-        "Oferecemos aluguel por dia ou semana. Reservas podem ser feitas via WhatsApp ou presencialmente. ",
-    },
-    {
-      question: "Qual a garantia dos produtos?",
-      answer:
-        "Bikes novas t\u00eam garantia de 2 anos para quadro e 1 ano para componentes. Pe\u00e7as e acess\u00f3rios seguem garantia do fabricante. Oferecemos suporte t\u00e9cnico completo.",
-    },
-    {
-      question: "Fazem revis\u00e3o de bikes?",
-      answer:
-        "Sim! Nossa oficina atende bikes de qualquer modelo ou marca. Temos 25 anos de experi\u00eancia e t\u00e9cnicos especializados em todas as modalidades.",
-    },
-    {
-      question: "Posso parcelar minha compra?",
-      answer:
-        "Sim! Aceitamos cart\u00e3o em at\u00e9 12x sem juros para bikes. Tamb\u00e9m trabalhamos com PIX \u00e0 vista com desconto especial.",
-    },
-  ];
-
-  const officeServices = [
-    "Manuten\u00e7\u00e3o preventiva completa",
-    "Troca de pneus e c\u00e2maras",
-    "Ajuste de freios e marchas",
-    "Limpeza e lubrifica\u00e7\u00e3o da corrente",
-    "Regulagem de suspens\u00e3o",
-    "Troca de cabos e condu\u00edtes",
-    "Centramento de rodas",
-    "Substitui\u00e7\u00e3o de pe\u00e7as desgastadas",
-    "Revis\u00e3o geral da bike",
-    "Upgrade de componentes",
-  ];
 
   const handleConsultarOS = () => {
     navigate("/consulta");
