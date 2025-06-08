@@ -204,9 +204,9 @@ export default function Home() {
 
   const handleServiceClick = (serviceType) => {
     const messages = {
-      vendas: "Ol\u00e1! Gostaria de saber sobre os modelos de bikes dispon\u00edveis para venda.",
-      aluguel: "Ol\u00e1! Tenho interesse em alugar uma bike. Podem me informar sobre disponibilidade e pre\u00e7os?",
-      pecas: "Ol\u00e1! Estou procurando pe\u00e7as e acess\u00f3rios para minha bike. Podem me ajudar?",
+      vendas: "Olá! Gostaria de saber sobre os modelos de bikes disponíveis para venda.",
+      aluguel: "Olá! Tenho interesse em alugar uma bike. Podem me informar sobre disponibilidade e preços?",
+      pecas: "Olá! Estou procurando peças e acessórios para minha bike. Podem me ajudar?",
     };
     if (serviceType === "oficina") {
       setIsOfficeModalOpen(true);
@@ -216,7 +216,7 @@ export default function Home() {
   };
 
   const handleOfficeServiceClick = (service) => {
-    const message = `Ol\u00e1! Gostaria de fazer ${service.toLowerCase()} na minha bicicleta. Podem me ajudar?`;
+    const message = `Olá! Gostaria de fazer ${service.toLowerCase()} na minha bicicleta. Podem me ajudar?`;
     handleWhatsApp(message);
     setIsOfficeModalOpen(false);
   };
@@ -258,7 +258,7 @@ export default function Home() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-8">
                 <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  Servi\u00e7os
+                  Serviços
                 </a>
                 <a href="#sobre" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                   Sobre
@@ -268,7 +268,7 @@ export default function Home() {
                 </a>
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                    onClick={() => handleWhatsApp("Olá! Vim através do site.")}
                     className="text-green-500 hover:text-green-600 transition-colors"
                     title="WhatsApp"
                   >
@@ -309,7 +309,7 @@ export default function Home() {
               <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col space-y-4 pt-4">
                   <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                    Servi\u00e7os
+                    Serviços
                   </a>
                   <a href="#sobre" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                     Sobre
@@ -319,7 +319,7 @@ export default function Home() {
                   </a>
                   <div className="flex items-center space-x-4">
                     <button
-                      onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                      onClick={() => handleWhatsApp("Olá! Vim através do site.")}
                       className="text-green-500 hover:text-green-600 transition-colors"
                     >
                       <MessageCircle className="w-5 h-5" />
@@ -361,11 +361,11 @@ export default function Home() {
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
               25 Anos de
               <span className="block bg-gradient-to-r from-amber-300 to-white bg-clip-text text-transparent">
-                Paix\u00e3o por Bikes
+                Paixão por Bikes
               </span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-              A Sport & Bike \u00e9 refer\u00eancia em Fortaleza. Vendas, manuten\u00e7\u00e3o, aluguel e experi\u00eancias \u00fanicas no mundo do
+              A Sport & Bike é referência em Fortaleza. Vendas, manutenção, aluguel e experiências únicas no mundo do
               ciclismo.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -373,10 +373,10 @@ export default function Home() {
                 onClick={handleConsultarOS}
                 className="bg-white text-gray-800 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl"
               >
-                Consultar Ordem de Servi\u00e7o
+                Consultar Ordem de Serviço
               </button>
               <button
-                onClick={() => handleWhatsApp("Ol\u00e1! Gostaria de alugar uma bike.")}
+                onClick={() => handleWhatsApp("Olá! Gostaria de alugar uma bike.")}
                 className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105"
               >
                 Alugue sua Bike Hoje
@@ -399,7 +399,7 @@ export default function Home() {
                 Produtos em Destaque
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Confira nossa sele\u00e7\u00e3o especial de bikes e acess\u00f3rios
+                Confira nossa seleção especial de bikes e acessórios
               </p>
             </div>
             <div className="relative max-w-4xl mx-auto">
@@ -423,7 +423,7 @@ export default function Home() {
                     <button
                       onClick={() =>
                         handleWhatsApp(
-                          `Ol\u00e1! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informa\u00e7\u00f5es?`
+                          `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`
                         )
                       }
                       className="bg-white text-amber-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
@@ -469,9 +469,9 @@ export default function Home() {
         <section id="servicos" className="py-20 bg-gray-50 dark:bg-gray-900">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Nossos Servi\u00e7os</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Nossos Serviços</h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Solu\u00e7\u00f5es completas para todos os tipos de ciclistas
+                Soluções completas para todos os tipos de ciclistas
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -500,7 +500,7 @@ export default function Home() {
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Perguntas Frequentes</h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Tire suas d\u00favidas sobre nossos servi\u00e7os
+                Tire suas dúvidas sobre nossos serviços
               </p>
             </div>
             <div className="max-w-3xl mx-auto space-y-4">
@@ -576,10 +576,10 @@ export default function Home() {
           <div className="container mx-auto px-4 text-center text-white">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Aluguel de Bikes Premium</h2>
             <p className="text-xl mb-8 max-w-2xl mx-auto">
-              Explore Fortaleza com nossas bikes de alta qualidade. Tarifas especiais para grupos e fam\u00edlias.
+              Explore Fortaleza com nossas bikes de alta qualidade. Tarifas especiais para grupos e famílias.
             </p>
             <button
-              onClick={() => handleWhatsApp("Ol\u00e1! Gostaria de informa\u00e7\u00f5es sobre aluguel de bikes.")}
+              onClick={() => handleWhatsApp("Olá! Gostaria de informações sobre aluguel de bikes.")}
               className="bg-white text-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl inline-flex items-center space-x-2"
             >
               <MessageCircle className="w-6 h-6" />
@@ -593,7 +593,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Visite Nossa Loja</h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados no cora\u00e7\u00e3o de Fortaleza</p>
+              <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados no coração de Fortaleza</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
@@ -605,14 +605,14 @@ export default function Home() {
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Localiza\u00e7\u00e3o Sport & Bike"
+                  title="Localização Sport & Bike"
                 ></iframe>
               </div>
               <div className="space-y-8">
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
                     <MapPin className="w-6 h-6 text-amber-500" />
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Endere\u00e7o</h3>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Endereço</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
                     Rua das Bikes, 123
@@ -636,19 +636,19 @@ export default function Home() {
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
                     <Clock className="w-6 h-6 text-amber-500" />
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Hor\u00e1rio</h3>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Horário</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Segunda a Sexta: 8h \u00e0s 18h
+                    Segunda a Sexta: 8h às 18h
                     <br />
-                    S\u00e1bado: 8h \u00e0s 16h
+                    Sábado: 8h às 16h
                     <br />
                     Domingo: Fechado
                   </p>
                 </div>
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                    onClick={() => handleWhatsApp("Olá! Vim através do site.")}
                     className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-full hover:shadow-lg transition-all transform hover:scale-110"
                   >
                     <MessageCircle className="w-6 h-6" />
@@ -668,7 +668,7 @@ export default function Home() {
         {/* WhatsApp Floating Button */}
         <div className="fixed bottom-6 right-6 z-50">
           <button
-            onClick={() => handleWhatsApp("Ol\u00e1! Preciso de ajuda.")}
+            onClick={() => handleWhatsApp("Olá! Preciso de ajuda.")}
             className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 animate-pulse"
             title="Fale conosco no WhatsApp"
           >
@@ -682,7 +682,7 @@ export default function Home() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Servi\u00e7os da Oficina</h3>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Serviços da Oficina</h3>
                   <button
                     onClick={() => setIsOfficeModalOpen(false)}
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
@@ -691,7 +691,7 @@ export default function Home() {
                   </button>
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mt-2">
-                  Clique no servi\u00e7o desejado para solicitar via WhatsApp
+                  Clique no serviço desejado para solicitar via WhatsApp
                 </p>
               </div>
               <div className="p-6">
@@ -723,7 +723,7 @@ export default function Home() {
                   <img src="/assets/Logo.png" alt="Sport & Bike" className="w-8 h-8" />
                   <span className="text-2xl font-bold">Sport & Bike</span>
                 </div>
-                <p className="text-gray-400">25 anos de tradi\u00e7\u00e3o e excel\u00eancia no mundo do ciclismo em Fortaleza.</p>
+                <p className="text-gray-400">25 anos de tradição e excelência no mundo do ciclismo em Fortaleza.</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold mb-4">Contato</h4>
@@ -737,7 +737,7 @@ export default function Home() {
                 <h4 className="text-lg font-bold mb-4">Redes Sociais</h4>
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                    onClick={() => handleWhatsApp("Olá! Vim através do site.")}
                     className="bg-green-500 p-3 rounded-full hover:bg-green-600 transition-colors"
                   >
                     <MessageCircle className="w-5 h-5" />
@@ -752,7 +752,7 @@ export default function Home() {
               </div>
             </div>
             <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-              <p className="text-gray-400 mb-4">\u00a9 {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.</p>
+              <p className="text-gray-400 mb-4">© {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.</p>
               <button
                 onClick={() => {
                   onAuthStateChanged(auth, (user) => {
@@ -765,7 +765,7 @@ export default function Home() {
                 }}
                 className="text-amber-500 hover:text-amber-400 transition-colors text-sm"
               >
-                Acesso Funcion\u00e1rios
+                Acesso Funcionários
               </button>
             </div>
           </div>

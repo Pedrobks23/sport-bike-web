@@ -12,6 +12,19 @@ import { PlusCircle, ArrowLeft, Edit, Trash } from "lucide-react";
 
 const emptyProduct = { name: "", price: "", image: "", category: "" };
 
+const normalizeImageUrl = (url) => {
+  if (!url) return url;
+  const match = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) {
+    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  }
+  const alt = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (alt) {
+    return `https://drive.google.com/uc?export=view&id=${alt[1]}`;
+  }
+  return url;
+};
+
 const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   const [formData, setFormData] = useState(product || emptyProduct);
 
@@ -22,7 +35,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    const data = { ...formData, image: normalizeImageUrl(formData.image.trim()) };
+    onSave(data);
   };
 
   return (
@@ -44,7 +58,20 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">URL da Imagem</label>
-            <input name="image" value={formData.image} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
+            <input
+              name="image"
+              value={formData.image}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+            {formData.image && (
+              <img
+                src={normalizeImageUrl(formData.image)}
+                alt="Pré-visualização"
+                className="mt-2 w-full h-40 object-cover rounded"
+              />
+            )}
           </div>
           <div className="flex justify-end gap-4 mt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600">Cancelar</button>
