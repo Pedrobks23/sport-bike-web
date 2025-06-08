@@ -48,6 +48,8 @@ const WorkshopDashboard = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBikeIndex, setSelectedBikeIndex] = useState(null);
   const [selectedPeca, setSelectedPeca] = useState(null);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showPartModal, setShowPartModal] = useState(false);
   const [serviceTable, setServiceTable] = useState({});
 
   // Função para verificar se uma data está dentro do período
@@ -580,9 +582,15 @@ const WorkshopDashboard = () => {
     );
   };
   // Componente OrderDetails
-  const OrderDetails = ({ order, onUpdate, onClose }) => {
-    const [showServiceModal, setShowServiceModal] = useState(false);
-    const [showPartModal, setShowPartModal] = useState(false);
+  const OrderDetails = ({
+    order,
+    onUpdate,
+    onClose,
+    showServiceModal,
+    setShowServiceModal,
+    showPartModal,
+    setShowPartModal,
+  }) => {
     const [showObsModal, setShowObsModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [localOrder, setLocalOrder] = useState(order);
@@ -591,6 +599,15 @@ const WorkshopDashboard = () => {
     useEffect(() => {
       setLocalOrder(order);
     }, [order]);
+
+    // Loga mudanças nos modais para rastrear montagens/desmontagens
+    useEffect(() => {
+      console.log('showServiceModal changed:', showServiceModal);
+    }, [showServiceModal]);
+
+    useEffect(() => {
+      console.log('showPartModal changed:', showPartModal);
+    }, [showPartModal]);
 
     // Função auxiliar para calcular valor com desconto
     const calculateServiceValue = (serviceName, serviceData, quantity) => {
@@ -678,6 +695,7 @@ const WorkshopDashboard = () => {
 
     // Manipulador de adição de serviço
     const handleAddService = async (bikeIndex, serviceData) => {
+      console.log('handleAddService start', { bikeIndex, selectedBikeIndex });
       try {
         await updateLocalAndParent(async () => {
           const serviceName = serviceData.nome;
@@ -729,6 +747,7 @@ const WorkshopDashboard = () => {
           setLocalOrder(updatedOrder);
         });
         setShowServiceModal(false);
+        console.log('handleAddService end', { bikeIndex, selectedBikeIndex });
       } catch (error) {
         console.error("Erro ao adicionar serviço:", error);
         alert("Erro ao adicionar serviço. Por favor, tente novamente.");
@@ -762,6 +781,7 @@ const WorkshopDashboard = () => {
 
     // Manipulador de adição de peça
     const handleAddPart = async (bikeIndex, partData) => {
+      console.log('handleAddPart start', { bikeIndex, selectedBikeIndex });
       try {
         await updateLocalAndParent(async () => {
           await addPartToBike(localOrder.id, bikeIndex, partData);
@@ -778,6 +798,7 @@ const WorkshopDashboard = () => {
           setLocalOrder(updatedOrder);
         });
         setShowPartModal(false);
+        console.log('handleAddPart end', { bikeIndex, selectedBikeIndex });
       } catch (error) {
         console.error("Erro ao adicionar peça:", error);
         alert("Erro ao adicionar peça. Por favor, tente novamente.");
@@ -1679,6 +1700,10 @@ const WorkshopDashboard = () => {
               order={selectedOrder}
               onUpdate={handleOrderUpdate}
               onClose={() => setShowModal(false)}
+              showServiceModal={showServiceModal}
+              setShowServiceModal={setShowServiceModal}
+              showPartModal={showPartModal}
+              setShowPartModal={setShowPartModal}
             />
           )}
         </div>
