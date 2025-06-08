@@ -592,6 +592,15 @@ const WorkshopDashboard = () => {
       setLocalOrder(order);
     }, [order]);
 
+    // Loga mudanças nos modais para rastrear montagens/desmontagens
+    useEffect(() => {
+      console.log('showServiceModal changed:', showServiceModal);
+    }, [showServiceModal]);
+
+    useEffect(() => {
+      console.log('showPartModal changed:', showPartModal);
+    }, [showPartModal]);
+
     // Função auxiliar para calcular valor com desconto
     const calculateServiceValue = (serviceName, serviceData, quantity) => {
       if (!serviceData) return 0;
@@ -678,6 +687,7 @@ const WorkshopDashboard = () => {
 
     // Manipulador de adição de serviço
     const handleAddService = async (bikeIndex, serviceData) => {
+      console.log('handleAddService start', { bikeIndex, selectedBikeIndex });
       try {
         await updateLocalAndParent(async () => {
           const serviceName = serviceData.nome;
@@ -729,6 +739,7 @@ const WorkshopDashboard = () => {
           setLocalOrder(updatedOrder);
         });
         setShowServiceModal(false);
+        console.log('handleAddService end', { bikeIndex, selectedBikeIndex });
       } catch (error) {
         console.error("Erro ao adicionar serviço:", error);
         alert("Erro ao adicionar serviço. Por favor, tente novamente.");
@@ -762,6 +773,7 @@ const WorkshopDashboard = () => {
 
     // Manipulador de adição de peça
     const handleAddPart = async (bikeIndex, partData) => {
+      console.log('handleAddPart start', { bikeIndex, selectedBikeIndex });
       try {
         await updateLocalAndParent(async () => {
           await addPartToBike(localOrder.id, bikeIndex, partData);
@@ -778,6 +790,7 @@ const WorkshopDashboard = () => {
           setLocalOrder(updatedOrder);
         });
         setShowPartModal(false);
+        console.log('handleAddPart end', { bikeIndex, selectedBikeIndex });
       } catch (error) {
         console.error("Erro ao adicionar peça:", error);
         alert("Erro ao adicionar peça. Por favor, tente novamente.");
