@@ -365,6 +365,7 @@ const ServicesManagement = () => {
       {showEditModal && selectedService && (
         <ServiceModal
           isEdit={true}
+          selectedService={selectedService}
           onClose={() => {
             setShowEditModal(false);
             setSelectedService(null);
