@@ -38,13 +38,11 @@ const Admin = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Card Oficina */}
           <div
-            onClick={() => navigate("/admin/workshop")}
+            onClick={() => navigate("/admin/receipts")}
             className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           >
-            <h2 className="text-xl font-bold text-[#333] mb-2">Oficina</h2>
-            <p className="text-gray-600">
-              Visualizar e gerenciar fila de serviços por dia
-            </p>
+            <h2 className="text-xl font-bold text-[#333] mb-2">Recibos</h2>
+            <p className="text-gray-600">Emitir e gerenciar recibos</p>
           </div>
 
           {/* Card Nova Ordem de Serviço */}
