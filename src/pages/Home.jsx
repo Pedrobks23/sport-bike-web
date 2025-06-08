@@ -98,7 +98,7 @@ export default function Home() {
     { icon: <Truck className="w-5 h-5" />, text: "Frete Grátis Fortaleza" },
     { icon: <Shield className="w-5 h-5" />, text: "Garantia" },
     { icon: <CreditCard className="w-5 h-5" />, text: "12x Sem Juros" },
-    { icon: <Award className="w-5 h-5" />, text: "25 Anos de Tradição" },
+    { icon: <Award className="w-5 h-5" />, text: "25 Anos de Experiência" },
   ];
 
   const faqData = [
@@ -243,7 +243,7 @@ export default function Home() {
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center space-x-8 animate-pulse">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 animate-pulse">
               {benefits.map((benefit, index) => (
                 <div key={index} className="flex items-center space-x-2 text-sm font-medium">
                   {benefit.icon}
@@ -378,8 +378,8 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-              A Sport & Bike é referência em Fortaleza. Vendas, manutenção, aluguel e experiências únicas no mundo do
-              ciclismo.
+              Loja de bicicletas desde 1999. Vendas de bicicleta e artigos esportivos,
+              oficina especializada e aluguéis de bikes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
@@ -628,11 +628,7 @@ export default function Home() {
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Endereço</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Rua das Bikes, 123
-                    <br />
-                    Centro, Fortaleza - CE
-                    <br />
-                    CEP: 60000-000
+                    R. Ana Bilhar, 1680 - Varjota, Fortaleza - CE
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
@@ -641,9 +637,9 @@ export default function Home() {
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Telefones</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
-                    (85) 3333-4444
+                    (85) 3267-7425 | (85) 3122-5874
                     <br />
-                    (85) 99999-9999
+                    WhatsApp: (85) 3267-7425
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
@@ -736,13 +732,13 @@ export default function Home() {
                   <img src="/assets/Logo.png" alt="Sport & Bike" className="w-8 h-8" />
                   <span className="text-2xl font-bold">Sport & Bike</span>
                 </div>
-                <p className="text-gray-400">25 anos de tradição e excelência no mundo do ciclismo em Fortaleza.</p>
+                <p className="text-gray-400">Desde 1999 oferecendo o melhor do ciclismo em Fortaleza.</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold mb-4">Contato</h4>
                 <div className="space-y-2 text-gray-400">
-                  <p>(85) 3333-4444</p>
-                  <p>(85) 99999-9999</p>
+                  <p>(85) 3267-7425 | (85) 3122-5874</p>
+                  <p>WhatsApp: (85) 3267-7425</p>
                   <p>contato@sportbike.com.br</p>
                 </div>
               </div>

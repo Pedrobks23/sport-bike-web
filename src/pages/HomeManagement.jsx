@@ -94,7 +94,7 @@ const HomeManagement = () => {
       getFeaturedProducts(),
       getHomeSettings(),
     ]);
-    setProducts(prods);
+    setProducts(prods.map((p) => ({ ...p, image: normalizeImageUrl(p.image) })));
     setShowFeatured(settings.showFeaturedProducts ?? true);
     setLoading(false);
   };
