@@ -418,6 +418,155 @@ const WorkshopDashboard = () => {
     }
   };
 
+  const generatePDFClient = async (order) => {
+    try {
+      const docPDF = new jsPDF();
+      const pageWidth = docPDF.internal.pageSize.getWidth();
+      let yPos = 50;
+
+      const centerText = (text, y) => {
+        const textWidth =
+          (docPDF.getStringUnitWidth(text) * docPDF.internal.getFontSize()) /
+          docPDF.internal.scaleFactor;
+        const x = (pageWidth - textWidth) / 2;
+        docPDF.text(text, x, y);
+      };
+
+      const logoImg = new Image();
+      logoImg.src = "/assets/Logo.png";
+      await new Promise((resolve) => {
+        logoImg.onload = resolve;
+      });
+
+      docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      docPDF.setFontSize(16);
+      docPDF.setFont("helvetica", "bold");
+      centerText("ORDEM DE SERVIÇO", 20);
+
+      docPDF.setFontSize(10);
+      docPDF.setFont("helvetica", "normal");
+      centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
+      centerText(
+        "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
+        35
+      );
+      centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
+
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`OS: ${order.codigo}`, 20, yPos);
+      yPos += 10;
+
+      const dataCriacao = new Date(order.dataCriacao);
+      const dataAgendamento = new Date(order.dataAgendamento);
+
+      docPDF.text(`Criada em: ${dataCriacao.toLocaleString("pt-BR")}`, 20, yPos);
+      yPos += 10;
+      docPDF.text(
+        `Agendada para: ${dataAgendamento.toLocaleDateString("pt-BR")}`,
+        20,
+        yPos
+      );
+      yPos += 15;
+
+      docPDF.text("DADOS DO CLIENTE", 20, yPos);
+      yPos += 10;
+      docPDF.setFont("helvetica", "normal");
+      docPDF.text(`Nome: ${order.cliente?.nome || "-"}`, 20, yPos);
+      yPos += 7;
+      docPDF.text(`Telefone: ${order.cliente?.telefone || "-"}`, 20, yPos);
+      yPos += 7;
+
+      yPos += 10;
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text("COMO CONSULTAR O ANDAMENTO DA SUA OS:", 20, yPos);
+      yPos += 7;
+
+      docPDF.setFont("helvetica", "normal");
+      const tutorialLinhas = [
+        "1. Acesse: https://sportbikece.vercel.app/consulta",
+        "2. Digite o número da OS ou seu telefone.",
+        "3. Clique em 'Consultar' para ver o status.",
+      ];
+      docPDF.text(tutorialLinhas, 20, yPos);
+      yPos += 20;
+
+      let totalGeral = 0;
+
+      order.bicicletas?.forEach((bike, index) => {
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text(
+          `Bicicleta ${index + 1}: ${bike.marca} - ${bike.modelo} - ${bike.cor}`,
+          20,
+          yPos
+        );
+        yPos += 10;
+
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text("Serviço", 20, yPos);
+        docPDF.text("Qtd", 120, yPos);
+        docPDF.text("Valor", 150, yPos);
+        yPos += 8;
+
+        let totalBike = 0;
+
+        docPDF.setFont("helvetica", "normal");
+        if (bike.services) {
+          Object.entries(bike.services).forEach(([serviceName, quantity]) => {
+            if (quantity > 0) {
+              const serviceValue =
+                bike.serviceValues?.[serviceName]?.valorFinal ||
+                bike.serviceValues?.[serviceName]?.valor ||
+                serviceTable[serviceName] ||
+                0;
+              const subtotal = serviceValue * quantity;
+              totalBike += subtotal;
+
+              docPDF.text(`• ${serviceName}`, 20, yPos);
+              docPDF.text(`${quantity}`, 120, yPos);
+              docPDF.text(`R$ ${subtotal.toFixed(2)}`, 150, yPos);
+              yPos += 7;
+            }
+          });
+        }
+
+        if (bike.pecas && bike.pecas.length > 0) {
+          yPos += 5;
+          docPDF.setFont("helvetica", "bold");
+          docPDF.text("PEÇAS:", 20, yPos);
+          yPos += 7;
+
+          docPDF.setFont("helvetica", "normal");
+          bike.pecas.forEach((peca) => {
+            const valorPeca = parseFloat(peca.valor) || 0;
+            totalBike += valorPeca;
+            docPDF.text(`• ${peca.nome}`, 20, yPos);
+            docPDF.text(`R$ ${valorPeca.toFixed(2)}`, 150, yPos);
+            yPos += 7;
+          });
+        }
+
+        totalGeral += totalBike;
+        yPos += 5;
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 120, yPos);
+        yPos += 15;
+
+        if (yPos > 250) {
+          docPDF.addPage();
+          yPos = 20;
+        }
+      });
+
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 20, yPos);
+
+      docPDF.save(`OS-Cliente-${order.codigo}.pdf`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF (Cliente):", err);
+    }
+  };
+
   // --------------------------------------------------------------------------------
 
   // Componente OrderCard
@@ -1141,6 +1290,12 @@ const WorkshopDashboard = () => {
                   className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700"
                 >
                   Imprimir Versão Loja
+                </button>
+                <button
+                  onClick={() => generatePDFClient(localOrder)}
+                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                >
+                  Imprimir Versão Cliente
                 </button>
                 {/* ----------------------------------------------------- */}
               </div>
