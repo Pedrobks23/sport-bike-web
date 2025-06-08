@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Phone,
   MapPin,
@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Menu,
   X,
+  Play,
+  Pause,
   ShoppingCart,
   Award,
   Truck,
@@ -48,10 +50,12 @@ export default function Home() {
   const [currentProduct, setCurrentProduct] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [showFeatured, setShowFeatured] = useState(true);
+  const videoRef = useRef(null);
 
   const services = [
     {
@@ -174,6 +178,17 @@ export default function Home() {
     };
     fetchData();
   }, []);
+
+  // sync video playback state
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (isVideoPlaying) {
+      vid.play().catch(() => {});
+    } else {
+      vid.pause();
+    }
+  }, [isVideoPlaying]);
 
 
   // header scroll effect
@@ -364,11 +379,27 @@ export default function Home() {
         </header>
 
         {/* Hero Section */}
-        <section
-          className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center"
-          style={{ backgroundImage: 'url(/placeholders/placeholder.svg)' }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-400/90 via-amber-500/90 to-amber-600/90 z-10"></div>
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-400/90 via-amber-500/90 to-amber-600/90 z-10"></div>
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              poster="/placeholder.svg?height=1080&width=1920"
+            >
+              <source src="/placeholder-video.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <button
+            onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+            className="absolute top-24 right-8 z-20 bg-white/20 backdrop-blur-sm rounded-full p-3 text-white hover:bg-white/30 transition-colors"
+          >
+            {isVideoPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+          </button>
           <div className="absolute top-20 right-10 sm:right-20 w-48 h-48 sm:w-72 sm:h-72 bg-white/20 rounded-full blur-xl animate-pulse z-10"></div>
           <div className="absolute bottom-20 left-10 sm:left-20 w-64 h-64 sm:w-96 sm:h-96 bg-white/10 rounded-full blur-2xl animate-bounce z-10"></div>
           <div className="relative z-20 container mx-auto px-4 text-center text-white">
