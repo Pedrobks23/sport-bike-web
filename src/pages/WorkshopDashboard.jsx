@@ -48,6 +48,8 @@ const WorkshopDashboard = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [selectedBikeIndex, setSelectedBikeIndex] = useState(null);
   const [selectedPeca, setSelectedPeca] = useState(null);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showPartModal, setShowPartModal] = useState(false);
   const [serviceTable, setServiceTable] = useState({});
 
   // Função para verificar se uma data está dentro do período
@@ -580,9 +582,15 @@ const WorkshopDashboard = () => {
     );
   };
   // Componente OrderDetails
-  const OrderDetails = ({ order, onUpdate, onClose }) => {
-    const [showServiceModal, setShowServiceModal] = useState(false);
-    const [showPartModal, setShowPartModal] = useState(false);
+  const OrderDetails = ({
+    order,
+    onUpdate,
+    onClose,
+    showServiceModal,
+    setShowServiceModal,
+    showPartModal,
+    setShowPartModal,
+  }) => {
     const [showObsModal, setShowObsModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [localOrder, setLocalOrder] = useState(order);
@@ -1692,6 +1700,10 @@ const WorkshopDashboard = () => {
               order={selectedOrder}
               onUpdate={handleOrderUpdate}
               onClose={() => setShowModal(false)}
+              showServiceModal={showServiceModal}
+              setShowServiceModal={setShowServiceModal}
+              showPartModal={showPartModal}
+              setShowPartModal={setShowPartModal}
             />
           )}
         </div>
