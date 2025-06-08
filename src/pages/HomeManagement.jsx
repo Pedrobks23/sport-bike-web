@@ -9,6 +9,18 @@ import {
   updateHomeSettings,
 } from "../services/homeService";
 import { PlusCircle, ArrowLeft, Edit, Trash } from "lucide-react";
+import { uploadImage } from "../services/uploadImage";
+
+const normalizeDriveUrl = (url) => {
+  if (!url) return url;
+  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`;
+  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`;
+  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`;
+  return url;
+};
 
 const emptyProduct = { name: "", price: "", image: "", category: "" };
 
@@ -29,6 +41,12 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
       setImageFile(file);
       setPreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleUrlChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, image: value }));
+    setPreview(normalizeDriveUrl(value));
   };
 
   const handleSubmit = (e) => {
@@ -54,7 +72,15 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
             <input name="category" value={formData.category} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Imagem</label>
+            <label className="block text-sm font-medium mb-1">Link da Imagem (Google Drive)</label>
+            <input
+              name="image"
+              value={formData.image}
+              onChange={handleUrlChange}
+              className="w-full border rounded px-3 py-2 mb-2"
+              placeholder="https://drive.google.com/..."
+            />
+            <label className="block text-sm font-medium mb-1">Upload da Imagem</label>
             <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
             {preview && (
               <img src={preview} alt="Pré-visualização" className="mt-2 w-full h-40 object-cover rounded" />
@@ -93,13 +119,23 @@ const HomeManagement = () => {
   }, []);
 
   const handleAdd = async (data) => {
-    await createFeaturedProduct(data);
+    let imageUrl = data.image ? normalizeDriveUrl(data.image) : "";
+    if (data.imageFile) {
+      imageUrl = await uploadImage(data.imageFile);
+    }
+    await createFeaturedProduct({ ...data, image: imageUrl });
     setShowModal(false);
     loadData();
   };
 
   const handleUpdate = async (data) => {
-    await updateFeaturedProduct(editProduct.id, data);
+    let imageUrl = editProduct.image;
+    if (data.imageFile) {
+      imageUrl = await uploadImage(data.imageFile);
+    } else if (data.image) {
+      imageUrl = normalizeDriveUrl(data.image);
+    }
+    await updateFeaturedProduct(editProduct.id, { ...data, image: imageUrl });
     setEditProduct(null);
     setShowModal(false);
     loadData();

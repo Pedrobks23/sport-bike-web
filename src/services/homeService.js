@@ -8,8 +8,8 @@ import {
   deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, storage } from "../config/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db } from "../config/firebase";
+import { uploadImage } from "./uploadImage";
 
 export const getFeaturedProducts = async () => {
   const ref = collection(db, "featuredProducts");
@@ -17,17 +17,12 @@ export const getFeaturedProducts = async () => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
-export const uploadProductImage = async (file) => {
-  const storageRef = ref(storage, `featuredProducts/${Date.now()}_${file.name}`);
-  await uploadBytes(storageRef, file);
-  return await getDownloadURL(storageRef);
-};
 
 export const createFeaturedProduct = async ({ imageFile, ...data }) => {
   const refCollection = collection(db, "featuredProducts");
   let imageUrl = data.image || "";
   if (imageFile) {
-    imageUrl = await uploadProductImage(imageFile);
+    imageUrl = await uploadImage(imageFile);
   }
   const docRef = await addDoc(refCollection, {
     ...data,
@@ -42,7 +37,7 @@ export const updateFeaturedProduct = async (id, { imageFile, ...data }) => {
   const refDoc = doc(db, "featuredProducts", id);
   let updates = { ...data, updatedAt: serverTimestamp() };
   if (imageFile) {
-    const url = await uploadProductImage(imageFile);
+    const url = await uploadImage(imageFile);
     updates.image = url;
   }
   await updateDoc(refDoc, updates);

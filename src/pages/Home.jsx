@@ -641,11 +641,10 @@ export default function Home() {
               <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados no coração de Fortaleza</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden h-[400px]">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3981.0!2d-38.5!3d-3.7!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KwNDInMDAuMCJTIDM4wrAzMCcwMC4wIlc!5e0!3m2!1spt-BR!2sbr!4v1234567890"
-                  width="100%"
-                  height="400"
+                  src="https://www.google.com/maps?q=-3.7315374,-38.4851501&hl=pt-BR&z=19&output=embed"
+                  className="w-full h-full"
                   style={{ border: 0 }}
                   allowFullScreen
                   loading="lazy"
