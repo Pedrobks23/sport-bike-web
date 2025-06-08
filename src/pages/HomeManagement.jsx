@@ -12,7 +12,7 @@ import { PlusCircle, ArrowLeft, Edit, Trash } from "lucide-react";
 
 const emptyProduct = { name: "", price: "", image: "", category: "" };
 
-const normalizeDriveUrl = (url) => {
+const normalizeImageUrl = (url) => {
   if (!url) return url;
   const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`;
