@@ -10,6 +10,21 @@ import {
   updateReceipt,
   deleteReceipt,
 } from "../services/receiptService";
+const storeInfo = {
+  name: "Sport & Bike",
+  company: "RP COMERCIO DE BICICLETAS E SERVICOS LTDA",
+  cnpj: "17.338.208/0001-18",
+  address: "Rua Manuel Jesuíno, 706, Loja de Bicicletas",
+  city: "Varjota, Fortaleza-CE",
+  cep: "60175-214",
+  email: "comercialsportbike@gmail.com",
+  phone1: "+55 (85) 3267-7425",
+  phone2: "+55 (85) 3122-5874",
+  instagram: "sportbike_fortaleza",
+  responsible: "Gilberto Pereira",
+  cityName: "Fortaleza",
+};
+
 
 const emptyForm = {
   date: "",
@@ -111,19 +126,41 @@ const ReceiptsManagement = () => {
         docPDF.text(text, (pageWidth - textWidth) / 2, y);
       };
 
-      center("RECIBO", 20);
-      center("Sport & Bike", 28);
-      center("Rua Ana Bilhar, 1680 - Fortaleza/CE", 34);
-      center("Tel: (85) 3267-7425", 40);
+      docPDF.setFontSize(14);
+      docPDF.setFont("helvetica", "bold");
+      center(storeInfo.name, 15);
 
-      docPDF.text(`Data: ${receipt.date}`, 20, 60);
-      docPDF.text(`Cliente: ${receipt.nome}`, 20, 70);
-      docPDF.text(`CPF: ${receipt.cpf || "-"}`, 20, 80);
-      docPDF.text(`Telefone: ${receipt.telefone}`, 20, 90);
-      docPDF.text(`Valor: R$ ${Number(receipt.valor || 0).toFixed(2)}`, 20, 100);
-      if (receipt.descricao) {
-        docPDF.text(`Descrição: ${receipt.descricao}`, 20, 110);
-      }
+      docPDF.setFontSize(10);
+      docPDF.setFont("helvetica", "normal");
+      center(storeInfo.company, 22);
+      center(`CNPJ: ${storeInfo.cnpj}`, 27);
+      center(storeInfo.address, 32);
+      center(storeInfo.city, 37);
+      center(`CEP ${storeInfo.cep}`, 42);
+      center(storeInfo.email, 47);
+      center(storeInfo.phone1, 52);
+      center(storeInfo.phone2, 57);
+      center(`@${storeInfo.instagram}`, 62);
+
+      docPDF.setFontSize(14);
+      docPDF.setFont("helvetica", "bold");
+      center("RECIBO", 72);
+
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "normal");
+      const valorFormatado = Number(receipt.valor || 0).toFixed(2).replace(".", ",");
+      const texto = `Declaro que recebi de ${receipt.nome}${
+        receipt.cpf ? `, inscrito no CPF ${receipt.cpf}` : ""
+      }, telefone ${receipt.telefone}, o valor de R$ ${valorFormatado} em ${receipt.date}${
+        receipt.descricao ? `, referente a ${receipt.descricao}` : ""
+      }.`;
+      const linhas = docPDF.splitTextToSize(texto, 180);
+      docPDF.text(linhas, 15, 82);
+
+      center(storeInfo.cityName, 120);
+      center(storeInfo.name, 128);
+      center(storeInfo.responsible, 136);
+
       docPDF.save(`recibo-${receipt.nome}.pdf`);
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
