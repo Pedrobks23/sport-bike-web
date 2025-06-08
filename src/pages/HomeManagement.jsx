@@ -12,29 +12,28 @@ import { PlusCircle, ArrowLeft, Edit, Trash } from "lucide-react";
 
 const emptyProduct = { name: "", price: "", image: "", category: "" };
 
-const normalizeImageUrl = (url) => {
-  if (!url) return url;
-  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`;
-  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`;
-  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
-  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`;
-  return url;
-};
 
 const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   const [formData, setFormData] = useState(product || emptyProduct);
+  const [imageFile, setImageFile] = useState(null);
+  const [preview, setPreview] = useState(product?.image || "");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const data = { ...formData, image: normalizeImageUrl(formData.image.trim()) };
-    onSave(data);
+    onSave({ ...formData, imageFile });
   };
 
   return (
@@ -55,20 +54,10 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
             <input name="category" value={formData.category} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">URL da Imagem</label>
-            <input
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-            {formData.image && (
-              <img
-                src={normalizeImageUrl(formData.image)}
-                alt="Pré-visualização"
-                className="mt-2 w-full h-40 object-cover rounded"
-              />
+            <label className="block text-sm font-medium mb-1">Imagem</label>
+            <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
+            {preview && (
+              <img src={preview} alt="Pré-visualização" className="mt-2 w-full h-40 object-cover rounded" />
             )}
           </div>
           <div className="flex justify-end gap-4 mt-4">
@@ -94,7 +83,7 @@ const HomeManagement = () => {
       getFeaturedProducts(),
       getHomeSettings(),
     ]);
-    setProducts(prods.map((p) => ({ ...p, image: normalizeImageUrl(p.image) })));
+    setProducts(prods);
     setShowFeatured(settings.showFeaturedProducts ?? true);
     setLoading(false);
   };

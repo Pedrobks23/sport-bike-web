@@ -209,8 +209,9 @@ export default function Home() {
   };
 
   const handleWhatsApp = (message) => {
-    const phone = "5585999999999";
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const baseUrl =
+      "https://api.whatsapp.com/send/?phone=558532677425&text=";
+    const url = `${baseUrl}${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
     window.open(url, "_blank");
   };
 
@@ -288,7 +289,7 @@ export default function Home() {
                     <MessageCircle className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
                     className="text-pink-500 hover:text-pink-600 transition-colors"
                     title="Instagram"
                   >
@@ -338,7 +339,7 @@ export default function Home() {
                       <MessageCircle className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                      onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
                       className="text-pink-500 hover:text-pink-600 transition-colors"
                     >
                       <Instagram className="w-5 h-5" />
@@ -663,7 +664,7 @@ export default function Home() {
                     <MessageCircle className="w-6 h-6" />
                   </button>
                   <button
-                    onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
                     className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white p-4 rounded-full hover:shadow-lg transition-all transform hover:scale-110"
                   >
                     <Instagram className="w-6 h-6" />
@@ -752,7 +753,7 @@ export default function Home() {
                     <MessageCircle className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-full hover:opacity-80 transition-opacity"
                   >
                     <Instagram className="w-5 h-5" />

@@ -11,6 +11,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -26,6 +27,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 export const updateOrderStatus = async (orderId, newStatus) => {
   try {
@@ -154,4 +156,4 @@ export const consultarOS = async (tipo, valor) => {
   }
 };
 
-export { db, auth };
+export { db, auth, storage };
