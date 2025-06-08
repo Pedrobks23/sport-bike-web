@@ -14,14 +14,12 @@ const emptyProduct = { name: "", price: "", image: "", category: "" };
 
 const normalizeImageUrl = (url) => {
   if (!url) return url;
-  const match = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) {
-    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-  }
-  const alt = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (alt) {
-    return `https://drive.google.com/uc?export=view&id=${alt[1]}`;
-  }
+  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`;
+  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`;
+  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`;
   return url;
 };
 

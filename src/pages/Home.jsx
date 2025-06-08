@@ -30,6 +30,17 @@ import {
   getHomeSettings,
 } from "../services/homeService";
 
+const normalizeDriveUrl = (url) => {
+  if (!url) return url;
+  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`;
+  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`;
+  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`;
+  return url;
+};
+
 export default function Home() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -156,8 +167,9 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       const prods = await getFeaturedProducts();
+      const normalized = prods.map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }));
       const settings = await getHomeSettings();
-      setFeaturedProducts(prods);
+      setFeaturedProducts(normalized);
       setShowFeatured(settings.showFeaturedProducts ?? true);
     };
     fetchData();
@@ -226,7 +238,8 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>\n      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
           <div className="container mx-auto px-4">
@@ -351,12 +364,12 @@ export default function Home() {
 
         {/* Hero Section */}
         <section
-          className="relative min-h-screen flex items-center justify-center bg-cover bg-center"
+          className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center"
           style={{ backgroundImage: 'url(/placeholders/placeholder.svg)' }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-amber-400/90 via-amber-500/90 to-amber-600/90 z-10"></div>
-          <div className="absolute top-20 right-20 w-72 h-72 bg-white/20 rounded-full blur-xl animate-pulse z-10"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-white/10 rounded-full blur-2xl animate-bounce z-10"></div>
+          <div className="absolute top-20 right-10 sm:right-20 w-48 h-48 sm:w-72 sm:h-72 bg-white/20 rounded-full blur-xl animate-pulse z-10"></div>
+          <div className="absolute bottom-20 left-10 sm:left-20 w-64 h-64 sm:w-96 sm:h-96 bg-white/10 rounded-full blur-2xl animate-bounce z-10"></div>
           <div className="relative z-20 container mx-auto px-4 text-center text-white">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
               25 Anos de
