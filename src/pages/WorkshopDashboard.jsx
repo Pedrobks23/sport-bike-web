@@ -535,11 +535,12 @@ const WorkshopDashboard = () => {
           </div>
         </div>
 
-        <div
-          onClick={() => {
-            setSelectedOrder(order);
-            setShowModal(true);
-          }}
+          <div
+            onClick={() => {
+              console.log('order details opened', order.id);
+              setSelectedOrder(order);
+              setShowModal(true);
+            }}
         >
           <div className="flex flex-col gap-1">
             <p className="text-gray-700 text-sm">
@@ -1067,6 +1068,7 @@ const WorkshopDashboard = () => {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        console.log('add service clicked', bikeIndex);
                         setSelectedBikeIndex(bikeIndex);
                         setShowServiceModal(true);
                       }}
@@ -1078,6 +1080,7 @@ const WorkshopDashboard = () => {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        console.log('add part clicked', bikeIndex);
                         setSelectedBikeIndex(bikeIndex);
                         setShowPartModal(true);
                       }}
@@ -1675,11 +1678,14 @@ const WorkshopDashboard = () => {
           </main>
 
           {showModal && selectedOrder && (
-            <OrderDetails
-              order={selectedOrder}
-              onUpdate={handleOrderUpdate}
-              onClose={() => setShowModal(false)}
-            />
+              <OrderDetails
+                order={selectedOrder}
+                onUpdate={handleOrderUpdate}
+                onClose={() => {
+                  console.log('order details closed');
+                  setShowModal(false);
+                }}
+              />
           )}
         </div>
       </>
