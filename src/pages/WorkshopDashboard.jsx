@@ -1064,7 +1064,11 @@ const WorkshopDashboard = () => {
                   {/* Botões de Adicionar */}
                   <div className="flex gap-2 mt-4">
                     <button
-                      onClick={() => {
+                      type="button"
+                      draggable="false"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         setSelectedBikeIndex(bikeIndex);
                         setShowServiceModal(true);
                       }}
@@ -1073,7 +1077,11 @@ const WorkshopDashboard = () => {
                       + Serviço
                     </button>
                     <button
-                      onClick={() => {
+                      type="button"
+                      draggable="false"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         setSelectedBikeIndex(bikeIndex);
                         setShowPartModal(true);
                       }}
