@@ -17,7 +17,7 @@ const storeInfo = {
   address: "Rua Manuel Jesuíno, 706, Loja de Bicicletas",
   city: "Varjota, Fortaleza-CE",
   cep: "60175-214",
-  email: "pedrobikes2319@gmail.com",
+  email: "comercialsportbike@gmail.com",
   phone1: "+55 (85) 3267-7425",
   phone2: "+55 (85) 3122-5874",
   instagram: "sportbike_fortaleza",
