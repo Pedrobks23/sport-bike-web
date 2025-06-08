@@ -41,7 +41,7 @@ export const updateOrderStatus = async (orderId, newStatus) => {
   }
 };
 
-export const updateOrdemURL = async (osCode) => {
+export const updateOrdemURL = async (osCode, customURL) => {
   try {
     const ordensRef = collection(db, "ordens");
     const q = query(ordensRef, where("codigo", "==", osCode));
@@ -49,12 +49,12 @@ export const updateOrdemURL = async (osCode) => {
 
     if (!querySnapshot.empty) {
       const docRef = doc(db, "ordens", querySnapshot.docs[0].id);
-      // URL base será automaticamente a do ambiente onde está rodando
-      const baseURL = window.location.origin; // Pega automaticamente a URL base (localhost ou vercel)
-      const newURL = `${baseURL}/consulta/${osCode}`;
-      
+      const baseURL = window.location.origin;
+      const newURL =
+        customURL || `${baseURL}/consulta?os=${osCode}`;
+
       await updateDoc(docRef, {
-        urlOS: newURL
+        urlOS: newURL,
       });
     }
   } catch (error) {
