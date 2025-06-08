@@ -7,6 +7,7 @@ import WorkshopDashboard from "../pages/WorkshopDashboard";
 import CustomerList from "../pages/CustomerList";
 import ServicesManagement from "../pages/ServicesManagement";
 import ReportsManagement from "../pages/ReportsManagement";
+import ReceiptsManagement from "../pages/ReceiptsManagement";
 import NewOrder from "../pages/NewOrder"; // Adicione esta importação
 import PrivateRoute from "../components/PrivateRoute";
 
@@ -68,6 +69,14 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <ReportsManagement />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/receipts",
+    element: (
+      <PrivateRoute>
+        <ReceiptsManagement />
       </PrivateRoute>
     ),
   },
