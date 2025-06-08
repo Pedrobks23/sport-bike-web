@@ -89,6 +89,15 @@ const Admin = () => {
             <p className="text-gray-600">Configurar tipos de serviços</p>
           </div>
 
+          {/* Card Home */}
+          <div
+            onClick={() => navigate("/admin/home")}
+            className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          >
+            <h2 className="text-xl font-bold text-[#333] mb-2">Home</h2>
+            <p className="text-gray-600">Gerenciar destaques da página inicial</p>
+          </div>
+
           {/* Card Relatórios */}
           <div
             onClick={() => navigate("/admin/reports")}

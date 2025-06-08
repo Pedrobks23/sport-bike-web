@@ -9,6 +9,7 @@ import ServicesManagement from "../pages/ServicesManagement";
 import ReportsManagement from "../pages/ReportsManagement";
 import ReceiptsManagement from "../pages/ReceiptsManagement";
 import NewOrder from "../pages/NewOrder"; // Adicione esta importação
+import HomeManagement from "../pages/HomeManagement";
 import PrivateRoute from "../components/PrivateRoute";
 
 export const router = createBrowserRouter([
@@ -77,6 +78,14 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <ReceiptsManagement />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/home",
+    element: (
+      <PrivateRoute>
+        <HomeManagement />
       </PrivateRoute>
     ),
   },

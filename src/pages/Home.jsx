@@ -1,16 +1,52 @@
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
+import {
+  Phone,
+  MapPin,
+  Clock,
+  Instagram,
+  MessageCircle,
+  Bike,
+  Wrench,
+  Trophy,
+  Settings,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  ShoppingCart,
+  Award,
+  Truck,
+  CreditCard,
+  Shield,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../config/firebase";
-import { Instagram } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
+import {
+  getFeaturedProducts,
+  getHomeSettings,
+} from "../services/homeService";
 
-const Home = () => {
+export default function Home() {
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [currentProduct, setCurrentProduct] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false);
+  const [expandedFaq, setExpandedFaq] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [showFeatured, setShowFeatured] = useState(true);
 
+  // access admin area shortcut
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "A") {
-        // Verifica se o usuário está autenticado antes de navegar
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && event.shiftKey && event.key === "A") {
+        event.preventDefault();
         onAuthStateChanged(auth, (user) => {
           if (user) {
             navigate("/admin");
@@ -20,258 +56,722 @@ const Home = () => {
         });
       }
     };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [navigate]);
 
-  const handleAdminAccess = () => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        navigate("/admin");
-      } else {
-        navigate("/admin/login");
-      }
-    });
+  // restore dark theme
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const prods = await getFeaturedProducts();
+      const settings = await getHomeSettings();
+      setFeaturedProducts(prods);
+      setShowFeatured(settings.showFeaturedProducts ?? true);
+    };
+    fetchData();
+  }, []);
+
+
+  // header scroll effect
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // auto rotate testimonials and products
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+      setCurrentProduct((prev) => (prev + 1) % featuredProducts.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [testimonials.length, featuredProducts.length]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    if (!isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   };
 
   const services = [
     {
-      title: "Vendas de Bicicletas",
-      description: "Bicicletas e artigos esportivos de qualidade",
-      icon: "🚴",
+      icon: <Bike className="w-8 h-8" />,
+      title: "Vendas de Bikes",
+      description: "Bikes de alta qualidade para todos os perfis e modalidades",
     },
     {
+      icon: <Wrench className="w-8 h-8" />,
       title: "Oficina Especializada",
-      description: "Manutenção profissional para sua bike",
-      icon: "🛠️",
+      description: "Manuten\u00e7\u00e3o e reparo com 25 anos de experi\u00eancia",
     },
     {
+      icon: <Trophy className="w-8 h-8" />,
       title: "Aluguel de Bikes",
-      description: "Alugue uma bike e aproveite seu passeio",
-      icon: "🚲",
+      description: "Alugue bikes premium para suas aventuras",
     },
     {
-      title: "Experiência",
-      description: "Mais de 25 anos no mercado",
-      icon: "⭐",
+      icon: <Settings className="w-8 h-8" />,
+      title: "Pe\u00e7as e Acess\u00f3rios",
+      description: "Componentes originais e acess\u00f3rios de qualidade",
     },
   ];
 
+  // produtos em destaque carregados do banco
+
+  const testimonials = [
+    {
+      name: "Carlos Silva",
+      text: "Excelente atendimento! Comprei minha bike aqui e o suporte p\u00f3s-venda \u00e9 excepcional.",
+      rating: 5,
+    },
+    {
+      name: "Ana Costa",
+      text: "25 anos de tradi\u00e7\u00e3o fazem toda a diferen\u00e7a. Profissionais experientes e produtos de qualidade.",
+      rating: 5,
+    },
+    {
+      name: "Jo\u00e3o Santos",
+      text: "A oficina \u00e9 top! Minha bike ficou como nova. Recomendo para todos os ciclistas.",
+      rating: 5,
+    },
+  ];
+
+  const benefits = [
+    { icon: <Truck className="w-5 h-5" />, text: "Frete Gr\u00e1tis Fortaleza" },
+    { icon: <Shield className="w-5 h-5" />, text: "Garantia" },
+    { icon: <CreditCard className="w-5 h-5" />, text: "12x Sem Juros" },
+    { icon: <Award className="w-5 h-5" />, text: "25 Anos de Tradi\u00e7\u00e3o" },
+  ];
+
+  const faqData = [
+    {
+      question: "Como funciona o aluguel de bikes?",
+      answer:
+        "Oferecemos aluguel por dia ou semana. Reservas podem ser feitas via WhatsApp ou presencialmente. ",
+    },
+    {
+      question: "Qual a garantia dos produtos?",
+      answer:
+        "Bikes novas t\u00eam garantia de 2 anos para quadro e 1 ano para componentes. Pe\u00e7as e acess\u00f3rios seguem garantia do fabricante. Oferecemos suporte t\u00e9cnico completo.",
+    },
+    {
+      question: "Fazem revis\u00e3o de bikes?",
+      answer:
+        "Sim! Nossa oficina atende bikes de qualquer modelo ou marca. Temos 25 anos de experi\u00eancia e t\u00e9cnicos especializados em todas as modalidades.",
+    },
+    {
+      question: "Posso parcelar minha compra?",
+      answer:
+        "Sim! Aceitamos cart\u00e3o em at\u00e9 12x sem juros para bikes. Tamb\u00e9m trabalhamos com PIX \u00e0 vista com desconto especial.",
+    },
+  ];
+
+  const officeServices = [
+    "Manuten\u00e7\u00e3o preventiva completa",
+    "Troca de pneus e c\u00e2maras",
+    "Ajuste de freios e marchas",
+    "Limpeza e lubrifica\u00e7\u00e3o da corrente",
+    "Regulagem de suspens\u00e3o",
+    "Troca de cabos e condu\u00edtes",
+    "Centramento de rodas",
+    "Substitui\u00e7\u00e3o de pe\u00e7as desgastadas",
+    "Revis\u00e3o geral da bike",
+    "Upgrade de componentes",
+  ];
+
+  const handleConsultarOS = () => {
+    navigate("/consulta");
+  };
+
+  const handleWhatsApp = (message) => {
+    const phone = "5585999999999";
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  };
+
+  const handleServiceClick = (serviceType) => {
+    const messages = {
+      vendas: "Ol\u00e1! Gostaria de saber sobre os modelos de bikes dispon\u00edveis para venda.",
+      aluguel: "Ol\u00e1! Tenho interesse em alugar uma bike. Podem me informar sobre disponibilidade e pre\u00e7os?",
+      pecas: "Ol\u00e1! Estou procurando pe\u00e7as e acess\u00f3rios para minha bike. Podem me ajudar?",
+    };
+    if (serviceType === "oficina") {
+      setIsOfficeModalOpen(true);
+    } else {
+      handleWhatsApp(messages[serviceType]);
+    }
+  };
+
+  const handleOfficeServiceClick = (service) => {
+    const message = `Ol\u00e1! Gostaria de fazer ${service.toLowerCase()} na minha bicicleta. Podem me ajudar?`;
+    handleWhatsApp(message);
+    setIsOfficeModalOpen(false);
+  };
+
+  const toggleFaq = (index) => {
+    setExpandedFaq(expandedFaq === index ? null : index);
+  };
+
   return (
-    <div className="min-h-screen bg-[#f5f5f5] relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] 
-        bg-[#FFC107] rounded-full opacity-20 blur-3xl -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] 
-        bg-[#FFC107] rounded-full opacity-20 blur-3xl translate-x-1/2 translate-y-1/2" />
-
-      <header className="relative z-10 bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center">
-            <img
-              src="/assets/Logo.png"
-              alt="Sport & Bike"
-              className="h-24 sm:h-32 md:h-40"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 text-center sm:text-left w-full sm:w-auto">
-            <a
-              href="tel:8532677425"
-              className="flex items-center justify-center sm:justify-start gap-2 text-[#333] hover:text-[#FFC107] transition-colors text-sm sm:text-base"
-            >
-              📞 (85) 3267-7425
-            </a>
-            <a
-              href="https://www.instagram.com/sportbike_fortaleza/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto flex items-center justify-center sm:justify-start gap-2 px-4 py-2 bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white rounded-lg hover:opacity-90 transition-opacity"
-            >
-              <Instagram className="w-5 h-5" />
-              <span>@sportbike_fortaleza</span>
-            </a>
-          </div>
-        </div>
-      </header>
-      <section className="relative z-10 py-8 sm:py-16 bg-gradient-to-b from-white to-transparent">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#333] mb-4 sm:mb-6">
-              Sport & Bike
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-3 sm:mb-4">
-              Desde 1999 - Mais de 25 anos de história
-            </p>
-            <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8">
-              Sua loja especializada em bikes em Fortaleza
-            </p>
-            <button
-              onClick={() => navigate("/consulta")}
-              className="w-full sm:w-auto btn bg-[#FFC107] text-[#333] px-4 sm:px-6 py-2 sm:py-3 text-base sm:text-lg rounded-lg hover:bg-[#FFD54F] transition-colors"
-            >
-              Consultar Ordem de Serviço
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 py-12 sm:py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-[#333] mb-8 sm:mb-12">
-            Nossos Serviços
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {services.map((service, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow p-3 sm:p-6"
-              >
-                <div className="text-2xl sm:text-3xl mb-2 sm:mb-4">
-                  {service.icon}
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>\n      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        {/* Benefits Bar */}
+        <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center space-x-8 animate-pulse">
+              {benefits.map((benefit, index) => (
+                <div key={index} className="flex items-center space-x-2 text-sm font-medium">
+                  {benefit.icon}
+                  <span>{benefit.text}</span>
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-[#333] mb-2">
-                  {service.title}
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {service.description}
-                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Header */}
+        <header
+          className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+            isScrolled
+              ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg border-b border-white/20 dark:border-gray-700/20 mt-0"
+              : "bg-transparent mt-10"
+          }`}
+        >
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <img src="/assets/Logo.png" alt="Sport & Bike" className="w-8 h-8" />
+                <span className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 py-12 sm:py-16 bg-[#FFC107]/10">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#333] mb-4 sm:mb-6">
-            Entre em contato pelo WhatsApp
-          </h2>
-          <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
-            Tire suas dúvidas, solicite orçamentos ou agende seu serviço
-          </p>
-          <a
-            href="https://wa.me/558532677425"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BD5C] text-white font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg shadow-lg hover:-translate-y-1 transition-all text-sm sm:text-base w-full sm:w-auto mx-0 sm:mx-4"
-          >
-            <span className="text-lg sm:text-xl">💬</span> Falar pelo WhatsApp
-          </a>
-        </div>
-      </section>
-
-      <section className="relative z-10 py-12 sm:py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-[#333] mb-8 sm:mb-12">
-            Nossa Localização
-          </h2>
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-gray-100 p-4 sm:p-6 rounded-lg mb-6 sm:mb-8">
-              <p className="text-base sm:text-lg mb-3 sm:mb-4">
-                <strong>📍 Endereço:</strong>
-              </p>
-              <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
-                R. Ana Bilhar, 1680 - Varjota
-                <br />
-                Fortaleza - CE, 60160-110
-              </p>
-              <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-                <strong>Telefones:</strong>
-                <br />
-                (85) 3267-7425 | (85) 3122-5874
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <a
-                  href="https://www.waze.com/ul?ll=-3.731500629550978,-38.48570288709533&navigate=yes"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#33ccff] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#28a4cc] transition-colors"
-                >
-                  Abrir no Waze
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center space-x-8">
+                <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                  Servi\u00e7os
                 </a>
-                <a
-                  href="https://www.google.com/maps/search/?api=1&query=-3.731500629550978,-38.48570288709533"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#4285F4] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#3367D6] transition-colors"
-                >
-                  Abrir no Google Maps
+                <a href="#sobre" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                  Sobre
                 </a>
-              </div>
-            </div>
-
-            <div className="h-[300px] sm:h-[400px] rounded-lg overflow-hidden shadow-lg">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d995.3399646620009!2d-38.48570288709533!3d-3.731500629550978!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7c74878a1947be5%3A0x26b8517840f9b106!2sSport%20%26%20Bike!5e0!3m2!1spt-BR!2sbr!4v1733699924589!5m2!1spt-BR!2sbr"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="relative z-10 bg-white border-t mt-auto">
-        <div className="container mx-auto px-4 py-6 sm:py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-            <div className="text-center md:text-left">
-              <img
-                src="/assets/Logo.png"
-                alt="Sport & Bike"
-                className="h-10 sm:h-12 mx-auto md:mx-0 mb-4"
-              />
-              <p className="text-sm sm:text-base text-gray-600">
-                Loja de bicicletas desde 1999
-                <br />
-                Vendas de bicicleta e artigos esportivos
-                <br />
-                Oficina especializada
-                <br />
-                Aluguéis de bikes
-              </p>
-            </div>
-            <div className="text-center md:text-left">
-              <h3 className="font-bold text-[#333] mb-4">Contato</h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                📍 R. Ana Bilhar, 1680 - Varjota, Fortaleza - CE
-                <br />
-                📞 (85) 3267-7425 | (85) 3122-5874
-                <br />
-                📱 WhatsApp: (85) 3267-7425
-                <br />
-                <a
-                  href="https://www.instagram.com/sportbike_fortaleza/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[#833AB4] hover:text-[#FD1D1D] transition-colors"
-                >
-                  <Instagram className="w-4 h-4" /> @sportbike_fortaleza
+                <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                  Contato
                 </a>
-              </p>
-            </div>
-          </div>
-          <div className="border-t mt-6 sm:mt-8 pt-6 sm:pt-8">
-            <div className="flex flex-col items-center gap-4">
-              <button
-                onClick={handleAdminAccess}
-                className="w-full sm:w-auto text-gray-600 hover:text-[#FFC107] transition-colors px-4 py-2 rounded-lg border border-gray-200 hover:border-[#FFC107]"
-              >
-                Acesso Funcionários
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                    className="text-green-500 hover:text-green-600 transition-colors"
+                    title="WhatsApp"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                    className="text-pink-500 hover:text-pink-600 transition-colors"
+                    title="Instagram"
+                  >
+                    <Instagram className="w-5 h-5" />
+                  </button>
+                </div>
+                <button
+                  onClick={toggleDarkMode}
+                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  title="Alternar tema"
+                >
+                  {isDarkMode ? "\u{1F31E}" : "\u{1F319}"}
+                </button>
+                <button
+                  onClick={handleConsultarOS}
+                  className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium"
+                >
+                  Consultar O.S.
+                </button>
+              </nav>
+              {/* Mobile Menu Button */}
+              <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                {isMenuOpen ? (
+                  <X className="w-6 h-6 text-gray-800 dark:text-white" />
+                ) : (
+                  <Menu className="w-6 h-6 text-gray-800 dark:text-white" />
+                )}
               </button>
             </div>
-            <p className="text-center text-sm sm:text-base text-gray-600 mt-4">
-              © {new Date().getFullYear()} Sport & Bike. Todos os direitos
-              reservados.
-            </p>
+            {isMenuOpen && (
+              <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col space-y-4 pt-4">
+                  <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                    Servi\u00e7os
+                  </a>
+                  <a href="#sobre" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                    Sobre
+                  </a>
+                  <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                    Contato
+                  </a>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                      className="text-green-500 hover:text-green-600 transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                      className="text-pink-500 hover:text-pink-600 transition-colors"
+                    >
+                      <Instagram className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={toggleDarkMode}
+                      className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    >
+                      {isDarkMode ? "\u{1F31E}" : "\u{1F319}"}
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleConsultarOS}
+                    className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium w-fit"
+                  >
+                    Consultar O.S.
+                  </button>
+                </div>
+              </nav>
+            )}
           </div>
+        </header>
+
+        {/* Hero Section */}
+        <section
+          className="relative min-h-screen flex items-center justify-center bg-cover bg-center"
+          style={{ backgroundImage: 'url(/placeholders/placeholder.svg)' }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-400/90 via-amber-500/90 to-amber-600/90 z-10"></div>
+          <div className="absolute top-20 right-20 w-72 h-72 bg-white/20 rounded-full blur-xl animate-pulse z-10"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-white/10 rounded-full blur-2xl animate-bounce z-10"></div>
+          <div className="relative z-20 container mx-auto px-4 text-center text-white">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              25 Anos de
+              <span className="block bg-gradient-to-r from-amber-300 to-white bg-clip-text text-transparent">
+                Paix\u00e3o por Bikes
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+              A Sport & Bike \u00e9 refer\u00eancia em Fortaleza. Vendas, manuten\u00e7\u00e3o, aluguel e experi\u00eancias \u00fanicas no mundo do
+              ciclismo.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button
+                onClick={handleConsultarOS}
+                className="bg-white text-gray-800 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl"
+              >
+                Consultar Ordem de Servi\u00e7o
+              </button>
+              <button
+                onClick={() => handleWhatsApp("Ol\u00e1! Gostaria de alugar uma bike.")}
+                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105"
+              >
+                Alugue sua Bike Hoje
+              </button>
+            </div>
+          </div>
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce z-20">
+            <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
+              <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
+            </div>
+          </div>
+        </section>
+
+        {/* Featured Products Carousel */}
+        {showFeatured && (
+        <section className="py-20 bg-white dark:bg-gray-800">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
+                Produtos em Destaque
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                Confira nossa sele\u00e7\u00e3o especial de bikes e acess\u00f3rios
+              </p>
+            </div>
+            <div className="relative max-w-4xl mx-auto">
+              {featuredProducts.length > 0 ? (
+                <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 shadow-2xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                  <div>
+                    <img
+                      src={featuredProducts[currentProduct].image}
+                      alt={featuredProducts[currentProduct].name}
+                      className="w-full h-64 object-cover rounded-lg"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="text-white">
+                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                      {featuredProducts[currentProduct].category}
+                    </span>
+                    <h3 className="text-2xl font-bold mt-4 mb-2">{featuredProducts[currentProduct].name}</h3>
+                    <p className="text-3xl font-bold mb-4">{featuredProducts[currentProduct].price}</p>
+                    <button
+                      onClick={() =>
+                        handleWhatsApp(
+                          `Ol\u00e1! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informa\u00e7\u00f5es?`
+                        )
+                      }
+                      className="bg-white text-amber-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      <span>Tenho Interesse</span>
+                    </button>
+                  </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
+              )}
+              <button
+                onClick={() => setCurrentProduct((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+              </button>
+              <button
+                onClick={() => setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+              </button>
+              <div className="flex justify-center mt-8 space-x-2">
+                {featuredProducts.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentProduct(index)}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentProduct ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+        )}
+
+        {/* Services Section */}
+        <section id="servicos" className="py-20 bg-gray-50 dark:bg-gray-900">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Nossos Servi\u00e7os</h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                Solu\u00e7\u00f5es completas para todos os tipos de ciclistas
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {services.map((service, index) => (
+                <div
+                  key={index}
+                  onClick={() =>
+                    handleServiceClick(index === 0 ? "vendas" : index === 1 ? "oficina" : index === 2 ? "aluguel" : "pecas")
+                  }
+                  className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
+                >
+                  <div className="text-amber-500 mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {service.icon}
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">{service.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-300">{service.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-20 bg-white dark:bg-gray-800">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Perguntas Frequentes</h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                Tire suas d\u00favidas sobre nossos servi\u00e7os
+              </p>
+            </div>
+            <div className="max-w-3xl mx-auto space-y-4">
+              {faqData.map((faq, index) => (
+                <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <button
+                    onClick={() => toggleFaq(index)}
+                    className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded-lg"
+                  >
+                    <span className="font-semibold text-gray-800 dark:text-white">{faq.question}</span>
+                    {expandedFaq === index ? (
+                      <ChevronUp className="w-5 h-5 text-amber-500" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-amber-500" />
+                    )}
+                  </button>
+                  {expandedFaq === index && (
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-600 dark:text-gray-300">{faq.answer}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-20 bg-gray-50 dark:bg-gray-900">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">O que nossos clientes dizem</h2>
+            </div>
+            <div className="max-w-4xl mx-auto relative">
+              <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 text-white shadow-2xl">
+                <div className="flex items-center justify-center mb-4">
+                  {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
+                    <Star key={i} className="w-6 h-6 fill-current" />
+                  ))}
+                </div>
+                <p className="text-xl md:text-2xl text-center mb-6 italic">&quot;{testimonials[currentTestimonial].text}&quot;</p>
+                <p className="text-center font-bold text-lg">- {testimonials[currentTestimonial].name}</p>
+              </div>
+              <button
+                onClick={() => setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+              </button>
+              <button
+                onClick={() => setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+              </button>
+              <div className="flex justify-center mt-8 space-x-2">
+                {testimonials.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentTestimonial(index)}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentTestimonial ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Rental Banner */}
+        <section className="py-20 bg-gradient-to-r from-green-500 to-green-600">
+          <div className="container mx-auto px-4 text-center text-white">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Aluguel de Bikes Premium</h2>
+            <p className="text-xl mb-8 max-w-2xl mx-auto">
+              Explore Fortaleza com nossas bikes de alta qualidade. Tarifas especiais para grupos e fam\u00edlias.
+            </p>
+            <button
+              onClick={() => handleWhatsApp("Ol\u00e1! Gostaria de informa\u00e7\u00f5es sobre aluguel de bikes.")}
+              className="bg-white text-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl inline-flex items-center space-x-2"
+            >
+              <MessageCircle className="w-6 h-6" />
+              <span>Fale Conosco no WhatsApp</span>
+            </button>
+          </div>
+        </section>
+
+        {/* Map & Contact Section */}
+        <section id="contato" className="py-20 bg-gray-50 dark:bg-gray-900">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Visite Nossa Loja</h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados no cora\u00e7\u00e3o de Fortaleza</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3981.0!2d-38.5!3d-3.7!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KwNDInMDAuMCJTIDM4wrAzMCcwMC4wIlc!5e0!3m2!1spt-BR!2sbr!4v1234567890"
+                  width="100%"
+                  height="400"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Localiza\u00e7\u00e3o Sport & Bike"
+                ></iframe>
+              </div>
+              <div className="space-y-8">
+                <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <MapPin className="w-6 h-6 text-amber-500" />
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Endere\u00e7o</h3>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Rua das Bikes, 123
+                    <br />
+                    Centro, Fortaleza - CE
+                    <br />
+                    CEP: 60000-000
+                  </p>
+                </div>
+                <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <Phone className="w-6 h-6 text-amber-500" />
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Telefones</h3>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    (85) 3333-4444
+                    <br />
+                    (85) 99999-9999
+                  </p>
+                </div>
+                <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <Clock className="w-6 h-6 text-amber-500" />
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Hor\u00e1rio</h3>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Segunda a Sexta: 8h \u00e0s 18h
+                    <br />
+                    S\u00e1bado: 8h \u00e0s 16h
+                    <br />
+                    Domingo: Fechado
+                  </p>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-full hover:shadow-lg transition-all transform hover:scale-110"
+                  >
+                    <MessageCircle className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                    className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white p-4 rounded-full hover:shadow-lg transition-all transform hover:scale-110"
+                  >
+                    <Instagram className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* WhatsApp Floating Button */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => handleWhatsApp("Ol\u00e1! Preciso de ajuda.")}
+            className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 animate-pulse"
+            title="Fale conosco no WhatsApp"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
         </div>
-      </footer>
+
+        {/* Office Services Modal */}
+        {isOfficeModalOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Servi\u00e7os da Oficina</h3>
+                  <button
+                    onClick={() => setIsOfficeModalOpen(false)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 mt-2">
+                  Clique no servi\u00e7o desejado para solicitar via WhatsApp
+                </p>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {officeServices.map((service, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleOfficeServiceClick(service)}
+                      className="text-left p-4 bg-gray-50 dark:bg-gray-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors border border-gray-200 dark:border-gray-600 hover:border-amber-300 dark:hover:border-amber-600"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Wrench className="w-5 h-5 text-amber-500" />
+                        <span className="text-gray-800 dark:text-gray-200 font-medium">{service}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="bg-gray-800 dark:bg-gray-900 text-white py-12">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-8 h-8" />
+                  <span className="text-2xl font-bold">Sport & Bike</span>
+                </div>
+                <p className="text-gray-400">25 anos de tradi\u00e7\u00e3o e excel\u00eancia no mundo do ciclismo em Fortaleza.</p>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold mb-4">Contato</h4>
+                <div className="space-y-2 text-gray-400">
+                  <p>(85) 3333-4444</p>
+                  <p>(85) 99999-9999</p>
+                  <p>contato@sportbike.com.br</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold mb-4">Redes Sociais</h4>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => handleWhatsApp("Ol\u00e1! Vim atrav\u00e9s do site.")}
+                    className="bg-green-500 p-3 rounded-full hover:bg-green-600 transition-colors"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => window.open("https://instagram.com/sportbike", "_blank")}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-full hover:opacity-80 transition-opacity"
+                  >
+                    <Instagram className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-700 mt-8 pt-8 text-center">
+              <p className="text-gray-400 mb-4">\u00a9 {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.</p>
+              <button
+                onClick={() => {
+                  onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                      navigate("/admin");
+                    } else {
+                      navigate("/admin/login");
+                    }
+                  });
+                }}
+                className="text-amber-500 hover:text-amber-400 transition-colors text-sm"
+              >
+                Acesso Funcion\u00e1rios
+              </button>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
-};
-
-export default Home;
+}
