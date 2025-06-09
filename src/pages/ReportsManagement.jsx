@@ -93,13 +93,6 @@ const ReportsManagement = () => {
           data[key].total += Number(order.valor);
           data[key].quantity = data[key].quantity + Number(order.quantidade);
         }
-  
-          ordem: order.id,
-          valorOriginal: order.valor,
-          servicosOriginal: order.quantidade,
-          valorAcumulado: data[key].total,
-          servicosAcumulados: data[key].quantity
-        });
       });
   
       // Remove períodos sem valores
