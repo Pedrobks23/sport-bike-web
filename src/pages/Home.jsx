@@ -621,9 +621,9 @@ export default function Home() {
         {/* Rental Banner */}
         <section className="py-20 bg-gradient-to-r from-green-500 to-green-600">
           <div className="container mx-auto px-4 text-center text-white">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Aluguel de Bikes Premium</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Aluguel de Bikes</h2>
             <p className="text-xl mb-8 max-w-2xl mx-auto">
-              Explore Fortaleza com nossas bikes de alta qualidade. Tarifas especiais para grupos e famílias.
+              Explore Fortaleza com nossas bikes.
             </p>
             <button
               onClick={() => handleWhatsApp("Olá! Gostaria de informações sobre aluguel de bikes.")}
@@ -640,7 +640,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Visite Nossa Loja</h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados no coração de Fortaleza</p>
+              <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados proximos a Aldeota</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden h-[400px]">
@@ -772,7 +772,7 @@ export default function Home() {
                 <div className="space-y-2 text-gray-400">
                   <p>(85) 3267-7425 | (85) 3122-5874</p>
                   <p>WhatsApp: (85) 3267-7425</p>
-                  <p>contato@sportbike.com.br</p>
+                  <p>comercialsportbike@gmail.com</p>
                 </div>
               </div>
               <div>
