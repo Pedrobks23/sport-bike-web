@@ -31,6 +31,7 @@ import {
   getFeaturedProducts,
   getHomeSettings,
 } from "../services/homeService";
+import { getAllServicesOrdered } from "../services/serviceService";
 
 const normalizeDriveUrl = (url) => {
   if (!url) return url;
@@ -128,18 +129,19 @@ export default function Home() {
     },
   ];
 
-  const officeServices = [
-    "Manutenção preventiva completa",
-    "Troca de pneus e câmaras",
-    "Ajuste de freios e marchas",
-    "Limpeza e lubrificação da corrente",
-    "Regulagem de suspensão",
-    "Troca de cabos e conduítes",
-    "Centramento de rodas",
-    "Substituição de peças desgastadas",
-    "Revisão geral da bike",
-    "Upgrade de componentes",
-  ];
+  const [officeServices, setOfficeServices] = useState([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const data = await getAllServicesOrdered();
+        setOfficeServices(data.map((s) => `${s.nome} - R$ ${s.valor.toFixed(2)}`));
+      } catch (err) {
+        console.error("Erro ao carregar serviços:", err);
+      }
+    };
+    fetchServices();
+  }, []);
 
   // access admin area shortcut
   useEffect(() => {

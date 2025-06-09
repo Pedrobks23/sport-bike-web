@@ -4,11 +4,13 @@ import { ArrowLeft, FileText, Trash, Edit } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import jsPDF from "jspdf";
+import "jspdf-autotable";
 import {
   createReceipt,
   getReceipts,
   updateReceipt,
   deleteReceipt,
+  getNextReceiptNumber,
 } from "../services/receiptService";
 const storeInfo = {
   name: "Sport & Bike",
@@ -31,8 +33,92 @@ const emptyForm = {
   nome: "",
   telefone: "",
   cpf: "",
-  valor: "",
-  descricao: "",
+  endereco: "",
+  itens: [],
+  pagamento: "",
+};
+
+const ItemEditor = ({ value, onChange }) => {
+  const [items, setItems] = useState(value || []);
+  const [item, setItem] = useState({ descricao: "", qtd: 1, unit: "" });
+
+  useEffect(() => {
+    onChange(items);
+  }, [items]);
+
+  const handleField = (e) => {
+    const { name, value } = e.target;
+    setItem((p) => ({ ...p, [name]: value }));
+  };
+
+  const add = () => {
+    if (!item.descricao) return;
+    setItems([
+      ...items,
+      { descricao: item.descricao, qtd: Number(item.qtd), unit: Number(item.unit) },
+    ]);
+    setItem({ descricao: "", qtd: 1, unit: "" });
+  };
+
+  const remove = (idx) => setItems(items.filter((_, i) => i !== idx));
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-2">
+        <input
+          name="descricao"
+          value={item.descricao}
+          onChange={handleField}
+          placeholder="Descrição"
+          className="flex-1 border rounded px-2 py-1"
+        />
+        <input
+          name="qtd"
+          type="number"
+          value={item.qtd}
+          onChange={handleField}
+          className="w-16 border rounded px-2 py-1"
+        />
+        <input
+          name="unit"
+          type="number"
+          step="0.01"
+          value={item.unit}
+          onChange={handleField}
+          className="w-24 border rounded px-2 py-1"
+        />
+        <button type="button" onClick={add} className="bg-blue-500 text-white px-3 rounded">
+          +
+        </button>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr>
+            <th className="border px-2">Descrição</th>
+            <th className="border px-2">Qtd.</th>
+            <th className="border px-2">Unit.</th>
+            <th className="border px-2">Preço</th>
+            <th className="border px-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((it, idx) => (
+            <tr key={idx}>
+              <td className="border px-2">{it.descricao}</td>
+              <td className="border px-2 text-center">{it.qtd}</td>
+              <td className="border px-2 text-right">R$ {it.unit.toFixed(2)}</td>
+              <td className="border px-2 text-right">R$ {(it.qtd * it.unit).toFixed(2)}</td>
+              <td className="border px-2 text-center">
+                <button type="button" onClick={() => remove(idx)} className="text-red-500">
+                  x
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
 const ReceiptsManagement = () => {
@@ -65,6 +151,7 @@ const ReceiptsManagement = () => {
           ...prev,
           nome: data.nome || "",
           cpf: data.cpf || "",
+          endereco: data.endereco || prev.endereco || "",
         }));
       }
     } catch (err) {
@@ -80,10 +167,12 @@ const ReceiptsManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const total = form.itens.reduce((sum, it) => sum + it.qtd * it.unit, 0);
       if (editingId) {
-        await updateReceipt(editingId, form);
+        await updateReceipt(editingId, { ...form, valor: total });
       } else {
-        await createReceipt(form);
+        const numero = await getNextReceiptNumber();
+        await createReceipt({ ...form, valor: total, numero });
       }
       setForm(emptyForm);
       setEditingId(null);
@@ -99,8 +188,9 @@ const ReceiptsManagement = () => {
       nome: receipt.nome,
       telefone: receipt.telefone,
       cpf: receipt.cpf,
-      valor: receipt.valor,
-      descricao: receipt.descricao || "",
+      endereco: receipt.endereco || "",
+      itens: receipt.itens || [],
+      pagamento: receipt.pagamento || "",
     });
     setEditingId(receipt.id);
   };
@@ -115,56 +205,73 @@ const ReceiptsManagement = () => {
     }
   };
 
-  const generatePDF = (receipt) => {
-    try {
-      const docPDF = new jsPDF();
-      const center = (text, y) => {
-        const pageWidth = docPDF.internal.pageSize.getWidth();
-        const textWidth =
-          (docPDF.getStringUnitWidth(text) * docPDF.internal.getFontSize()) /
-          docPDF.internal.scaleFactor;
-        docPDF.text(text, (pageWidth - textWidth) / 2, y);
-      };
+  const generatePDF = (r) => {
+    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
 
-      docPDF.setFontSize(14);
-      docPDF.setFont("helvetica", "bold");
-      center(storeInfo.name, 15);
+    const center = (txt, y, fontSize = 10, bold = false) => {
+      pdf.setFont("helvetica", bold ? "bold" : "normal");
+      pdf.setFontSize(fontSize);
+      const w = pdf.getTextWidth(txt);
+      pdf.text(txt, (pageW - w) / 2, y);
+    };
 
-      docPDF.setFontSize(10);
-      docPDF.setFont("helvetica", "normal");
-      center(storeInfo.company, 22);
-      center(`CNPJ: ${storeInfo.cnpj}`, 27);
-      center(storeInfo.address, 32);
-      center(storeInfo.city, 37);
-      center(`CEP ${storeInfo.cep}`, 42);
-      center(storeInfo.email, 47);
-      center(storeInfo.phone1, 52);
-      center(storeInfo.phone2, 57);
-      center(`@${storeInfo.instagram}`, 62);
+    center(storeInfo.name, 40, 18, true);
+    center(storeInfo.company, 60);
+    center(`CNPJ ${storeInfo.cnpj}`, 75);
+    center(storeInfo.address, 90);
+    center(storeInfo.city, 105);
+    center(`CEP ${storeInfo.cep}`, 120);
+    center(storeInfo.email, 135);
+    center(storeInfo.phone1, 150);
+    center(storeInfo.phone2, 165);
+    center(`@${storeInfo.instagram}`, 180);
 
-      docPDF.setFontSize(14);
-      docPDF.setFont("helvetica", "bold");
-      center("RECIBO", 72);
+    center("RECIBO", 210, 16, true);
+    center(r.numero, 230, 11);
 
-      docPDF.setFontSize(12);
-      docPDF.setFont("helvetica", "normal");
-      const valorFormatado = Number(receipt.valor || 0).toFixed(2).replace(".", ",");
-      const texto = `Declaro que recebi de ${receipt.nome}${
-        receipt.cpf ? `, inscrito no CPF ${receipt.cpf}` : ""
-      }, telefone ${receipt.telefone}, o valor de R$ ${valorFormatado} em ${receipt.date}${
-        receipt.descricao ? `, referente a ${receipt.descricao}` : ""
-      }.`;
-      const linhas = docPDF.splitTextToSize(texto, 180);
-      docPDF.text(linhas, 15, 82);
+    const valorFmt = Number(r.valor).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+    pdf.setFontSize(12);
+    pdf.setFont("helvetica", "normal");
+    const declaracao = `Declaro que recebi de ${r.nome}$
+      {r.cpf ? `, inscrito no CPF ${r.cpf}` : ""}$
+      {r.endereco ? `, com endereço em ${r.endereco}` : ""}, o valor de ${valorFmt} em ${r.date
+        .split("-")
+        .reverse()
+        .join("/")} referente aos seguintes produtos:`;
+    const lines = pdf.splitTextToSize(declaracao, 500);
+    pdf.text(lines, 40, 260);
 
-      center(storeInfo.cityName, 120);
-      center(storeInfo.name, 128);
-      center(storeInfo.responsible, 136);
+    const tableData = r.itens.map((it) => [
+      it.descricao,
+      `R$ ${Number(it.unit).toFixed(2)}`,
+      it.qtd,
+      `R$ ${(it.qtd * it.unit).toFixed(2)}`,
+    ]);
+    pdf.autoTable({
+      head: [["Descrição", "Preço unit.", "Qtd.", "Preço"]],
+      body: tableData,
+      startY: pdf.previousAutoTable ? pdf.previousAutoTable.finalY + 10 : 300,
+      styles: { fontSize: 10, halign: "left" },
+      headStyles: { fillColor: [245, 245, 245] },
+      columnStyles: { 1: { halign: "right" }, 2: { halign: "center" }, 3: { halign: "right" } },
+    });
 
-      docPDF.save(`recibo-${receipt.nome}.pdf`);
-    } catch (err) {
-      console.error("Erro ao gerar PDF:", err);
-    }
+    const afterTableY = pdf.previousAutoTable.finalY + 20;
+    pdf.setFont("helvetica", "bold");
+    pdf.text(`Total ${valorFmt}`, 40, afterTableY);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Meio de pagamento: ${r.pagamento || "-"}`, 40, afterTableY + 18);
+
+    const footerY = afterTableY + 80;
+    center(storeInfo.cityName, footerY);
+    center(storeInfo.name, footerY + 25);
+    center(storeInfo.responsible, footerY + 50);
+
+    pdf.save(`recibo-${r.numero}.pdf`);
   };
 
   return (
@@ -238,25 +345,35 @@ const ReceiptsManagement = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Valor</label>
+              <label className="block text-sm font-medium mb-1">Endereço</label>
               <input
-                type="number"
-                name="valor"
-                value={form.valor}
+                type="text"
+                name="endereco"
+                value={form.endereco}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
-                step="0.01"
-                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Descrição</label>
-              <input
-                type="text"
-                name="descricao"
-                value={form.descricao}
+              <label className="block text-sm font-medium mb-1">Forma de pagamento</label>
+              <select
+                name="pagamento"
+                value={form.pagamento}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
+              >
+                <option value="">Selecionar…</option>
+                <option>Dinheiro</option>
+                <option>Pix</option>
+                <option>Cartão de crédito</option>
+                <option>Cartão de débito</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Itens</label>
+              <ItemEditor
+                value={form.itens}
+                onChange={(items) => setForm((p) => ({ ...p, itens: items }))}
               />
             </div>
           </div>
