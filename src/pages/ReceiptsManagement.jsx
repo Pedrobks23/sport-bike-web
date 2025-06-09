@@ -134,7 +134,7 @@ const ItemEditor = React.forwardRef(({ value, onChange }, ref) => {
       </table>
     </div>
   );
-};
+});
 
 const ReceiptsManagement = () => {
   const navigate = useNavigate();
