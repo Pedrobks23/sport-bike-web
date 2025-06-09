@@ -137,12 +137,6 @@ const ReportsManagement = () => {
                     const servicoTotal = parseFloat(valor) * quantidade;
                     totalValor += servicoTotal;
                     totalServicos += quantidade;
-                    
-                      valor,
-                      quantidade,
-                      servicoTotal,
-                      totalAcumulado: totalValor
-                    });
                   }
                 });
               }
@@ -156,21 +150,11 @@ const ReportsManagement = () => {
                     const servicoTotal = valor * quantidade;
                     totalValor += servicoTotal;
                     totalServicos += quantidade;
-                    
-                      valor,
-                      quantidade,
-                      servicoTotal,
-                      totalAcumulado: totalValor
-                    });
                   }
                 });
               }
             });
           }
-  
-            valor: totalValor,
-            servicos: totalServicos
-          });
   
           return {
             id: doc.id,
