@@ -27,6 +27,7 @@ const WorkshopDashboard = () => {
   const navigate = useNavigate();
 
   // Estados principais
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [orders, setOrders] = useState({
     pending: [],
     inProgress: [],
@@ -51,6 +52,14 @@ const WorkshopDashboard = () => {
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showPartModal, setShowPartModal] = useState(false);
   const [serviceTable, setServiceTable] = useState({});
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   // Função para verificar se uma data está dentro do período
   const isWithinPeriod = (date, days) => {
@@ -1102,7 +1111,10 @@ const WorkshopDashboard = () => {
             <div className="mb-6">
               <h3 className="font-bold mb-4">Bicicletas</h3>
               {order.bicicletas?.map((bike, bikeIndex) => (
-                <div key={bikeIndex} className="bg-gray-50 p-4 rounded-lg mb-4">
+                <div
+                  key={bikeIndex}
+                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-4 mb-4"
+                >
                   <h4 className="font-bold mb-2">Bike {bikeIndex + 1}</h4>
                   <p>
                     <strong>Marca:</strong> {bike.marca}
@@ -1710,38 +1722,32 @@ const WorkshopDashboard = () => {
   // Renderização final do WorkshopDashboard
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <>
-        {loading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-4 rounded-lg">
-              <p className="text-lg">Carregando...</p>
+      <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+        <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+          {loading && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-4 rounded-lg">
+                <p className="text-lg">Carregando...</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="min-h-screen bg-[#f5f5f5]">
-          <header className="bg-white shadow-sm">
-            <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-              <div className="flex items-center">
-                <img
-                  src="/assets/Logo.png"
-                  alt="Sport & Bike"
-                  className="h-14"
-                />
-                <h1 className="ml-4 text-xl font-bold text-[#333]">
-                  Ordens de Serviço
-                </h1>
+          <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
+            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <img src="/assets/Logo.png" alt="Sport & Bike" className="h-12" />
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ordens de Serviço</h1>
               </div>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => navigate("/admin")}
-                  className="text-gray-600 hover:text-[#FFC107] transition-colors"
+                  className="text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
                 >
                   Voltar
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="text-gray-600 hover:text-[#FFC107] transition-colors"
+                  className="text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
                 >
                   Sair
                 </button>
@@ -1760,7 +1766,7 @@ const WorkshopDashboard = () => {
               <input
                 type="text"
                 placeholder="Buscar OS ou cliente..."
-                className="w-full max-w-md px-4 py-2 rounded border focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
+                className="w-full max-w-md px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -1817,7 +1823,7 @@ const WorkshopDashboard = () => {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className="bg-gray-50 p-4 rounded-lg min-h-[200px]"
+                        className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-4 shadow-xl min-h-[200px]"
                       >
                         {orders.map((order, index) => (
                           <Draggable
@@ -1862,7 +1868,7 @@ const WorkshopDashboard = () => {
             />
           )}
         </div>
-      </>
+      </div>
     </DragDropContext>
   );
 };
