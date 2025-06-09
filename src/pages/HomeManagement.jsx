@@ -1,12 +1,151 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ArrowLeft, Bike, Plus, Edit, Trash2, Eye, EyeOff, Search, Filter } from "lucide-react"
+import React, { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import {
+  ArrowLeft,
+  Bike,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+} from "lucide-react"
+import {
+  getFeaturedProducts,
+  createFeaturedProduct,
+  updateFeaturedProduct,
+  deleteFeaturedProduct,
+  getHomeSettings,
+  updateHomeSettings,
+} from "../services/homeService"
+import { uploadImage } from "../services/uploadImage"
 
-export default function ManageHomePage() {
+const normalizeDriveUrl = (url) => {
+  if (!url) return url
+  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`
+  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
+  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`
+  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/)
+  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`
+  return url
+}
+
+const emptyProduct = { name: "", price: "", image: "", category: "" }
+
+const ProductModal = ({ isEdit, onClose, onSave, product }) => {
+  const [formData, setFormData] = useState(product || emptyProduct)
+  const [imageFile, setImageFile] = useState(null)
+  const [preview, setPreview] = useState(product?.image || "")
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImageFile(file)
+      setPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleUrlChange = (e) => {
+    const value = e.target.value
+    setFormData((prev) => ({ ...prev, image: value }))
+    setPreview(normalizeDriveUrl(value))
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSave({ ...formData, imageFile })
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6">
+        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+          {isEdit ? "Editar" : "Novo"} Produto
+        </h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Nome</label>
+            <input
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Preço</label>
+            <input
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Categoria</label>
+            <input
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Link da Imagem (Google Drive)</label>
+            <input
+              name="image"
+              value={formData.image}
+              onChange={handleUrlChange}
+              className="w-full border rounded px-3 py-2 mb-2"
+              placeholder="https://drive.google.com/..."
+            />
+            <label className="block text-sm font-medium mb-1">Upload da Imagem</label>
+            <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
+            {preview && <img src={preview} alt="Pré-visualização" className="mt-2 w-full h-40 object-cover rounded" />}
+          </div>
+          <div className="flex justify-end gap-4 mt-4">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300">
+              Cancelar
+            </button>
+            <button type="submit" className="px-6 py-2 bg-blue-500 text-white rounded">
+              Salvar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default function HomeManagement() {
+  const navigate = useNavigate()
   const [isDarkMode, setIsDarkMode] = useState(false)
-  const [showFeaturedProducts, setShowFeaturedProducts] = useState(true)
+  const [products, setProducts] = useState([])
+  const [showFeatured, setShowFeatured] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editProduct, setEditProduct] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
+
+  const loadData = async () => {
+    const [prods, settings] = await Promise.all([getFeaturedProducts(), getHomeSettings()])
+    setProducts(prods)
+    setShowFeatured(settings.showFeaturedProducts ?? true)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme")
@@ -16,52 +155,47 @@ export default function ManageHomePage() {
     }
   }, [])
 
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Bicicleta IGK",
-      category: "MTB 29",
-      price: "R$ 1.200",
-      image: "/placeholder.svg?height=200&width=300",
-      featured: true,
-    },
-    {
-      id: 2,
-      name: "Speed Carbon Pro",
-      category: "Speed",
-      price: "R$ 3.500",
-      image: "/placeholder.svg?height=200&width=300",
-      featured: true,
-    },
-    {
-      id: 3,
-      name: "Urban Comfort",
-      category: "Urbana",
-      price: "R$ 890",
-      image: "/placeholder.svg?height=200&width=300",
-      featured: false,
-    },
-  ]
-
-  const handleToggleFeatured = (id) => {
-    alert(
-      `Produto ${id} ${featuredProducts.find((p) => p.id === id)?.featured ? "removido dos" : "adicionado aos"} destaques`
-    )
+  const handleAdd = async (data) => {
+    let imageUrl = data.image ? normalizeDriveUrl(data.image) : ""
+    if (data.imageFile) {
+      imageUrl = await uploadImage(data.imageFile)
+    }
+    await createFeaturedProduct({ ...data, image: imageUrl })
+    setShowModal(false)
+    loadData()
   }
 
-  const handleNewProduct = () => {
-    alert("Redirecionando para cadastro de novo produto...")
+  const handleUpdate = async (data) => {
+    let imageUrl = editProduct.image
+    if (data.imageFile) {
+      imageUrl = await uploadImage(data.imageFile)
+    } else if (data.image) {
+      imageUrl = normalizeDriveUrl(data.image)
+    }
+    await updateFeaturedProduct(editProduct.id, { ...data, image: imageUrl })
+    setEditProduct(null)
+    setShowModal(false)
+    loadData()
   }
 
-  const handleEditProduct = (id) => {
-    alert(`Editando produto ${id}`)
-  }
-
-  const handleDeleteProduct = (id) => {
-    if (confirm("Tem certeza que deseja excluir este produto?")) {
-      alert(`Produto ${id} excluído`)
+  const handleDelete = async (id) => {
+    if (window.confirm("Excluir produto?")) {
+      await deleteFeaturedProduct(id)
+      loadData()
     }
   }
+
+  const toggleVisibility = async () => {
+    const newValue = !showFeatured
+    setShowFeatured(newValue)
+    await updateHomeSettings({ showFeaturedProducts: newValue })
+  }
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
@@ -71,7 +205,7 @@ export default function ManageHomePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={() => window.history.back()}
+                  onClick={() => navigate("/admin")}
                   className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -84,7 +218,7 @@ export default function ManageHomePage() {
                 </div>
               </div>
               <button
-                onClick={handleNewProduct}
+                onClick={() => setShowModal(true)}
                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
               >
                 <Plus className="w-5 h-5" />
@@ -100,8 +234,8 @@ export default function ManageHomePage() {
                 <label className="flex items-center space-x-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={showFeaturedProducts}
-                    onChange={(e) => setShowFeaturedProducts(e.target.checked)}
+                    checked={showFeatured}
+                    onChange={toggleVisibility}
                     className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
                   />
                   <span className="text-gray-800 dark:text-white font-medium">Exibir seção de produtos em destaque</span>
@@ -118,92 +252,76 @@ export default function ManageHomePage() {
                     className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   />
                 </div>
-                <button className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                  <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                </button>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts
-              .filter(
-                (product) =>
-                  product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  product.category.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((product) => (
-                <div
-                  key={product.id}
-                  className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-                >
-                  <div className="relative">
-                    <img
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      className="w-full h-48 object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <button
-                        onClick={() => handleToggleFeatured(product.id)}
-                        className={`p-2 rounded-full transition-colors ${
-                          product.featured
-                            ? "bg-amber-500 text-white"
-                            : "bg-white/80 text-gray-600 hover:bg-amber-500 hover:text-white"
-                        }`}
-                        title={product.featured ? "Remover dos destaques" : "Adicionar aos destaques"}
-                      >
-                        {product.featured ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                      </button>
+          {loading ? (
+            <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                  >
+                    <div className="relative">
+                      <img src={product.image} alt={product.name} className="w-full h-48 object-cover" loading="lazy" />
                     </div>
-                    {product.featured && (
-                      <div className="absolute top-4 left-4">
-                        <span className="bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-medium">Destaque</span>
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{product.category}</span>
+                        <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
+                        <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
                       </div>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{product.category}</span>
-                      <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
-                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEditProduct(product.id)}
-                          className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                          title="Editar produto"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                          title="Excluir produto"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditProduct(product)
+                              setShowModal(true)
+                            }}
+                            className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                            title="Editar produto"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                            title="Excluir produto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">ID: {product.id}</div>
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">ID: {product.id}</div>
                     </div>
                   </div>
+                ))}
+              </div>
+              {filteredProducts.length === 0 && (
+                <div className="text-center py-12">
+                  <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum produto encontrado</h3>
+                  <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos produtos</p>
                 </div>
-              ))}
-          </div>
-          {featuredProducts.filter(
-            (product) =>
-              product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              product.category.toLowerCase().includes(searchTerm.toLowerCase())
-          ).length === 0 && (
-            <div className="text-center py-12">
-              <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum produto encontrado</h3>
-              <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos produtos</p>
-            </div>
+              )}
+            </>
           )}
         </main>
       </div>
+      {showModal && (
+        <ProductModal
+          isEdit={!!editProduct}
+          product={editProduct || emptyProduct}
+          onClose={() => {
+            setShowModal(false)
+            setEditProduct(null)
+          }}
+          onSave={editProduct ? handleUpdate : handleAdd}
+        />
+      )}
     </div>
   )
 }
