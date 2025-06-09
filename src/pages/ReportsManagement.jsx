@@ -58,7 +58,6 @@ const ReportsManagement = () => {
   };
   const processOrders = (orders, type) => {
     try {
-      console.log("Iniciando processamento de ordens:", orders);
       const data = {};
   
       orders.forEach((order) => {
@@ -94,14 +93,6 @@ const ReportsManagement = () => {
           data[key].total += Number(order.valor);
           data[key].quantity = data[key].quantity + Number(order.quantidade);
         }
-  
-        console.log(`Acumulado para ${key}:`, {
-          ordem: order.id,
-          valorOriginal: order.valor,
-          servicosOriginal: order.quantidade,
-          valorAcumulado: data[key].total,
-          servicosAcumulados: data[key].quantity
-        });
       });
   
       // Remove períodos sem valores
@@ -114,7 +105,6 @@ const ReportsManagement = () => {
         }))
         .sort((a, b) => new Date(a.period) - new Date(b.period));
   
-      console.log("Resultado final processado:", result);
       return result;
     } catch (error) {
       console.error("Erro ao processar ordens:", error);
@@ -135,11 +125,9 @@ const ReportsManagement = () => {
           let totalValor = 0;
           let totalServicos = 0;
           
-          console.log("Processando ordem:", doc.id, data);
   
           if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike, index) => {
-              console.log(`Processando bicicleta ${index}:`, bike);
               
               // Processa valorServicos (formato antigo)
               if (bike.valorServicos) {
@@ -149,13 +137,6 @@ const ReportsManagement = () => {
                     const servicoTotal = parseFloat(valor) * quantidade;
                     totalValor += servicoTotal;
                     totalServicos += quantidade;
-                    
-                    console.log(`Processando serviço (valorServicos) ${serviceName}:`, {
-                      valor,
-                      quantidade,
-                      servicoTotal,
-                      totalAcumulado: totalValor
-                    });
                   }
                 });
               }
@@ -169,23 +150,11 @@ const ReportsManagement = () => {
                     const servicoTotal = valor * quantidade;
                     totalValor += servicoTotal;
                     totalServicos += quantidade;
-                    
-                    console.log(`Processando serviço (serviceValues) ${serviceName}:`, {
-                      valor,
-                      quantidade,
-                      servicoTotal,
-                      totalAcumulado: totalValor
-                    });
                   }
                 });
               }
             });
           }
-  
-          console.log("Totais finais para ordem:", doc.id, {
-            valor: totalValor,
-            servicos: totalServicos
-          });
   
           return {
             id: doc.id,
@@ -204,7 +173,6 @@ const ReportsManagement = () => {
         });
   
       const processedData = processOrders(orders, reportType);
-      console.log("Dados processados:", processedData);
       setReportData(processedData);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
