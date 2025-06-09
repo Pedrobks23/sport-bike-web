@@ -1,400 +1,209 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download } from "lucide-react";
-import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
-import { db } from "../config/firebase";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+"use client"
 
-const ReportsManagement = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [reportType, setReportType] = useState("monthly");
-  const [selectedService, setSelectedService] = useState("all");
-  const [services, setServices] = useState([]);
-  const getDefaultDateRange = () => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 30);
-    return {
-      start: start.toISOString().split("T")[0],
-      end: end.toISOString().split("T")[0],
-    };
-  };
-  const [dateRange, setDateRange] = useState(getDefaultDateRange());
-  const [reportData, setReportData] = useState([]);
+import { useState, useEffect } from "react"
+import { ArrowLeft, Bike, Plus, Edit, Trash2, Eye, EyeOff, Search, Filter } from "lucide-react"
 
-  const loadServices = async () => {
-    try {
-      const servicosRef = collection(db, "servicos");
-      const querySnapshot = await getDocs(servicosRef);
-      const servicosData = [];
+export default function ManageHomePage() {
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [showFeaturedProducts, setShowFeaturedProducts] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        Object.keys(data).forEach((serviceName) => {
-          servicosData.push({
-            id: serviceName, // Usando o nome como ID
-            nome: serviceName,
-            valor: data[serviceName],
-          });
-        });
-      });
-
-      setServices(servicosData);
-    } catch (error) {
-      console.error("Erro ao carregar serviços:", error);
-    }
-  };
-  const processOrders = (orders, type) => {
-    try {
-      const data = {};
-  
-      orders.forEach((order) => {
-        if (!order.data) return;
-  
-        const orderDate = order.data;
-        let key;
-        
-        switch (type) {
-          case "daily":
-            key = orderDate.toLocaleDateString("pt-BR");
-            break;
-          case "weekly":
-            const weekStart = new Date(orderDate);
-            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-            key = `Semana de ${weekStart.toLocaleDateString("pt-BR")}`;
-            break;
-          case "monthly":
-          default:
-            key = orderDate.toLocaleString("pt-BR", {
-              month: "long",
-              year: "numeric",
-            });
-        }
-  
-        // Inicializa o período se não existir
-        if (!data[key]) {
-          data[key] = { total: 0, quantity: 0 };
-        }
-  
-        // Usa os valores diretos da ordem, sem acumular
-        if (order.valor > 0) {
-          data[key].total += Number(order.valor);
-          data[key].quantity = data[key].quantity + Number(order.quantidade);
-        }
-      });
-  
-      // Remove períodos sem valores
-      const result = Object.entries(data)
-        .filter(([_, values]) => values.total > 0)
-        .map(([period, values]) => ({
-          period,
-          total: Number(values.total.toFixed(2)),
-          quantity: values.quantity
-        }))
-        .sort((a, b) => new Date(a.period) - new Date(b.period));
-  
-      return result;
-    } catch (error) {
-      console.error("Erro ao processar ordens:", error);
-      return [];
-    }
-  };
-
-  const loadReportData = async () => {
-    setLoading(true);
-    try {
-      const ordensRef = collection(db, "ordens");
-      let ordersQuery = query(ordensRef, orderBy("dataCriacao", "desc"));
-      const querySnapshot = await getDocs(ordersQuery);
-      
-      const orders = querySnapshot.docs
-        .map((doc) => {
-          const data = doc.data();
-          let totalValor = 0;
-          let totalServicos = 0;
-          
-  
-          if (data.bicicletas?.length > 0) {
-            data.bicicletas.forEach((bike, index) => {
-              
-              // Processa valorServicos (formato antigo)
-              if (bike.valorServicos) {
-                Object.entries(bike.valorServicos).forEach(([serviceName, valor]) => {
-                  if (selectedService === "all" || serviceName === selectedService) {
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = parseFloat(valor) * quantidade;
-                    totalValor += servicoTotal;
-                    totalServicos += quantidade;
-                  }
-                });
-              }
-  
-              // Processa serviceValues (formato novo)
-              if (bike.serviceValues) {
-                Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
-                  if (selectedService === "all" || serviceName === selectedService) {
-                    const valor = serviceData.valorFinal || serviceData.valor || 0;
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = valor * quantidade;
-                    totalValor += servicoTotal;
-                    totalServicos += quantidade;
-                  }
-                });
-              }
-            });
-          }
-  
-          return {
-            id: doc.id,
-            data: data.dataCriacao ? 
-              (typeof data.dataCriacao === 'string' ? new Date(data.dataCriacao) : data.dataCriacao.toDate()) : 
-              new Date(),
-            valor: totalValor,
-            quantidade: totalServicos
-          };
-        })
-        .filter((order) => {
-          const startDate = new Date(dateRange.start);
-          const endDate = new Date(dateRange.end);
-          endDate.setHours(23, 59, 59);
-          return order.data >= startDate && order.data <= endDate;
-        });
-  
-      const processedData = processOrders(orders, reportType);
-      setReportData(processedData);
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const exportPDF = () => {
-    const doc = new jsPDF();
-
-    doc.text("Relatório de Serviços", 14, 15);
-    doc.text(`Período: ${dateRange.start} a ${dateRange.end}`, 14, 25);
-
-    const tableColumn = ["Período", "Quantidade", "Total"];
-    const tableRows = reportData.map((item) => [
-      item.period,
-      item.quantity,
-      `R$ ${item.total.toFixed(2)}`,
-    ]);
-
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 35,
-      theme: "grid",
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [37, 99, 235] },
-    });
-
-    doc.save(`relatorio-${new Date().toISOString()}.pdf`);
-  };
   useEffect(() => {
-    loadServices();
-  }, []);
-  useEffect(() => {
-    loadReportData();
-  }, [reportType, selectedService, dateRange]);
-  useEffect(() => {
-    const now = new Date();
-    let start = new Date();
-    switch (reportType) {
-      case "daily":
-        start.setDate(now.getDate() - 7);
-        break;
-      case "weekly":
-        start.setDate(now.getDate() - 28);
-        break;
-      case "monthly":
-        start.setMonth(now.getMonth() - 6);
-        break;
+    const savedTheme = localStorage.getItem("theme")
+    if (savedTheme === "dark") {
+      setIsDarkMode(true)
+      document.documentElement.classList.add("dark")
     }
+  }, [])
 
-    setDateRange({
-      start: start.toISOString().split("T")[0],
-      end: now.toISOString().split("T")[0],
-    });
-  }, [reportType]);
+  const featuredProducts = [
+    {
+      id: 1,
+      name: "Bicicleta IGK",
+      category: "MTB 29",
+      price: "R$ 1.200",
+      image: "/placeholder.svg?height=200&width=300",
+      featured: true,
+    },
+    {
+      id: 2,
+      name: "Speed Carbon Pro",
+      category: "Speed",
+      price: "R$ 3.500",
+      image: "/placeholder.svg?height=200&width=300",
+      featured: true,
+    },
+    {
+      id: 3,
+      name: "Urban Comfort",
+      category: "Urbana",
+      price: "R$ 890",
+      image: "/placeholder.svg?height=200&width=300",
+      featured: false,
+    },
+  ]
+
+  const handleToggleFeatured = (id) => {
+    alert(
+      `Produto ${id} ${featuredProducts.find((p) => p.id === id)?.featured ? "removido dos" : "adicionado aos"} destaques`
+    )
+  }
+
+  const handleNewProduct = () => {
+    alert("Redirecionando para cadastro de novo produto...")
+  }
+
+  const handleEditProduct = (id) => {
+    alert(`Editando produto ${id}`)
+  }
+
+  const handleDeleteProduct = (id) => {
+    if (confirm("Tem certeza que deseja excluir este produto?")) {
+      alert(`Produto ${id} excluído`)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => window.history.back()}
+                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gradient-to-r from-amber-400 to-amber-600 p-2 rounded-full">
+                    <Bike className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Home</h1>
+                </div>
+              </div>
               <button
-                onClick={() => navigate("/admin")}
-                className="mr-4 text-gray-600 hover:text-gray-900 flex items-center"
+                onClick={handleNewProduct}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
               >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Voltar
+                <Plus className="w-5 h-5" />
+                <span>Novo Produto</span>
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
-            </div>
-            <button
-              onClick={exportPDF}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              Exportar PDF
-            </button>
-          </div>
-        </div>
-      </header>
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Tipo de Relatório
-              </label>
-              <select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              >
-                <option value="daily">Diário</option>
-                <option value="weekly">Semanal</option>
-                <option value="monthly">Mensal</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Serviço
-              </label>
-              <select
-                value={selectedService}
-                onChange={(e) => setSelectedService(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              >
-                <option value="all">Todos os serviços</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Data Inicial
-              </label>
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) =>
-                  setDateRange((prev) => ({ ...prev, start: e.target.value }))
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Data Final
-              </label>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) =>
-                  setDateRange((prev) => ({ ...prev, end: e.target.value }))
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                max={new Date().toISOString().split("T")[0]}
-              />
             </div>
           </div>
-        </div>
-
-        {loading ? (
-          <div>Carregando...</div>
-        ) : (
-          <>
-            <div className="bg-white shadow rounded-lg p-6 mb-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">
-                Resultados
-              </h2>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={reportData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#2563eb"
-                      name="Valor Total (R$)"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="quantity"
-                      stroke="#059669"
-                      name="Quantidade de Serviços"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+        </header>
+        <main className="container mx-auto px-4 py-8">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showFeaturedProducts}
+                    onChange={(e) => setShowFeaturedProducts(e.target.checked)}
+                    className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
+                  />
+                  <span className="text-gray-800 dark:text-white font-medium">Exibir seção de produtos em destaque</span>
+                </label>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar produtos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                </div>
+                <button className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                  <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                </button>
               </div>
             </div>
-
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">
-                Detalhamento
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">
-                        Período
-                      </th>
-                      <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase">
-                        Quantidade
-                      </th>
-                      <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase">
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {reportData.map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.period}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                          {item.quantity}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                          R$ {item.total.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredProducts
+              .filter(
+                (product) =>
+                  product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  product.category.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((product) => (
+                <div
+                  key={product.id}
+                  className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                >
+                  <div className="relative">
+                    <img
+                      src={product.image || "/placeholder.svg"}
+                      alt={product.name}
+                      className="w-full h-48 object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-4 right-4">
+                      <button
+                        onClick={() => handleToggleFeatured(product.id)}
+                        className={`p-2 rounded-full transition-colors ${
+                          product.featured
+                            ? "bg-amber-500 text-white"
+                            : "bg-white/80 text-gray-600 hover:bg-amber-500 hover:text-white"
+                        }`}
+                        title={product.featured ? "Remover dos destaques" : "Adicionar aos destaques"}
+                      >
+                        {product.featured ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {product.featured && (
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-medium">Destaque</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{product.category}</span>
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
+                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditProduct(product.id)}
+                          className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                          title="Editar produto"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                          title="Excluir produto"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">ID: {product.id}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+          {featuredProducts.filter(
+            (product) =>
+              product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              product.category.toLowerCase().includes(searchTerm.toLowerCase())
+          ).length === 0 && (
+            <div className="text-center py-12">
+              <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum produto encontrado</h3>
+              <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos produtos</p>
             </div>
-          </>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
     </div>
-  );
-};
-
-export default ReportsManagement;
+  )
+}
