@@ -683,7 +683,7 @@ export default function Home() {
                   <p className="text-gray-600 dark:text-gray-300">
                     Segunda a Sexta: 8h às 18h
                     <br />
-                    Sábado: 8h às 16h
+                    Sábado: 8h às 15h
                     <br />
                     Domingo: Fechado
                   </p>
