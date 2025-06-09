@@ -135,7 +135,7 @@ export default function Home() {
     const fetchServices = async () => {
       try {
         const data = await getAllServicesOrdered();
-        setOfficeServices(data.map((s) => `${s.nome} - R$ ${s.valor.toFixed(2)}`));
+        setOfficeServices(data.map((s) => s.nome));
       } catch (err) {
         console.error("Erro ao carregar serviços:", err);
       }

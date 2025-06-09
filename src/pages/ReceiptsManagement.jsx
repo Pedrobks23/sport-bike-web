@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, Trash, Edit } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
@@ -38,13 +38,28 @@ const emptyForm = {
   pagamento: "",
 };
 
-const ItemEditor = ({ value, onChange }) => {
+const ItemEditor = React.forwardRef(({ value, onChange }, ref) => {
   const [items, setItems] = useState(value || []);
   const [item, setItem] = useState({ descricao: "", qtd: 1, unit: "" });
 
   useEffect(() => {
     onChange(items);
   }, [items]);
+
+  useImperativeHandle(ref, () => ({
+    finalize() {
+      let newItems = items;
+      if (item.descricao) {
+        newItems = [
+          ...items,
+          { descricao: item.descricao, qtd: Number(item.qtd), unit: Number(item.unit) },
+        ];
+        setItems(newItems);
+        setItem({ descricao: "", qtd: 1, unit: "" });
+      }
+      return newItems;
+    },
+  }));
 
   const handleField = (e) => {
     const { name, value } = e.target;
@@ -126,6 +141,7 @@ const ReceiptsManagement = () => {
   const [form, setForm] = useState(emptyForm);
   const [receipts, setReceipts] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const itemEditorRef = useRef(null);
 
   useEffect(() => {
     loadReceipts();
@@ -167,12 +183,14 @@ const ReceiptsManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const total = form.itens.reduce((sum, it) => sum + it.qtd * it.unit, 0);
+      const finalItems = itemEditorRef.current.finalize();
+      setForm((prev) => ({ ...prev, itens: finalItems }));
+      const total = finalItems.reduce((sum, it) => sum + it.qtd * it.unit, 0);
       if (editingId) {
-        await updateReceipt(editingId, { ...form, valor: total });
+        await updateReceipt(editingId, { ...form, itens: finalItems, valor: total });
       } else {
         const numero = await getNextReceiptNumber();
-        await createReceipt({ ...form, valor: total, numero });
+        await createReceipt({ ...form, itens: finalItems, valor: total, numero });
       }
       setForm(emptyForm);
       setEditingId(null);
@@ -216,16 +234,17 @@ const ReceiptsManagement = () => {
       pdf.text(txt, (pageW - w) / 2, y);
     };
 
-    center(storeInfo.name, 40, 18, true);
-    center(storeInfo.company, 60);
-    center(`CNPJ ${storeInfo.cnpj}`, 75);
-    center(storeInfo.address, 90);
-    center(storeInfo.city, 105);
-    center(`CEP ${storeInfo.cep}`, 120);
-    center(storeInfo.email, 135);
-    center(storeInfo.phone1, 150);
-    center(storeInfo.phone2, 165);
-    center(`@${storeInfo.instagram}`, 180);
+    pdf.setFontSize(12);
+    pdf.text(storeInfo.name, 40, 40);
+    pdf.text(`CNPJ ${storeInfo.cnpj}`, 40, 55);
+    pdf.text(storeInfo.address, pageW / 2, 40, { align: "center" });
+    pdf.text(`${storeInfo.city} - CEP ${storeInfo.cep}`, pageW / 2, 55, { align: "center" });
+    pdf.text(storeInfo.phone1, pageW - 40, 40, { align: "right" });
+    pdf.text(storeInfo.phone2, pageW - 40, 55, { align: "right" });
+    pdf.text(storeInfo.email, pageW - 40, 70, { align: "right" });
+    pdf.text(`@${storeInfo.instagram}`, pageW - 40, 85, { align: "right" });
+
+    center(storeInfo.company, 110);
 
     center("RECIBO", 210, 16, true);
     center(r.numero, 230, 11);
@@ -374,6 +393,7 @@ const ReceiptsManagement = () => {
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Itens</label>
               <ItemEditor
+                ref={itemEditorRef}
                 value={form.itens}
                 onChange={(items) => setForm((p) => ({ ...p, itens: items }))}
               />

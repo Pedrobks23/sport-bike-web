@@ -7,9 +7,10 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
-import { uploadImage } from "./uploadImage";
+import { uploadImage, deleteImageByUrl } from "./uploadImage";
 
 export const getFeaturedProducts = async () => {
   const ref = collection(db, "featuredProducts");
@@ -35,8 +36,11 @@ export const createFeaturedProduct = async ({ imageFile, ...data }) => {
 
 export const updateFeaturedProduct = async (id, { imageFile, ...data }) => {
   const refDoc = doc(db, "featuredProducts", id);
-  let updates = { ...data, updatedAt: serverTimestamp() };
+  const updates = { ...data, updatedAt: serverTimestamp() };
   if (imageFile) {
+    const snap = await getDoc(refDoc);
+    const oldUrl = snap.data()?.image;
+    if (oldUrl) await deleteImageByUrl(oldUrl);
     const url = await uploadImage(imageFile);
     updates.image = url;
   }
@@ -45,6 +49,9 @@ export const updateFeaturedProduct = async (id, { imageFile, ...data }) => {
 
 export const deleteFeaturedProduct = async (id) => {
   const ref = doc(db, "featuredProducts", id);
+  const snap = await getDoc(ref);
+  const url = snap.data()?.image;
+  if (url) await deleteImageByUrl(url);
   await deleteDoc(ref);
 };
 
@@ -56,5 +63,5 @@ export const getHomeSettings = async () => {
 
 export const updateHomeSettings = async (data) => {
   const ref = doc(db, "home", "settings");
-  await updateDoc(ref, data);
+  await setDoc(ref, data, { merge: true });
 };
