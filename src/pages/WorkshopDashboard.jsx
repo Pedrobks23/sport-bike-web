@@ -1871,22 +1871,12 @@ const WorkshopDashboard = () => {
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                       {filteredOrders.pending.map((order, index) => (
-                        <PortalAwareDraggable key={order.id} draggableId={order.id} index={index}>
-                          {(prov, snapshot) => (
-                            <div
-                              ref={prov.innerRef}
-                              {...prov.draggableProps}
-                              {...prov.dragHandleProps}
-                              style={{
-                                ...prov.draggableProps.style,
-                                opacity: 1,
-                                zIndex: snapshot.isDragging ? 999 : "auto",
-                                margin: 0,
-                              }}
-                            >
-                              <OrderCard order={order} />
-                            </div>
-                          )}
+                        <PortalAwareDraggable
+                          key={order.id}
+                          draggableId={String(order.id)}
+                          index={index}
+                        >
+                          <OrderCard order={order} />
                         </PortalAwareDraggable>
                       ))}
                       {provided.placeholder}
@@ -1903,22 +1893,12 @@ const WorkshopDashboard = () => {
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                       {filteredOrders.inProgress.map((order, index) => (
-                        <PortalAwareDraggable key={order.id} draggableId={order.id} index={index}>
-                          {(prov, snapshot) => (
-                            <div
-                              ref={prov.innerRef}
-                              {...prov.draggableProps}
-                              {...prov.dragHandleProps}
-                              style={{
-                                ...prov.draggableProps.style,
-                                opacity: 1,
-                                zIndex: snapshot.isDragging ? 999 : "auto",
-                                margin: 0,
-                              }}
-                            >
-                              <OrderCard order={order} />
-                            </div>
-                          )}
+                        <PortalAwareDraggable
+                          key={order.id}
+                          draggableId={String(order.id)}
+                          index={index}
+                        >
+                          <OrderCard order={order} />
                         </PortalAwareDraggable>
                       ))}
                       {provided.placeholder}
@@ -1952,22 +1932,12 @@ const WorkshopDashboard = () => {
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                       {filteredOrders.done.map((order, index) => (
-                        <PortalAwareDraggable key={order.id} draggableId={order.id} index={index}>
-                          {(prov, snapshot) => (
-                            <div
-                              ref={prov.innerRef}
-                              {...prov.draggableProps}
-                              {...prov.dragHandleProps}
-                              style={{
-                                ...prov.draggableProps.style,
-                                opacity: 1,
-                                zIndex: snapshot.isDragging ? 999 : "auto",
-                                margin: 0,
-                              }}
-                            >
-                              <OrderCard order={order} />
-                            </div>
-                          )}
+                        <PortalAwareDraggable
+                          key={order.id}
+                          draggableId={String(order.id)}
+                          index={index}
+                        >
+                          <OrderCard order={order} />
                         </PortalAwareDraggable>
                       ))}
                       {provided.placeholder}
