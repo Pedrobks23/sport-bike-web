@@ -1849,12 +1849,16 @@ const WorkshopDashboard = () => {
                     <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                       {filteredOrders.pending.map((order, index) => (
                         <Draggable key={order.id} draggableId={order.id} index={index}>
-                          {(prov) => (
+                          {(prov, snapshot) => (
                             <div
                               ref={prov.innerRef}
                               {...prov.draggableProps}
                               {...prov.dragHandleProps}
-                              style={prov.draggableProps.style}
+                              style={{
+                                ...prov.draggableProps.style,
+                                opacity: 1,
+                                zIndex: snapshot.isDragging ? 50 : 'auto',
+                              }}
                             >
                               <OrderCard order={order} />
                             </div>
@@ -1876,12 +1880,16 @@ const WorkshopDashboard = () => {
                     <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                       {filteredOrders.inProgress.map((order, index) => (
                         <Draggable key={order.id} draggableId={order.id} index={index}>
-                          {(prov) => (
+                          {(prov, snapshot) => (
                             <div
                               ref={prov.innerRef}
                               {...prov.draggableProps}
                               {...prov.dragHandleProps}
-                              style={prov.draggableProps.style}
+                              style={{
+                                ...prov.draggableProps.style,
+                                opacity: 1,
+                                zIndex: snapshot.isDragging ? 50 : 'auto',
+                              }}
                             >
                               <OrderCard order={order} />
                             </div>
@@ -1920,12 +1928,16 @@ const WorkshopDashboard = () => {
                     <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                       {filteredOrders.done.map((order, index) => (
                         <Draggable key={order.id} draggableId={order.id} index={index}>
-                          {(prov) => (
+                          {(prov, snapshot) => (
                             <div
                               ref={prov.innerRef}
                               {...prov.draggableProps}
                               {...prov.dragHandleProps}
-                              style={prov.draggableProps.style}
+                              style={{
+                                ...prov.draggableProps.style,
+                                opacity: 1,
+                                zIndex: snapshot.isDragging ? 50 : 'auto',
+                              }}
                             >
                               <OrderCard order={order} />
                             </div>
