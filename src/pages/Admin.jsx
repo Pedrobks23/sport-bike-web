@@ -28,6 +28,7 @@ export default function Admin() {
   const [ordersToday, setOrdersToday] = useState(0);
   const [customersCount, setCustomersCount] = useState(0);
   const [bikesMaintenance, setBikesMaintenance] = useState(0);
+  const [statsError, setStatsError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function Admin() {
         setBikesMaintenance(b);
       } catch (err) {
         console.error("Erro ao carregar dados do dashboard:", err);
+        setStatsError("Falha ao carregar dados");
       }
     };
     loadStats();
@@ -198,6 +200,9 @@ export default function Admin() {
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
+          {statsError && (
+            <p className="text-red-500 text-center mb-4">{statsError}</p>
+          )}
           <div className="mb-12">
             <div className="bg-gradient-to-r from-amber-400 to-amber-600 rounded-2xl p-8 text-white shadow-2xl">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Bem-vindo ao Dashboard</h2>

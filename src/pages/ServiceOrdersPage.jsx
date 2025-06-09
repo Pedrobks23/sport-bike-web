@@ -19,6 +19,7 @@ export default function ServiceOrdersPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState({ pending: [], inProgress: [], completed: [] });
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -40,6 +41,7 @@ export default function ServiceOrdersPage() {
         });
       } catch (err) {
         console.error("Erro ao carregar ordens:", err);
+        setLoadError("Falha ao carregar ordens");
       }
     };
     load();
@@ -122,6 +124,9 @@ export default function ServiceOrdersPage() {
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
+          {loadError && (
+            <p className="text-red-500 text-center mb-4">{loadError}</p>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
               <div className="flex items-center justify-between">
