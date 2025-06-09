@@ -236,12 +236,14 @@ const ReceiptsManagement = () => {
     });
     pdf.setFontSize(12);
     pdf.setFont("helvetica", "normal");
-    const declaracao = `Declaro que recebi de ${r.nome}$
-      {r.cpf ? `, inscrito no CPF ${r.cpf}` : ""}$
-      {r.endereco ? `, com endereço em ${r.endereco}` : ""}, o valor de ${valorFmt} em ${r.date
-        .split("-")
-        .reverse()
-        .join("/")} referente aos seguintes produtos:`;
+    const declaracao = `Declaro que recebi de ${r.nome}${
+      r.cpf ? `, inscrito no CPF ${r.cpf}` : ""
+    }${
+      r.endereco ? `, com endereço em ${r.endereco}` : ""
+    }, o valor de ${valorFmt} em ${r.date
+      .split("-")
+      .reverse()
+      .join("/")} referente aos seguintes produtos:`;
     const lines = pdf.splitTextToSize(declaracao, 500);
     pdf.text(lines, 40, 260);
 
