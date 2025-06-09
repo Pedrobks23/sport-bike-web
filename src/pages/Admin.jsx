@@ -20,7 +20,7 @@ const Admin = () => {
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center">
-            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-10" />
+            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-14" />
             <h1 className="ml-4 text-xl font-bold text-[#333]">
               Área Administrativa
             </h1>

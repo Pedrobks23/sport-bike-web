@@ -225,6 +225,7 @@ const ReceiptsManagement = () => {
 
   const generatePDF = (r) => {
     const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    pdf.setTextColor(0, 0, 0);
     const pageW = pdf.internal.pageSize.getWidth();
 
     const center = (txt, y, fontSize = 10, bold = false) => {
@@ -276,8 +277,8 @@ const ReceiptsManagement = () => {
       head: [["Descrição", "Preço unit.", "Qtd.", "Preço"]],
       body: tableData,
       startY: pdf.previousAutoTable ? pdf.previousAutoTable.finalY + 10 : 300,
-      styles: { fontSize: 10, halign: "left" },
-      headStyles: { fillColor: [245, 245, 245] },
+      styles: { fontSize: 10, halign: "left", textColor: [0, 0, 0] },
+      headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
       columnStyles: { 1: { halign: "right" }, 2: { halign: "center" }, 3: { halign: "right" } },
     });
 

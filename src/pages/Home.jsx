@@ -283,7 +283,7 @@ export default function Home() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <img src="/assets/Logo.png" alt="Sport & Bike" className="w-8 h-8" />
+                <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
                 <span className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</span>
               </div>
               {/* Desktop Navigation */}
@@ -762,7 +762,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <div className="flex items-center space-x-2 mb-4">
-                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-8 h-8" />
+                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
                   <span className="text-2xl font-bold">Sport & Bike</span>
                 </div>
                 <p className="text-gray-400">Desde 1999 oferecendo o melhor do ciclismo em Fortaleza.</p>

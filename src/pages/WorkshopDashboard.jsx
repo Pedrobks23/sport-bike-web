@@ -1726,7 +1726,7 @@ const WorkshopDashboard = () => {
                 <img
                   src="/assets/Logo.png"
                   alt="Sport & Bike"
-                  className="h-10"
+                  className="h-14"
                 />
                 <h1 className="ml-4 text-xl font-bold text-[#333]">
                   Ordens de Serviço
