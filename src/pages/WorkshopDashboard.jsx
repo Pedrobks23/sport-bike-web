@@ -1857,7 +1857,8 @@ const WorkshopDashboard = () => {
                               style={{
                                 ...prov.draggableProps.style,
                                 opacity: 1,
-                                zIndex: snapshot.isDragging ? 50 : 'auto',
+                                zIndex: snapshot.isDragging ? 50 : "auto",
+                                margin: 0,
                               }}
                             >
                               <OrderCard order={order} />
@@ -1888,7 +1889,8 @@ const WorkshopDashboard = () => {
                               style={{
                                 ...prov.draggableProps.style,
                                 opacity: 1,
-                                zIndex: snapshot.isDragging ? 50 : 'auto',
+                                zIndex: snapshot.isDragging ? 50 : "auto",
+                                margin: 0,
                               }}
                             >
                               <OrderCard order={order} />
@@ -1936,7 +1938,8 @@ const WorkshopDashboard = () => {
                               style={{
                                 ...prov.draggableProps.style,
                                 opacity: 1,
-                                zIndex: snapshot.isDragging ? 50 : 'auto',
+                                zIndex: snapshot.isDragging ? 50 : "auto",
+                                margin: 0,
                               }}
                             >
                               <OrderCard order={order} />
