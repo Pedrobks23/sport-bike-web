@@ -1,6 +1,20 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import {
+  ArrowLeft,
+  Wrench,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Clock,
+  User,
+  Phone,
+  Calendar,
+  DollarSign,
+} from "lucide-react";
 import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
 import {
@@ -27,6 +41,7 @@ const WorkshopDashboard = () => {
   const navigate = useNavigate();
 
   // Estados principais
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [orders, setOrders] = useState({
     pending: [],
     inProgress: [],
@@ -51,6 +66,14 @@ const WorkshopDashboard = () => {
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showPartModal, setShowPartModal] = useState(false);
   const [serviceTable, setServiceTable] = useState({});
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   // Função para verificar se uma data está dentro do período
   const isWithinPeriod = (date, days) => {
@@ -119,13 +142,13 @@ const WorkshopDashboard = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "Pendente":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "Em Andamento":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "Pronto":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
     }
   };
 
@@ -635,19 +658,25 @@ const WorkshopDashboard = () => {
       }
     };
 
+    const description = order.bicicletas
+      ?.map((bike) => `${bike.marca} ${bike.modelo} (${bike.cor})`)
+      .join(", ");
+
     return (
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-3 cursor-pointer hover:shadow-md transition-shadow relative">
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-bold text-lg">{order.codigo}</span>
+      <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group mb-3">
+        <div className="flex items-start justify-between mb-3">
+          <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+            {order.codigo}
+          </h4>
           <div className="relative">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowStatusMenu(!showStatusMenu);
               }}
-              className="text-gray-600 hover:text-gray-800"
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              •••
+              <MoreHorizontal className="w-4 h-4" />
             </button>
             {showStatusMenu && (
               <div
@@ -692,39 +721,38 @@ const WorkshopDashboard = () => {
             setShowModal(true);
           }}
         >
-          <div className="flex flex-col gap-1">
-            <p className="text-gray-700 text-sm">
-              <strong>Data:</strong>{" "}
-              {new Date(order.dataCriacao).toLocaleDateString()}
-            </p>
+          <div className="space-y-2 text-sm">
+            <div className="text-gray-600 dark:text-gray-400">
+              Cliente: {order.cliente?.nome}
+            </div>
+            <div className="flex items-center text-gray-600 dark:text-gray-400">
+              <Calendar className="w-4 h-4 mr-2" />
+              <span>Data: {new Date(order.dataCriacao).toLocaleDateString()}</span>
+            </div>
             {order.dataAgendamento && (
-              <p className="text-gray-600 text-sm">
-                <strong>Agendamento:</strong>{" "}
-                {new Date(order.dataAgendamento).toLocaleDateString()}
-              </p>
-            )}
-            <p className="text-gray-600 text-sm">
-              <strong>Total:</strong> {formatCurrency(calculateOrderTotal())}
-            </p>
-          </div>
-
-          <div className="mt-2">
-            {order.bicicletas?.map((bike, index) => (
-              <div key={index} className="text-xs text-gray-500">
-                {bike.marca} {bike.modelo} ({bike.cor})
+              <div className="flex items-center text-gray-600 dark:text-gray-400">
+                <Clock className="w-4 h-4 mr-2" />
+                <span>Agendamento: {new Date(order.dataAgendamento).toLocaleDateString()}</span>
               </div>
-            ))}
+            )}
+            <div className="flex items-center text-gray-600 dark:text-gray-400">
+              <DollarSign className="w-4 h-4 mr-2" />
+              <span>Total: {formatCurrency(calculateOrderTotal())}</span>
+            </div>
+            <div className="flex items-center text-gray-600 dark:text-gray-400">
+              <Phone className="w-4 h-4 mr-2" />
+              <span>{order.cliente?.telefone}</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between mt-2 text-sm">
-            <span
-              className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                order.status
-              )}`}
-            >
+          <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">
+            {description}
+          </p>
+
+          <div className="mt-3">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
               {order.status}
             </span>
-            <span>{order.cliente?.telefone}</span>
           </div>
         </div>
       </div>
@@ -1063,7 +1091,7 @@ const WorkshopDashboard = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
           <div className="p-6">
             {/* Cabeçalho */}
@@ -1102,7 +1130,10 @@ const WorkshopDashboard = () => {
             <div className="mb-6">
               <h3 className="font-bold mb-4">Bicicletas</h3>
               {order.bicicletas?.map((bike, bikeIndex) => (
-                <div key={bikeIndex} className="bg-gray-50 p-4 rounded-lg mb-4">
+                <div
+                  key={bikeIndex}
+                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-4 mb-4"
+                >
                   <h4 className="font-bold mb-2">Bike {bikeIndex + 1}</h4>
                   <p>
                     <strong>Marca:</strong> {bike.marca}
@@ -1710,41 +1741,55 @@ const WorkshopDashboard = () => {
   // Renderização final do WorkshopDashboard
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <>
-        {loading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-4 rounded-lg">
-              <p className="text-lg">Carregando...</p>
-            </div>
-          </div>
-        )}
-
-        <div className="min-h-screen bg-[#f5f5f5]">
-          <header className="bg-white shadow-sm">
-            <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-              <div className="flex items-center">
-                <img
-                  src="/assets/Logo.png"
-                  alt="Sport & Bike"
-                  className="h-14"
-                />
-                <h1 className="ml-4 text-xl font-bold text-[#333]">
-                  Ordens de Serviço
-                </h1>
+      <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+        <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+          {loading && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-4 rounded-lg">
+                <p className="text-lg">Carregando...</p>
               </div>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => navigate("/admin")}
-                  className="text-gray-600 hover:text-[#FFC107] transition-colors"
-                >
-                  Voltar
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-600 hover:text-[#FFC107] transition-colors"
-                >
-                  Sair
-                </button>
+            </div>
+          )}
+
+          <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-gradient-to-r from-amber-400 to-amber-600 p-2 rounded-full">
+                      <Wrench className="w-6 h-6 text-white" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ordens de Serviço</h1>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Buscar OS ou cliente..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent w-64"
+                    />
+                  </div>
+                  <button className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                  >
+                    Sair
+                  </button>
+                </div>
               </div>
             </div>
           </header>
@@ -1756,97 +1801,147 @@ const WorkshopDashboard = () => {
               </div>
             )}
 
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="Buscar OS ou cliente..."
-                className="w-full max-w-md px-4 py-2 rounded border focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-yellow-800 dark:text-yellow-400 font-medium">Pendente</p>
+                    <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-300">({orders.pending.length})</p>
+                  </div>
+                  <div className="bg-yellow-200 dark:bg-yellow-800 p-3 rounded-full">
+                    <Clock className="w-6 h-6 text-yellow-700 dark:text-yellow-300" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-100 dark:bg-blue-900/30 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-800 dark:text-blue-400 font-medium">Em Andamento</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-300">({orders.inProgress.length})</p>
+                  </div>
+                  <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-full">
+                    <Wrench className="w-6 h-6 text-blue-700 dark:text-blue-300" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-6 border border-green-200 dark:border-green-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-800 dark:text-green-400 font-medium">Pronto</p>
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-300">({orders.done.length})</p>
+                  </div>
+                  <div className="bg-green-200 dark:bg-green-800 p-3 rounded-full">
+                    <User className="w-6 h-6 text-green-700 dark:text-green-300" />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {Object.entries(filteredOrders).map(([status, orders]) => (
-                <div key={status}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold flex items-center">
-                      <span
-                        className={`w-3 h-3 rounded-full mr-2 ${
-                          status === "pending"
-                            ? "bg-yellow-400"
-                            : status === "inProgress"
-                            ? "bg-blue-400"
-                            : "bg-green-400"
-                        }`}
-                      ></span>
-                      {status === "pending"
-                        ? "Pendente"
-                        : status === "inProgress"
-                        ? "Em Andamento"
-                        : "Pronto"}{" "}
-                      ({orders.length})
-                    </h2>
-                    {status === "done" && (
-                      <div className="flex items-center gap-2">
-                        {!showAllCompleted && (
-                          <select
-                            value={daysToShow}
-                            onChange={(e) =>
-                              setDaysToShow(Number(e.target.value))
-                            }
-                            className="text-sm border rounded px-2 py-1"
-                          >
-                            <option value={3}>Últimos 3 dias</option>
-                            <option value={7}>Última semana</option>
-                            <option value={15}>Últimos 15 dias</option>
-                            <option value={30}>Último mês</option>
-                          </select>
-                        )}
-                        <button
-                          onClick={() => setShowAllCompleted(!showAllCompleted)}
-                          className="text-sm text-blue-600 hover:text-blue-800"
-                        >
-                          {showAllCompleted ? "Mostrar menos" : "Ver todas"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <Droppable droppableId={status}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className="bg-gray-50 p-4 rounded-lg min-h-[200px]"
-                      >
-                        {orders.map((order, index) => (
-                          <Draggable
-                            key={order.id}
-                            draggableId={order.id}
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                              >
-                                <OrderCard order={order} />
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                        {status === "done" && !showAllCompleted && (
-                          <div className="text-center mt-4 text-gray-500 text-sm">
-                            Mostrando ordens dos últimos {daysToShow} dias
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </Droppable>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">🟡 Pendente ({filteredOrders.pending.length})</h3>
                 </div>
-              ))}
+                <Droppable droppableId="pending">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
+                      {filteredOrders.pending.map((order, index) => (
+                        <Draggable key={order.id} draggableId={order.id} index={index}>
+                          {(prov) => (
+                            <div
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              {...prov.dragHandleProps}
+                              style={prov.draggableProps.style}
+                            >
+                              <OrderCard order={order} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">🔵 Em Andamento ({filteredOrders.inProgress.length})</h3>
+                </div>
+                <Droppable droppableId="inProgress">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
+                      {filteredOrders.inProgress.map((order, index) => (
+                        <Draggable key={order.id} draggableId={order.id} index={index}>
+                          {(prov) => (
+                            <div
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              {...prov.dragHandleProps}
+                              style={prov.draggableProps.style}
+                            >
+                              <OrderCard order={order} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-green-700 dark:text-green-400">🟢 Pronto ({filteredOrders.done.length})</h3>
+                  <div className="flex items-center gap-2">
+                    {!showAllCompleted && (
+                      <select
+                        value={daysToShow}
+                        onChange={(e) => setDaysToShow(Number(e.target.value))}
+                        className="text-sm border rounded px-2 py-1"
+                      >
+                        <option value={3}>Últimos 3 dias</option>
+                        <option value={7}>Última semana</option>
+                        <option value={15}>Últimos 15 dias</option>
+                        <option value={30}>Último mês</option>
+                      </select>
+                    )}
+                    <button onClick={() => setShowAllCompleted(!showAllCompleted)} className="text-sm text-blue-500 hover:text-blue-600 font-medium">
+                      {showAllCompleted ? 'Mostrar menos' : 'Ver todas'}
+                    </button>
+                  </div>
+                </div>
+                <Droppable droppableId="done">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
+                      {filteredOrders.done.map((order, index) => (
+                        <Draggable key={order.id} draggableId={order.id} index={index}>
+                          {(prov) => (
+                            <div
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              {...prov.dragHandleProps}
+                              style={prov.draggableProps.style}
+                            >
+                              <OrderCard order={order} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                      { !showAllCompleted && (
+                        <div className="text-center mt-4 text-gray-500 text-sm">
+                          Mostrando ordens dos últimos {daysToShow} dias
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
             </div>
           </main>
 
@@ -1862,7 +1957,7 @@ const WorkshopDashboard = () => {
             />
           )}
         </div>
-      </>
+      </div>
     </DragDropContext>
   );
 };

@@ -14,12 +14,20 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+import {
+  getOrdersTodayCount,
+  getCustomersCount,
+  getBikesInMaintenanceCount,
+} from "../services/dashboardService";
 import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
 
 export default function Admin() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [ordersToday, setOrdersToday] = useState(0);
+  const [customersCount, setCustomersCount] = useState(0);
+  const [bikesMaintenance, setBikesMaintenance] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +36,24 @@ export default function Admin() {
       setIsDarkMode(true);
       document.documentElement.classList.add("dark");
     }
+  }, []);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [o, c, b] = await Promise.all([
+          getOrdersTodayCount(),
+          getCustomersCount(),
+          getBikesInMaintenanceCount(),
+        ]);
+        setOrdersToday(o);
+        setCustomersCount(c);
+        setBikesMaintenance(b);
+      } catch (err) {
+        console.error("Erro ao carregar dados do dashboard:", err);
+      }
+    };
+    loadStats();
   }, []);
 
   const toggleDarkMode = () => {
@@ -178,12 +204,12 @@ export default function Admin() {
               <p className="text-xl opacity-90 max-w-2xl">Gerencie todos os aspectos da Sport & Bike através desta central administrativa moderna e intuitiva.</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Ordens Hoje</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">12</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{ordersToday}</p>
                 </div>
                 <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
                   <Wrench className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -194,7 +220,7 @@ export default function Admin() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Cadastrados</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">248</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{customersCount}</p>
                 </div>
                 <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
                   <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -204,19 +230,8 @@ export default function Admin() {
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Receita Mês</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">R$ 15.2k</p>
-                </div>
-                <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full">
-                  <Receipt className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Bikes em Manutenção</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">8</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{bikesMaintenance}</p>
                 </div>
                 <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
                   <Bike className="w-6 h-6 text-purple-600 dark:text-purple-400" />
