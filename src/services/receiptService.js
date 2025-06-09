@@ -9,6 +9,8 @@ import {
   getDoc,
   orderBy,
   query,
+  where,
+  limit,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 
@@ -34,4 +36,24 @@ export const updateReceipt = async (id, data) => {
 export const deleteReceipt = async (id) => {
   const ref = doc(db, "recibos", id);
   await deleteDoc(ref);
+};
+
+export const getNextReceiptNumber = async () => {
+  const year = new Date().getFullYear();
+  const coll = collection(db, "recibos");
+  const q = query(
+    coll,
+    where("numero", ">=", `${year}-`),
+    where("numero", "<=", `${year}-\uf8ff`),
+    orderBy("numero", "desc"),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  const last = snap.docs[0]?.data();
+  const seq = (
+    parseInt(last?.numero?.split("-")[0] || 0, 10) + 1
+  )
+    .toString()
+    .padStart(3, "0");
+  return `${seq}-${year}`;
 };
