@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+"use client"
+
+import { useEffect, useState, useRef } from "react"
 import {
   Phone,
   MapPin,
@@ -23,40 +25,37 @@ import {
   Shield,
   ChevronDown,
   ChevronUp,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { auth } from "../config/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import {
-  getFeaturedProducts,
-  getHomeSettings,
-} from "../services/homeService";
-import { getAllServicesOrdered } from "../services/serviceService";
+} from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { auth } from "../config/firebase"
+import { onAuthStateChanged } from "firebase/auth"
+import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
+import { getAllServicesOrdered } from "../services/serviceService"
 
 const normalizeDriveUrl = (url) => {
-  if (!url) return url;
-  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`;
-  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`;
-  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
-  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`;
-  return url;
-};
+  if (!url) return url
+  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`
+  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
+  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`
+  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/)
+  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`
+  return url
+}
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [currentProduct, setCurrentProduct] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
-  const [expandedFaq, setExpandedFaq] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [showFeatured, setShowFeatured] = useState(true);
-  const videoRef = useRef(null);
+  const navigate = useNavigate()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [currentProduct, setCurrentProduct] = useState(0)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true)
+  const [expandedFaq, setExpandedFaq] = useState(null)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [featuredProducts, setFeaturedProducts] = useState([])
+  const [showFeatured, setShowFeatured] = useState(true)
+  const videoRef = useRef(null)
 
   const services = [
     {
@@ -79,10 +78,10 @@ export default function Home() {
       title: "Peças e Acessórios",
       description: "Componentes originais e acessórios de qualidade",
     },
-  ];
+  ]
 
   const testimonials = [
-   {
+    {
       name: "Mauricio Fontenele",
       text: "Resolvem o problema, dizem exatamente o que precisa fazer e tem boas peças de reposição",
       rating: 5,
@@ -97,20 +96,19 @@ export default function Home() {
       text: "Fui super bem atendida pelo seu Gilberto e esposa e seus filhos e todos que trabalham lá. Excelente atendimento, parabéns seu Gilberto, o senhor anda com profissionais no ramo da Bike.",
       rating: 5,
     },
-  ];
+  ]
 
   const benefits = [
     { icon: <Truck className="w-5 h-5" />, text: "Frete Grátis Fortaleza" },
     { icon: <Shield className="w-5 h-5" />, text: "Garantia" },
     { icon: <CreditCard className="w-5 h-5" />, text: "12x Sem Juros" },
     { icon: <Award className="w-5 h-5" />, text: "25 Anos de Experiência" },
-  ];
+  ]
 
   const faqData = [
     {
       question: "Como funciona o aluguel de bikes?",
-      answer:
-        "Oferecemos aluguel por dia ou semana. Reservas podem ser feitas via WhatsApp ou presencialmente. ",
+      answer: "Oferecemos aluguel por dia ou semana. Reservas podem ser feitas via WhatsApp ou presencialmente. ",
     },
     {
       question: "Qual a garantia dos produtos?",
@@ -127,133 +125,130 @@ export default function Home() {
       answer:
         "Sim! Aceitamos cartão em até 12x sem juros para bikes. Também trabalhamos com PIX à vista com desconto especial.",
     },
-  ];
+  ]
 
-  const [officeServices, setOfficeServices] = useState([]);
+  const [officeServices, setOfficeServices] = useState([])
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const data = await getAllServicesOrdered();
-        setOfficeServices(data.map((s) => s.nome));
+        const data = await getAllServicesOrdered()
+        setOfficeServices(data.map((s) => s.nome))
       } catch (err) {
-        console.error("Erro ao carregar serviços:", err);
+        console.error("Erro ao carregar serviços:", err)
       }
-    };
-    fetchServices();
-  }, []);
+    }
+    fetchServices()
+  }, [])
 
   // access admin area shortcut
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.ctrlKey && event.shiftKey && event.key === "A") {
-        event.preventDefault();
+        event.preventDefault()
         onAuthStateChanged(auth, (user) => {
           if (user) {
-            navigate("/admin");
+            navigate("/admin")
           } else {
-            navigate("/admin/login");
+            navigate("/admin/login")
           }
-        });
+        })
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate]);
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [navigate])
 
   // restore dark theme
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
+    const savedTheme = localStorage.getItem("theme")
     if (savedTheme === "dark") {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
+      setIsDarkMode(true)
+      document.documentElement.classList.add("dark")
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
-      const prods = await getFeaturedProducts();
-      const normalized = prods.map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }));
-      const settings = await getHomeSettings();
-      setFeaturedProducts(normalized);
-      setShowFeatured(settings.showFeaturedProducts ?? true);
-    };
-    fetchData();
-  }, []);
+      const prods = await getFeaturedProducts()
+      const normalized = prods.map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }))
+      const settings = await getHomeSettings()
+      setFeaturedProducts(normalized)
+      setShowFeatured(settings.showFeaturedProducts ?? true)
+    }
+    fetchData()
+  }, [])
 
   // sync video playback state
   useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
+    const vid = videoRef.current
+    if (!vid) return
     if (isVideoPlaying) {
-      vid.play().catch(() => {});
+      vid.play().catch(() => {})
     } else {
-      vid.pause();
+      vid.pause()
     }
-  }, [isVideoPlaying]);
-
+  }, [isVideoPlaying])
 
   // header scroll effect
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    const handleScroll = () => setIsScrolled(window.scrollY > 50)
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   // auto rotate testimonials and products
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-      setCurrentProduct((prev) => (prev + 1) % featuredProducts.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [testimonials.length, featuredProducts.length]);
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+      setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [testimonials.length, featuredProducts.length])
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
+    setIsDarkMode(!isDarkMode)
     if (!isDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
+      document.documentElement.classList.add("dark")
+      localStorage.setItem("theme", "dark")
     } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+      document.documentElement.classList.remove("dark")
+      localStorage.setItem("theme", "light")
     }
-  };
-
+  }
 
   const handleConsultarOS = () => {
-    navigate("/consulta");
-  };
+    navigate("/consulta")
+  }
 
   const handleWhatsApp = (message) => {
-    const baseUrl =
-      "https://api.whatsapp.com/send/?phone=558532677425&text=";
-    const url = `${baseUrl}${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
-    window.open(url, "_blank");
-  };
+    const baseUrl = "https://api.whatsapp.com/send/?phone=558532677425&text="
+    const url = `${baseUrl}${encodeURIComponent(message)}&type=phone_number&app_absent=0`
+    window.open(url, "_blank")
+  }
 
   const handleServiceClick = (serviceType) => {
     const messages = {
       vendas: "Olá! Gostaria de saber sobre os modelos de bikes disponíveis para venda.",
       aluguel: "Olá! Tenho interesse em alugar uma bike. Podem me informar sobre disponibilidade e preços?",
       pecas: "Olá! Estou procurando peças e acessórios para minha bike. Podem me ajudar?",
-    };
-    if (serviceType === "oficina") {
-      setIsOfficeModalOpen(true);
-    } else {
-      handleWhatsApp(messages[serviceType]);
     }
-  };
+    if (serviceType === "oficina") {
+      setIsOfficeModalOpen(true)
+    } else {
+      handleWhatsApp(messages[serviceType])
+    }
+  }
 
   const handleOfficeServiceClick = (service) => {
-    const message = `Olá! Gostaria de fazer ${service.toLowerCase()} na minha bicicleta. Podem me ajudar?`;
-    handleWhatsApp(message);
-    setIsOfficeModalOpen(false);
-  };
+    const message = `Olá! Gostaria de fazer ${service.toLowerCase()} na minha bicicleta. Podem me ajudar?`
+    handleWhatsApp(message)
+    setIsOfficeModalOpen(false)
+  }
 
   const toggleFaq = (index) => {
-    setExpandedFaq(expandedFaq === index ? null : index);
-  };
+    setExpandedFaq(expandedFaq === index ? null : index)
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
@@ -291,8 +286,8 @@ export default function Home() {
                 <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                   Serviços
                 </a>
-                <a href="#sobre" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  Sobre
+                <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                  FAQ
                 </a>
                 <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                   Contato
@@ -318,7 +313,7 @@ export default function Home() {
                   className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   title="Alternar tema"
                 >
-                  {isDarkMode ? "\u{1F31E}" : "\u{1F319}"}
+                  {isDarkMode ? "🌞" : "🌙"}
                 </button>
                 <button
                   onClick={handleConsultarOS}
@@ -339,13 +334,19 @@ export default function Home() {
             {isMenuOpen && (
               <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col space-y-4 pt-4">
-                  <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                  <a
+                    href="#servicos"
+                    className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
+                  >
                     Serviços
                   </a>
-                  <a href="#sobre" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                    Sobre
+                  <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                    FAQ
                   </a>
-                  <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
+                  <a
+                    href="#contato"
+                    className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
+                  >
                     Contato
                   </a>
                   <div className="flex items-center space-x-4">
@@ -365,7 +366,7 @@ export default function Home() {
                       onClick={toggleDarkMode}
                       className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                     >
-                      {isDarkMode ? "\u{1F31E}" : "\u{1F319}"}
+                      {isDarkMode ? "🌞" : "🌙"}
                     </button>
                   </div>
                   <button
@@ -412,8 +413,8 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-              Loja de bicicletas desde 1999. Vendas de bicicleta e artigos esportivos,
-              oficina especializada e aluguéis de bikes.
+              Loja de bicicletas desde 1999. Vendas de bicicleta e artigos esportivos, oficina especializada e aluguéis
+              de bikes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
@@ -439,77 +440,79 @@ export default function Home() {
 
         {/* Featured Products Carousel */}
         {showFeatured && (
-        <section className="py-20 bg-white dark:bg-gray-800">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
-                Produtos em Destaque
-              </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Confira nossa seleção especial de bikes e acessórios
-              </p>
-            </div>
-            <div className="relative max-w-4xl mx-auto">
-              {featuredProducts.length > 0 ? (
-                <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 shadow-2xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <img
-                      src={featuredProducts[currentProduct].image}
-                      alt={featuredProducts[currentProduct].name}
-                      className="w-full h-64 object-cover rounded-lg"
-                      loading="lazy"
-                    />
+          <section className="py-20 bg-white dark:bg-gray-800">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
+                  Produtos em Destaque
+                </h2>
+                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                  Confira nossa seleção especial de bikes e acessórios
+                </p>
+              </div>
+              <div className="relative max-w-4xl mx-auto">
+                {featuredProducts.length > 0 ? (
+                  <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 shadow-2xl">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                      <div>
+                        <img
+                          src={featuredProducts[currentProduct].image || "/placeholder.svg"}
+                          alt={featuredProducts[currentProduct].name}
+                          className="w-full h-64 object-cover rounded-lg"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="text-white">
+                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                          {featuredProducts[currentProduct].category}
+                        </span>
+                        <h3 className="text-2xl font-bold mt-4 mb-2">{featuredProducts[currentProduct].name}</h3>
+                        <p className="text-3xl font-bold mb-4">{featuredProducts[currentProduct].price}</p>
+                        <button
+                          onClick={() =>
+                            handleWhatsApp(
+                              `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`,
+                            )
+                          }
+                          className="bg-white text-amber-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
+                        >
+                          <ShoppingCart className="w-5 h-5" />
+                          <span>Tenho Interesse</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-white">
-                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
-                      {featuredProducts[currentProduct].category}
-                    </span>
-                    <h3 className="text-2xl font-bold mt-4 mb-2">{featuredProducts[currentProduct].name}</h3>
-                    <p className="text-3xl font-bold mb-4">{featuredProducts[currentProduct].price}</p>
+                ) : (
+                  <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
+                )}
+                <button
+                  onClick={() =>
+                    setCurrentProduct((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)
+                  }
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+                >
+                  <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                </button>
+                <button
+                  onClick={() => setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+                >
+                  <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                </button>
+                <div className="flex justify-center mt-8 space-x-2">
+                  {featuredProducts.map((_, index) => (
                     <button
-                      onClick={() =>
-                        handleWhatsApp(
-                          `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`
-                        )
-                      }
-                      className="bg-white text-amber-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
-                    >
-                      <ShoppingCart className="w-5 h-5" />
-                      <span>Tenho Interesse</span>
-                    </button>
-                  </div>
-                  </div>
+                      key={index}
+                      onClick={() => setCurrentProduct(index)}
+                      className={`w-3 h-3 rounded-full transition-all ${
+                        index === currentProduct ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
+                      }`}
+                    />
+                  ))}
                 </div>
-              ) : (
-                <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
-              )}
-              <button
-                onClick={() => setCurrentProduct((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
-              >
-                <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-              </button>
-              <button
-                onClick={() => setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
-              >
-                <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-              </button>
-              <div className="flex justify-center mt-8 space-x-2">
-                {featuredProducts.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentProduct(index)}
-                    className={`w-3 h-3 rounded-full transition-all ${
-                      index === currentProduct ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                  />
-                ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
         )}
 
         {/* Services Section */}
@@ -526,7 +529,9 @@ export default function Home() {
                 <div
                   key={index}
                   onClick={() =>
-                    handleServiceClick(index === 0 ? "vendas" : index === 1 ? "oficina" : index === 2 ? "aluguel" : "pecas")
+                    handleServiceClick(
+                      index === 0 ? "vendas" : index === 1 ? "oficina" : index === 2 ? "aluguel" : "pecas",
+                    )
                   }
                   className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
                 >
@@ -542,17 +547,22 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-20 bg-white dark:bg-gray-800">
+        <section id="faq" className="py-20 bg-white dark:bg-gray-800">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Perguntas Frequentes</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
+                Perguntas Frequentes
+              </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
                 Tire suas dúvidas sobre nossos serviços
               </p>
             </div>
             <div className="max-w-3xl mx-auto space-y-4">
               {faqData.map((faq, index) => (
-                <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div
+                  key={index}
+                  className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                >
                   <button
                     onClick={() => toggleFaq(index)}
                     className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors rounded-lg"
@@ -579,7 +589,9 @@ export default function Home() {
         <section className="py-20 bg-gray-50 dark:bg-gray-900">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">O que nossos clientes dizem</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
+                O que nossos clientes dizem
+              </h2>
             </div>
             <div className="max-w-4xl mx-auto relative">
               <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 text-white shadow-2xl">
@@ -588,7 +600,9 @@ export default function Home() {
                     <Star key={i} className="w-6 h-6 fill-current" />
                   ))}
                 </div>
-                <p className="text-xl md:text-2xl text-center mb-6 italic">&quot;{testimonials[currentTestimonial].text}&quot;</p>
+                <p className="text-xl md:text-2xl text-center mb-6 italic">
+                  &quot;{testimonials[currentTestimonial].text}&quot;
+                </p>
                 <p className="text-center font-bold text-lg">- {testimonials[currentTestimonial].name}</p>
               </div>
               <button
@@ -622,9 +636,7 @@ export default function Home() {
         <section className="py-20 bg-gradient-to-r from-green-500 to-green-600">
           <div className="container mx-auto px-4 text-center text-white">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Aluguel de Bikes</h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">
-              Explore Fortaleza com nossas bikes.
-            </p>
+            <p className="text-xl mb-8 max-w-2xl mx-auto">Explore Fortaleza com nossas bikes.</p>
             <button
               onClick={() => handleWhatsApp("Olá! Gostaria de informações sobre aluguel de bikes.")}
               className="bg-white text-green-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl inline-flex items-center space-x-2"
@@ -640,7 +652,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Visite Nossa Loja</h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados proximos a Aldeota</p>
+              <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados próximos à Aldeota</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden h-[400px]">
@@ -660,9 +672,7 @@ export default function Home() {
                     <MapPin className="w-6 h-6 text-amber-500" />
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Endereço</h3>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    R. Ana Bilhar, 1680 - Varjota, Fortaleza - CE
-                  </p>
+                  <p className="text-gray-600 dark:text-gray-300">R. Ana Bilhar, 1680 - Varjota, Fortaleza - CE</p>
                 </div>
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
@@ -794,16 +804,18 @@ export default function Home() {
               </div>
             </div>
             <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-              <p className="text-gray-400 mb-4">© {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.</p>
+              <p className="text-gray-400 mb-4">
+                © {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.
+              </p>
               <button
                 onClick={() => {
                   onAuthStateChanged(auth, (user) => {
                     if (user) {
-                      navigate("/admin");
+                      navigate("/admin")
                     } else {
-                      navigate("/admin/login");
+                      navigate("/admin/login")
                     }
-                  });
+                  })
                 }}
                 className="text-amber-500 hover:text-amber-400 transition-colors text-sm"
               >
@@ -814,5 +826,5 @@ export default function Home() {
         </footer>
       </div>
     </div>
-  );
+  )
 }
