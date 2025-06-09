@@ -193,7 +193,7 @@ export default function Admin() {
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Ativos</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Cadastrados</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">248</p>
                 </div>
                 <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
@@ -245,29 +245,6 @@ export default function Admin() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-xl">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Ações Rápidas</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                onClick={() => handleModuleClick('/admin/orders/new')}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-4 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg"
-              >
-                + Nova O.S.
-              </button>
-              <button
-                onClick={() => handleModuleClick('/admin/customers')}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg"
-              >
-                + Novo Cliente
-              </button>
-              <button
-                onClick={() => handleModuleClick('/admin/reports')}
-                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg"
-              >
-                Ver Relatórios
-              </button>
             </div>
           </div>
         </main>
