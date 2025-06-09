@@ -14,12 +14,15 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
 import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
 
 export default function Admin() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +32,8 @@ export default function Admin() {
       document.documentElement.classList.add("dark");
     }
   }, []);
+
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
 
   const toggleDarkMode = () => {
     setIsDarkMode((prev) => !prev);
@@ -172,18 +177,24 @@ export default function Admin() {
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
+
           <div className="mb-12">
             <div className="bg-gradient-to-r from-amber-400 to-amber-600 rounded-2xl p-8 text-white shadow-2xl">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Bem-vindo ao Dashboard</h2>
               <p className="text-xl opacity-90 max-w-2xl">Gerencie todos os aspectos da Sport & Bike através desta central administrativa moderna e intuitiva.</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
+         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Ordens Hoje</p>
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">12</p>
+
                 </div>
                 <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
                   <Wrench className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -194,7 +205,9 @@ export default function Admin() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Cadastrados</p>
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">248</p>
+
                 </div>
                 <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
                   <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -204,6 +217,7 @@ export default function Admin() {
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                   <p className="text-sm text-gray-600 dark:text-gray-400">Receita Mês</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">R$ 15.2k</p>
                 </div>
@@ -217,6 +231,7 @@ export default function Admin() {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Bikes em Manutenção</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">8</p>
+
                 </div>
                 <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
                   <Bike className="w-6 h-6 text-purple-600 dark:text-purple-400" />

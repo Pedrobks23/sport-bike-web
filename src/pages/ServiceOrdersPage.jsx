@@ -13,11 +13,13 @@ import {
   Calendar,
   DollarSign,
 } from "lucide-react";
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
+
 
 export default function ServiceOrdersPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
+<<<<<<ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
@@ -26,6 +28,7 @@ export default function ServiceOrdersPage() {
     }
   }, []);
 
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
   const orders = {
     pending: [
       {
@@ -91,6 +94,7 @@ export default function ServiceOrdersPage() {
     ],
   };
 
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Pendente":
@@ -107,6 +111,8 @@ export default function ServiceOrdersPage() {
   const handleOrderClick = (orderId) => {
     alert(`Abrindo ordem de serviço: ${orderId}`);
   };
+
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
@@ -147,6 +153,8 @@ export default function ServiceOrdersPage() {
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
               <div className="flex items-center justify-between">
@@ -188,16 +196,19 @@ export default function ServiceOrdersPage() {
                 <h3 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">🟡 Pendente ({orders.pending.length})</h3>
               </div>
               <div className="space-y-4">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                 {orders.pending.map((order) => (
                   <div
                     key={order.id}
                     onClick={() => handleOrderClick(order.id)}
+
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                         {order.id}
-                      </h4>
+       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
@@ -205,6 +216,7 @@ export default function ServiceOrdersPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4 mr-2" />
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                         <span>Data: {order.date}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
@@ -218,6 +230,7 @@ export default function ServiceOrdersPage() {
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Phone className="w-4 h-4 mr-2" />
                         <span>{order.phone}</span>
+
                       </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">{order.description}</p>
@@ -233,15 +246,19 @@ export default function ServiceOrdersPage() {
                 <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">🔵 Em Andamento ({orders.inProgress.length})</h3>
               </div>
               <div className="space-y-4">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                 {orders.inProgress.map((order) => (
                   <div
                     key={order.id}
                     onClick={() => handleOrderClick(order.id)}
+
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                         {order.id}
+
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <MoreHorizontal className="w-4 h-4" />
@@ -250,6 +267,7 @@ export default function ServiceOrdersPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4 mr-2" />
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                         <span>Data: {order.date}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
@@ -263,6 +281,7 @@ export default function ServiceOrdersPage() {
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Phone className="w-4 h-4 mr-2" />
                         <span>{order.phone}</span>
+
                       </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">{order.description}</p>
@@ -279,15 +298,19 @@ export default function ServiceOrdersPage() {
                 <button className="text-blue-500 hover:text-blue-600 text-sm font-medium">Mostrar menos</button>
               </div>
               <div className="space-y-4">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                 {orders.completed.slice(0, 4).map((order) => (
                   <div
                     key={order.id}
                     onClick={() => handleOrderClick(order.id)}
+
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                         {order.id}
+
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <MoreHorizontal className="w-4 h-4" />
@@ -296,6 +319,7 @@ export default function ServiceOrdersPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4 mr-2" />
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                         <span>Data: {order.date}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
@@ -309,6 +333,7 @@ export default function ServiceOrdersPage() {
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Phone className="w-4 h-4 mr-2" />
                         <span>{order.phone}</span>
+
                       </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">{order.description}</p>

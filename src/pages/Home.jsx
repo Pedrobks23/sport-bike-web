@@ -83,18 +83,18 @@ export default function Home() {
 
   const testimonials = [
     {
-      name: "Carlos Silva",
-      text: "Excelente atendimento! Comprei minha bike aqui e o suporte pós-venda é excepcional.",
+      name: "Mauricio Fontenele",
+      text: "Resolvem o problema, dizem exatamente o que precisa fazer e tem boas peças de reposição",
       rating: 5,
     },
     {
-      name: "Ana Costa",
-      text: "25 anos de tradição fazem toda a diferença. Profissionais experientes e produtos de qualidade.",
+      name: "Pedro Lobato",
+      text: "Curti bastante a loja. Gostei muito do atendimento deles, comprei uma bike lá e estou satisfeito.",
       rating: 5,
     },
     {
-      name: "João Santos",
-      text: "A oficina é top! Minha bike ficou como nova. Recomendo para todos os ciclistas.",
+      name: "Patricia",
+      text: "Fui super bem atendida pelo seu Gilberto e esposa e seus filhos e todos que trabalham lá. Excelente atendimento, parabéns seu Gilberto, o senhor anda com profissionais no ramo da Bike.",
       rating: 5,
     },
   ];
@@ -291,8 +291,10 @@ export default function Home() {
                 <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                   Serviços
                 </a>
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                 <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                   FAQ
+
                 </a>
                 <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                   Contato
@@ -342,8 +344,10 @@ export default function Home() {
                   <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                     Serviços
                   </a>
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
                   <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                     FAQ
+
                   </a>
                   <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
                     Contato
@@ -542,7 +546,9 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
         <section id="faq" className="py-20 bg-white dark:bg-gray-800">
+
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Perguntas Frequentes</h2>
@@ -621,9 +627,11 @@ export default function Home() {
         {/* Rental Banner */}
         <section className="py-20 bg-gradient-to-r from-green-500 to-green-600">
           <div className="container mx-auto px-4 text-center text-white">
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
             <h2 className="text-4xl md:text-5xl font-bold mb-6">Aluguel de Bikes Premium</h2>
             <p className="text-xl mb-8 max-w-2xl mx-auto">
               Explore Fortaleza com nossas bikes de alta qualidade. Tarifas especiais para grupos e famílias.
+
             </p>
             <button
               onClick={() => handleWhatsApp("Olá! Gostaria de informações sobre aluguel de bikes.")}
@@ -640,7 +648,9 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Visite Nossa Loja</h2>
+<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
               <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados no coração de Fortaleza</p>
+
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden h-[400px]">
@@ -683,7 +693,8 @@ export default function Home() {
                   <p className="text-gray-600 dark:text-gray-300">
                     Segunda a Sexta: 8h às 18h
                     <br />
-                    Sábado: 8h às 16h
+
+                    Sábado: 8h às 15h
                     <br />
                     Domingo: Fechado
                   </p>
@@ -772,7 +783,9 @@ export default function Home() {
                 <div className="space-y-2 text-gray-400">
                   <p>(85) 3267-7425 | (85) 3122-5874</p>
                   <p>WhatsApp: (85) 3267-7425</p>
-                  <p>contato@sportbike.com.br</p>
+
+                  <p>comercialsportbike@gmail.com</p>
+
                 </div>
               </div>
               <div>

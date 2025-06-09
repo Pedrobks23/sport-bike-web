@@ -54,6 +54,7 @@ const ServicesManagement = () => {
       });
 
       servicesData.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+<<<<<< ipwvt1-codex/aplicar-novo-modelo-de-home-com-logo-e-fluxo-atual
       console.log("Serviços carregados:", servicesData);
       setServices(servicesData);
     } catch (error) {
