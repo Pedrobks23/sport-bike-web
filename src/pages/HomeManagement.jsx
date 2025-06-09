@@ -1,210 +1,400 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Download } from "lucide-react";
+import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
+import { db } from "../config/firebase";
 import {
-  getFeaturedProducts,
-  createFeaturedProduct,
-  updateFeaturedProduct,
-  deleteFeaturedProduct,
-  getHomeSettings,
-  updateHomeSettings,
-} from "../services/homeService";
-import { PlusCircle, ArrowLeft, Edit, Trash } from "lucide-react";
-import { uploadImage } from "../services/uploadImage";
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
-const normalizeDriveUrl = (url) => {
-  if (!url) return url;
-  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`;
-  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`;
-  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
-  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`;
-  return url;
-};
-
-const emptyProduct = { name: "", price: "", image: "", category: "" };
-
-
-const ProductModal = ({ isEdit, onClose, onSave, product }) => {
-  const [formData, setFormData] = useState(product || emptyProduct);
-  const [imageFile, setImageFile] = useState(null);
-  const [preview, setPreview] = useState(product?.image || "");
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleUrlChange = (e) => {
-    const value = e.target.value;
-    setFormData((prev) => ({ ...prev, image: value }));
-    setPreview(normalizeDriveUrl(value));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({ ...formData, imageFile });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-md p-6">
-        <h3 className="text-xl font-bold mb-4">{isEdit ? "Editar" : "Novo"} Produto</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nome</label>
-            <input name="name" value={formData.name} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Preço</label>
-            <input name="price" value={formData.price} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Categoria</label>
-            <input name="category" value={formData.category} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Link da Imagem (Google Drive)</label>
-            <input
-              name="image"
-              value={formData.image}
-              onChange={handleUrlChange}
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="https://drive.google.com/..."
-            />
-            <label className="block text-sm font-medium mb-1">Upload da Imagem</label>
-            <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
-            {preview && (
-              <img src={preview} alt="Pré-visualização" className="mt-2 w-full h-40 object-cover rounded" />
-            )}
-          </div>
-          <div className="flex justify-end gap-4 mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600">Cancelar</button>
-            <button type="submit" className="px-6 py-2 bg-blue-500 text-white rounded">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const HomeManagement = () => {
+const ReportsManagement = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [showFeatured, setShowFeatured] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editProduct, setEditProduct] = useState(null);
+  const [reportType, setReportType] = useState("monthly");
+  const [selectedService, setSelectedService] = useState("all");
+  const [services, setServices] = useState([]);
+  const getDefaultDateRange = () => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return {
+      start: start.toISOString().split("T")[0],
+      end: end.toISOString().split("T")[0],
+    };
+  };
+  const [dateRange, setDateRange] = useState(getDefaultDateRange());
+  const [reportData, setReportData] = useState([]);
 
-  const loadData = async () => {
-    const [prods, settings] = await Promise.all([
-      getFeaturedProducts(),
-      getHomeSettings(),
+  const loadServices = async () => {
+    try {
+      const servicosRef = collection(db, "servicos");
+      const querySnapshot = await getDocs(servicosRef);
+      const servicosData = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        Object.keys(data).forEach((serviceName) => {
+          servicosData.push({
+            id: serviceName, // Usando o nome como ID
+            nome: serviceName,
+            valor: data[serviceName],
+          });
+        });
+      });
+
+      setServices(servicosData);
+    } catch (error) {
+      console.error("Erro ao carregar serviços:", error);
+    }
+  };
+  const processOrders = (orders, type) => {
+    try {
+      const data = {};
+  
+      orders.forEach((order) => {
+        if (!order.data) return;
+  
+        const orderDate = order.data;
+        let key;
+        
+        switch (type) {
+          case "daily":
+            key = orderDate.toLocaleDateString("pt-BR");
+            break;
+          case "weekly":
+            const weekStart = new Date(orderDate);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            key = `Semana de ${weekStart.toLocaleDateString("pt-BR")}`;
+            break;
+          case "monthly":
+          default:
+            key = orderDate.toLocaleString("pt-BR", {
+              month: "long",
+              year: "numeric",
+            });
+        }
+  
+        // Inicializa o período se não existir
+        if (!data[key]) {
+          data[key] = { total: 0, quantity: 0 };
+        }
+  
+        // Usa os valores diretos da ordem, sem acumular
+        if (order.valor > 0) {
+          data[key].total += Number(order.valor);
+          data[key].quantity = data[key].quantity + Number(order.quantidade);
+        }
+      });
+  
+      // Remove períodos sem valores
+      const result = Object.entries(data)
+        .filter(([_, values]) => values.total > 0)
+        .map(([period, values]) => ({
+          period,
+          total: Number(values.total.toFixed(2)),
+          quantity: values.quantity
+        }))
+        .sort((a, b) => new Date(a.period) - new Date(b.period));
+  
+      return result;
+    } catch (error) {
+      console.error("Erro ao processar ordens:", error);
+      return [];
+    }
+  };
+
+  const loadReportData = async () => {
+    setLoading(true);
+    try {
+      const ordensRef = collection(db, "ordens");
+      let ordersQuery = query(ordensRef, orderBy("dataCriacao", "desc"));
+      const querySnapshot = await getDocs(ordersQuery);
+      
+      const orders = querySnapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+          let totalValor = 0;
+          let totalServicos = 0;
+          
+  
+          if (data.bicicletas?.length > 0) {
+            data.bicicletas.forEach((bike, index) => {
+              
+              // Processa valorServicos (formato antigo)
+              if (bike.valorServicos) {
+                Object.entries(bike.valorServicos).forEach(([serviceName, valor]) => {
+                  if (selectedService === "all" || serviceName === selectedService) {
+                    const quantidade = bike.services?.[serviceName] || 1;
+                    const servicoTotal = parseFloat(valor) * quantidade;
+                    totalValor += servicoTotal;
+                    totalServicos += quantidade;
+                  }
+                });
+              }
+  
+              // Processa serviceValues (formato novo)
+              if (bike.serviceValues) {
+                Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
+                  if (selectedService === "all" || serviceName === selectedService) {
+                    const valor = serviceData.valorFinal || serviceData.valor || 0;
+                    const quantidade = bike.services?.[serviceName] || 1;
+                    const servicoTotal = valor * quantidade;
+                    totalValor += servicoTotal;
+                    totalServicos += quantidade;
+                  }
+                });
+              }
+            });
+          }
+  
+          return {
+            id: doc.id,
+            data: data.dataCriacao ? 
+              (typeof data.dataCriacao === 'string' ? new Date(data.dataCriacao) : data.dataCriacao.toDate()) : 
+              new Date(),
+            valor: totalValor,
+            quantidade: totalServicos
+          };
+        })
+        .filter((order) => {
+          const startDate = new Date(dateRange.start);
+          const endDate = new Date(dateRange.end);
+          endDate.setHours(23, 59, 59);
+          return order.data >= startDate && order.data <= endDate;
+        });
+  
+      const processedData = processOrders(orders, reportType);
+      setReportData(processedData);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+
+    doc.text("Relatório de Serviços", 14, 15);
+    doc.text(`Período: ${dateRange.start} a ${dateRange.end}`, 14, 25);
+
+    const tableColumn = ["Período", "Quantidade", "Total"];
+    const tableRows = reportData.map((item) => [
+      item.period,
+      item.quantity,
+      `R$ ${item.total.toFixed(2)}`,
     ]);
-    setProducts(prods);
-    setShowFeatured(settings.showFeaturedProducts ?? true);
-    setLoading(false);
-  };
 
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      theme: "grid",
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    doc.save(`relatorio-${new Date().toISOString()}.pdf`);
+  };
   useEffect(() => {
-    loadData();
+    loadServices();
   }, []);
-
-  const handleAdd = async (data) => {
-    let imageUrl = data.image ? normalizeDriveUrl(data.image) : "";
-    if (data.imageFile) {
-      imageUrl = await uploadImage(data.imageFile);
+  useEffect(() => {
+    loadReportData();
+  }, [reportType, selectedService, dateRange]);
+  useEffect(() => {
+    const now = new Date();
+    let start = new Date();
+    switch (reportType) {
+      case "daily":
+        start.setDate(now.getDate() - 7);
+        break;
+      case "weekly":
+        start.setDate(now.getDate() - 28);
+        break;
+      case "monthly":
+        start.setMonth(now.getMonth() - 6);
+        break;
     }
-    await createFeaturedProduct({ ...data, image: imageUrl });
-    setShowModal(false);
-    loadData();
-  };
 
-  const handleUpdate = async (data) => {
-    let imageUrl = editProduct.image;
-    if (data.imageFile) {
-      imageUrl = await uploadImage(data.imageFile);
-    } else if (data.image) {
-      imageUrl = normalizeDriveUrl(data.image);
-    }
-    await updateFeaturedProduct(editProduct.id, { ...data, image: imageUrl });
-    setEditProduct(null);
-    setShowModal(false);
-    loadData();
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Excluir produto?")) {
-      await deleteFeaturedProduct(id);
-      loadData();
-    }
-  };
-
-  const toggleVisibility = async () => {
-    const newValue = !showFeatured;
-    setShowFeatured(newValue);
-    await updateHomeSettings({ showFeaturedProducts: newValue });
-  };
-
+    setDateRange({
+      start: start.toISOString().split("T")[0],
+      end: now.toISOString().split("T")[0],
+    });
+  }, [reportType]);
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <button onClick={() => navigate("/admin")} className="mr-4 text-gray-600 flex items-center">
-              <ArrowLeft className="w-5 h-5 mr-2" />Voltar
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button
+                onClick={() => navigate("/admin")}
+                className="mr-4 text-gray-600 hover:text-gray-900 flex items-center"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Voltar
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
+            </div>
+            <button
+              onClick={exportPDF}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center"
+            >
+              <Download className="w-5 h-5 mr-2" />
+              Exportar PDF
             </button>
-            <h1 className="text-2xl font-bold">Gerenciar Home</h1>
           </div>
-          <button onClick={() => setShowModal(true)} className="bg-blue-500 text-white px-4 py-2 rounded flex items-center">
-            <PlusCircle className="w-5 h-5 mr-2" />Novo Produto
-          </button>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto py-6 px-4">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Tipo de Relatório
+              </label>
+              <select
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              >
+                <option value="daily">Diário</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensal</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Serviço
+              </label>
+              <select
+                value={selectedService}
+                onChange={(e) => setSelectedService(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              >
+                <option value="all">Todos os serviços</option>
+                {services.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Data Inicial
+              </label>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, start: e.target.value }))
+                }
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Data Final
+              </label>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, end: e.target.value }))
+                }
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                max={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+          </div>
+        </div>
+
         {loading ? (
           <div>Carregando...</div>
         ) : (
-          <div>
-            <div className="mb-4 flex items-center gap-2">
-              <input type="checkbox" checked={showFeatured} onChange={toggleVisibility} id="toggle" />
-              <label htmlFor="toggle">Exibir seção de produtos em destaque</label>
+          <>
+            <div className="bg-white shadow rounded-lg p-6 mb-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Resultados
+              </h2>
+              <div className="h-96">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={reportData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#2563eb"
+                      name="Valor Total (R$)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="quantity"
+                      stroke="#059669"
+                      name="Quantidade de Serviços"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((p) => (
-                <div key={p.id} className="bg-white shadow rounded p-4">
-                  <img src={p.image} alt={p.name} className="w-full h-40 object-cover rounded" />
-                  <h3 className="mt-2 font-bold">{p.name}</h3>
-                  <p className="text-sm text-gray-600">{p.category}</p>
-                  <p className="font-semibold">{p.price}</p>
-                  <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={() => { setEditProduct(p); setShowModal(true); }} className="text-blue-600"><Edit className="w-4 h-4" /></button>
-                    <button onClick={() => handleDelete(p.id)} className="text-red-600"><Trash className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              ))}
+
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Detalhamento
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">
+                        Período
+                      </th>
+                      <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase">
+                        Quantidade
+                      </th>
+                      <th className="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {reportData.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {item.period}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                          {item.quantity}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                          R$ {item.total.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </main>
-      {showModal && (
-        <ProductModal
-          isEdit={!!editProduct}
-          product={editProduct || emptyProduct}
-          onClose={() => { setShowModal(false); setEditProduct(null); }}
-          onSave={editProduct ? handleUpdate : handleAdd}
-        />
-      )}
     </div>
   );
 };
 
-export default HomeManagement;
+export default ReportsManagement;
