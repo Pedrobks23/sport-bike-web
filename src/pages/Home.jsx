@@ -83,7 +83,7 @@ export default function Home() {
 
   const testimonials = [
     {
-      name: "Mauricio",
+      name: "Mauricio Fontenele",
       text: "Resolvem o problema, dizem exatamente o que precisa fazer e tem boas peças de reposição",
       rating: 5,
     },
