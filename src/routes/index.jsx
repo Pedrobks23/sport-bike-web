@@ -40,7 +40,7 @@ export const router = createBrowserRouter([
     path: "/admin/orders",
     element: (
       <PrivateRoute>
-        <WorkshopDashboard />
+        <ServiceOrdersPage />
       </PrivateRoute>
     ),
   },

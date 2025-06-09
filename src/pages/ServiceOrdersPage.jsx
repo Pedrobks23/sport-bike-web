@@ -13,10 +13,12 @@ import {
   Calendar,
   DollarSign,
 } from "lucide-react";
+import { getOrders } from "../services/orderService";
 
 export default function ServiceOrdersPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [orders, setOrders] = useState({ pending: [], inProgress: [], completed: [] });
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -26,70 +28,22 @@ export default function ServiceOrdersPage() {
     }
   }, []);
 
-  const orders = {
-    pending: [
-      {
-        id: "OS-202505020",
-        date: "24/05/2025",
-        appointment: "26/05/2025",
-        total: "R$ 100.00",
-        description: "OGGI BIG WHEEL 70 ()",
-        phone: "85985265390",
-        status: "Pendente",
-      },
-    ],
-    inProgress: [
-      {
-        id: "OS-202505019",
-        date: "23/05/2025",
-        appointment: "23/05/2025",
-        total: "R$ 100.00",
-        description: "Caloi Explorer (azul)",
-        phone: "85982136179",
-        status: "Em Andamento",
-      },
-      {
-        id: "OS-202505018",
-        date: "17/05/2025",
-        appointment: "19/05/2025",
-        total: "R$ 1.986,00",
-        description:
-          "aro 20 branca com rosa (), pneu atacama aro 29 (), caloi ceci aro 24 (), over aro 26 preto (), caloi andes aro26 (), cannondale laranja ()",
-        phone: "85981910132",
-        status: "Em Andamento",
-      },
-    ],
-    completed: [
-      {
-        id: "OS-202505017",
-        date: "17/05/2025",
-        appointment: "19/05/2025",
-        total: "R$ 100.00",
-        description: "ABSOLUTE HERA ()",
-        phone: "85999925245",
-        status: "Pronto",
-      },
-      {
-        id: "OS-202505008",
-        date: "12/05/2025",
-        appointment: "12/05/2025",
-        total: "R$ 200.00",
-        description: "Caloi Elite Carbon 29 (preta)",
-        phone: "85999999943",
-        status: "Pronto",
-      },
-      {
-        id: "OS-202505007",
-        date: "12/05/2025",
-        appointment: "13/05/2025",
-        total: "R$ 385.00",
-        description:
-          "Caloi Elite (Prata Com Vermelho), Caloi Explorer (amarela), Caloi T-Type (Prata)",
-        phone: "85982136179",
-        status: "Pronto",
-      },
-    ],
-  };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await getOrders();
+        setOrders({
+          pending: data.pending,
+          inProgress: data.inProgress,
+          completed: data.done,
+        });
+      } catch (err) {
+        console.error("Erro ao carregar ordens:", err);
+      }
+    };
+    load();
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -106,6 +60,27 @@ export default function ServiceOrdersPage() {
 
   const handleOrderClick = (orderId) => {
     alert(`Abrindo ordem de serviço: ${orderId}`);
+  };
+
+  const filteredOrders = {
+    pending: orders.pending.filter(
+      (o) =>
+        o.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cliente?.telefone?.includes(searchTerm)
+    ),
+    inProgress: orders.inProgress.filter(
+      (o) =>
+        o.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cliente?.telefone?.includes(searchTerm)
+    ),
+    completed: orders.completed.filter(
+      (o) =>
+        o.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.cliente?.telefone?.includes(searchTerm)
+    ),
   };
 
   return (
@@ -188,15 +163,15 @@ export default function ServiceOrdersPage() {
                 <h3 className="text-lg font-bold text-yellow-700 dark:text-yellow-400">🟡 Pendente ({orders.pending.length})</h3>
               </div>
               <div className="space-y-4">
-                {orders.pending.map((order) => (
+                {filteredOrders.pending.map((order) => (
                   <div
-                    key={order.id}
-                    onClick={() => handleOrderClick(order.id)}
+                    key={order.id || order.codigo}
+                    onClick={() => handleOrderClick(order.id || order.codigo)}
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {order.id}
+                        {order.codigo}
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <MoreHorizontal className="w-4 h-4" />
@@ -205,19 +180,19 @@ export default function ServiceOrdersPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>Data: {order.date}</span>
+                        <span>Data: {order.dataCriacao?.slice(0,10)}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span>Agendamento: {order.appointment}</span>
+                        <span>Agendamento: {order.dataAgendamento?.slice(0,10)}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>Total: {order.total}</span>
+                        <span>Total: R$ {order.valorTotal}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Phone className="w-4 h-4 mr-2" />
-                        <span>{order.phone}</span>
+                        <span>{order.cliente?.telefone}</span>
                       </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">{order.description}</p>
@@ -233,15 +208,15 @@ export default function ServiceOrdersPage() {
                 <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">🔵 Em Andamento ({orders.inProgress.length})</h3>
               </div>
               <div className="space-y-4">
-                {orders.inProgress.map((order) => (
+                {filteredOrders.inProgress.map((order) => (
                   <div
-                    key={order.id}
-                    onClick={() => handleOrderClick(order.id)}
+                    key={order.id || order.codigo}
+                    onClick={() => handleOrderClick(order.id || order.codigo)}
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {order.id}
+                        {order.codigo}
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <MoreHorizontal className="w-4 h-4" />
@@ -250,19 +225,19 @@ export default function ServiceOrdersPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>Data: {order.date}</span>
+                        <span>Data: {order.dataCriacao?.slice(0,10)}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span>Agendamento: {order.appointment}</span>
+                        <span>Agendamento: {order.dataAgendamento?.slice(0,10)}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>Total: {order.total}</span>
+                        <span>Total: R$ {order.valorTotal}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Phone className="w-4 h-4 mr-2" />
-                        <span>{order.phone}</span>
+                        <span>{order.cliente?.telefone}</span>
                       </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">{order.description}</p>
@@ -279,15 +254,15 @@ export default function ServiceOrdersPage() {
                 <button className="text-blue-500 hover:text-blue-600 text-sm font-medium">Mostrar menos</button>
               </div>
               <div className="space-y-4">
-                {orders.completed.slice(0, 4).map((order) => (
+                {filteredOrders.completed.slice(0, 4).map((order) => (
                   <div
-                    key={order.id}
-                    onClick={() => handleOrderClick(order.id)}
+                    key={order.id || order.codigo}
+                    onClick={() => handleOrderClick(order.id || order.codigo)}
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {order.id}
+                        {order.codigo}
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <MoreHorizontal className="w-4 h-4" />
@@ -296,19 +271,19 @@ export default function ServiceOrdersPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>Data: {order.date}</span>
+                        <span>Data: {order.dataCriacao?.slice(0,10)}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span>Agendamento: {order.appointment}</span>
+                        <span>Agendamento: {order.dataAgendamento?.slice(0,10)}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <DollarSign className="w-4 h-4 mr-2" />
-                        <span>Total: {order.total}</span>
+                        <span>Total: R$ {order.valorTotal}</span>
                       </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-400">
                         <Phone className="w-4 h-4 mr-2" />
-                        <span>{order.phone}</span>
+                        <span>{order.cliente?.telefone}</span>
                       </div>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">{order.description}</p>

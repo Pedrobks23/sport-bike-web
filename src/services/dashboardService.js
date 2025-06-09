@@ -15,7 +15,19 @@ export const getCustomersCount = async () => {
 };
 
 export const getBikesInMaintenanceCount = async () => {
-  const q = query(collection(db, "ordens"), where("status", "in", ["Pendente", "Em Andamento"]));
+  const q = query(
+    collection(db, "ordens"),
+    where("status", "in", ["Pendente", "Em Andamento"])
+  );
   const snap = await getDocs(q);
-  return snap.size;
+  let total = 0;
+  snap.forEach((doc) => {
+    const data = doc.data();
+    if (Array.isArray(data.bicicletas)) {
+      total += data.bicicletas.length;
+    } else if (data.bicicleta) {
+      total += 1;
+    }
+  });
+  return total;
 };
