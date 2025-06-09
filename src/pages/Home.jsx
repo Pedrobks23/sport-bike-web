@@ -82,19 +82,19 @@ export default function Home() {
   ];
 
   const testimonials = [
-    {
-      name: "Carlos Silva",
-      text: "Excelente atendimento! Comprei minha bike aqui e o suporte pós-venda é excepcional.",
+   {
+      name: "Mauricio Fontenele",
+      text: "Resolvem o problema, dizem exatamente o que precisa fazer e tem boas peças de reposição",
       rating: 5,
     },
     {
-      name: "Ana Costa",
-      text: "25 anos de tradição fazem toda a diferença. Profissionais experientes e produtos de qualidade.",
+      name: "Pedro Lobato",
+      text: "Curti bastante a loja. Gostei muito do atendimento deles, comprei uma bike lá e estou satisfeito.",
       rating: 5,
     },
     {
-      name: "João Santos",
-      text: "A oficina é top! Minha bike ficou como nova. Recomendo para todos os ciclistas.",
+      name: "Patricia",
+      text: "Fui super bem atendida pelo seu Gilberto e esposa e seus filhos e todos que trabalham lá. Excelente atendimento, parabéns seu Gilberto, o senhor anda com profissionais no ramo da Bike.",
       rating: 5,
     },
   ];
