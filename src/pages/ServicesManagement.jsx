@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Edit,
   Trash,
-  Clock,
   DollarSign,
   FileText,
 } from "lucide-react";
@@ -48,13 +47,6 @@ const ServicesManagement = () => {
       : 0;
   const maxPrice =
     services.length > 0 ? Math.max(...services.map((s) => s.valor)) : 0;
-  const averageDuration =
-    services.length > 0
-      ? Math.round(
-          services.reduce((sum, s) => sum + (s.tempoEstimado || 0), 0) /
-            services.length
-        )
-      : 0;
 
   const getServiceColor = (index) => {
     const colors = [
@@ -89,7 +81,6 @@ const ServicesManagement = () => {
             nome: nome,
             descricao: nome,
             valor: valorNumerico,
-            tempoEstimado: 30, // valor padrão
           });
         });
       });
@@ -169,10 +160,6 @@ const ServicesManagement = () => {
       nome: isEdit && selectedService ? selectedService.nome : "",
       descricao: isEdit && selectedService ? selectedService.descricao : "",
       valor: isEdit && selectedService ? selectedService.valor.toString() : "0",
-      tempoEstimado:
-        isEdit && selectedService
-          ? selectedService.tempoEstimado.toString()
-          : "0",
     });
 
     useEffect(() => {
@@ -181,7 +168,6 @@ const ServicesManagement = () => {
           nome: selectedService.nome,
           descricao: selectedService.descricao,
           valor: selectedService.valor.toString(),
-          tempoEstimado: selectedService.tempoEstimado.toString(),
         });
       }
     }, [isEdit, selectedService]);
@@ -246,20 +232,6 @@ const ServicesManagement = () => {
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                     min="0"
                     step="0.01"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Tempo Estimado (minutos)
-                  </label>
-                  <input
-                    type="number"
-                    name="tempoEstimado"
-                    value={formData.tempoEstimado}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                    min="0"
                     required
                   />
                 </div>
@@ -388,17 +360,6 @@ const ServicesManagement = () => {
               </div>
             </div>
 
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Tempo Médio</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{averageDuration} min</p>
-                </div>
-                <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
-                  <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-            </div>
           </div>
 
           {loading ? (
