@@ -437,6 +437,13 @@ const CustomerList = () => {
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Clientes</h1>
                 </div>
               </div>
+              <button
+                onClick={() => navigate('/admin/customers/new')}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Novo Cliente</span>
+              </button>
             </div>
           </div>
         </header>
@@ -580,9 +587,11 @@ const CustomerList = () => {
                   {expandedCustomer === customer.id && (
                     <div className="mt-4 space-y-2">
                       {customerBikes[customer.id]?.map((bike) => (
-                        <div key={bike.id} className="flex items-center justify-between text-sm">
-                          <span>{bike.marca} {bike.modelo} - {bike.cor}</span>
-                          <div className="space-x-1">
+                        <div key={bike.id} className="flex items-start justify-between gap-2 text-sm">
+                          <span className="flex-1 min-w-0 break-words">
+                            {bike.marca} {bike.modelo} - {bike.cor}
+                          </span>
+                          <div className="flex-shrink-0 space-x-1">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
