@@ -13,6 +13,7 @@ import ServiceOrdersPage from "../pages/ServiceOrdersPage";
 import ManageReceiptsPage from "../pages/ManageReceiptsPage";
 import NewOrder from "../pages/NewOrder"; // Adicione esta importação
 import HomeManagement from "../pages/HomeManagement";
+import NewCustomer from "../pages/NewCustomer";
 import PrivateRoute from "../components/PrivateRoute";
 
 export const router = createBrowserRouter([
@@ -57,6 +58,14 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <CustomerList />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/customers/new",
+    element: (
+      <PrivateRoute>
+        <NewCustomer />
       </PrivateRoute>
     ),
   },
