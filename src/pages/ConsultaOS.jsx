@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jsPDF } from "jspdf";
-import { consultarOS, updateOrdemURL } from "../config/firebase";
+import { useData } from "../contexts/DataContext";
 import {
   ArrowLeft,
   Search,
@@ -21,6 +21,7 @@ const logo = "/assets/logo.svg";
 const ConsultaOS = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { ordensDeServico, updateOrdem } = useData();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,20 +54,25 @@ const ConsultaOS = () => {
     setError(null);
 
     try {
-      const resultado = await consultarOS(tipo, value);
+      let resultado = [];
+      if (tipo === "os") {
+        resultado = ordensDeServico.filter((o) => o.codigo === value);
+        if (resultado[0]) {
+          const baseURL = window.location.origin;
+          const newURL = `${baseURL}/consulta?os=${resultado[0].codigo}`;
+          await updateOrdem(resultado[0].id, { urlOS: newURL });
+        }
+      } else {
+        resultado = ordensDeServico.filter((o) =>
+          o.cliente?.telefone?.includes(value.replace(/\D/g, ""))
+        );
+      }
 
       if (resultado.length === 0) {
         setError("Nenhuma ordem de serviço encontrada");
         setOrdens([]);
       } else {
         setOrdens(resultado);
-
-        // Atualiza a URL no Firebase apenas se for busca por OS
-        if (tipo === "os") {
-          const baseURL = window.location.origin;
-          const newURL = `${baseURL}/consulta?os=${resultado[0].codigo}`;
-          await updateOrdemURL(resultado[0].codigo, newURL);
-        }
       }
     } catch (err) {
       console.error("Erro na consulta:", err);
@@ -88,7 +94,9 @@ const ConsultaOS = () => {
     setError(null);
 
     try {
-      const historico = await consultarOS("historico", searchValue.trim());
+      const historico = ordensDeServico.filter((o) =>
+        o.cliente?.telefone?.includes(searchValue.replace(/\D/g, ""))
+      );
       if (historico.length > 0) {
         setOrdens(historico);
       } else {

@@ -1,56 +1,26 @@
-import { db } from "../config/firebase";
-import { uploadImage, deleteImageByUrl } from "./uploadImage";
+let featuredProducts = [
+  { id: '1', name: 'Bike A', price: '1000', image: '', category: 'bike' },
+];
+let homeSettings = { showFeaturedProducts: true };
 
-export const getFeaturedProducts = async () => {
-  const ref = collection(db, "featuredProducts");
-  const snap = await getDocs(ref);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-};
-
+export const getFeaturedProducts = async () => featuredProducts;
 
 export const createFeaturedProduct = async ({ imageFile, ...data }) => {
-  const refCollection = collection(db, "featuredProducts");
-  let imageUrl = data.image || "";
-  if (imageFile) {
-    imageUrl = await uploadImage(imageFile);
-  }
-  const docRef = await addDoc(refCollection, {
-    ...data,
-    image: imageUrl,
-    createdAt: serverTimestamp(),
-  });
-  const snap = await getDoc(docRef);
-  return { id: docRef.id, ...snap.data() };
+  const product = { id: Date.now().toString(), ...data };
+  featuredProducts.push(product);
+  return product;
 };
 
-export const updateFeaturedProduct = async (id, { imageFile, ...data }) => {
-  const refDoc = doc(db, "featuredProducts", id);
-  const updates = { ...data, updatedAt: serverTimestamp() };
-  if (imageFile) {
-    const snap = await getDoc(refDoc);
-    const oldUrl = snap.data()?.image;
-    if (oldUrl) await deleteImageByUrl(oldUrl);
-    const url = await uploadImage(imageFile);
-    updates.image = url;
-  }
-  await updateDoc(refDoc, updates);
+export const updateFeaturedProduct = async (id, data) => {
+  featuredProducts = featuredProducts.map((p) => (p.id === id ? { ...p, ...data } : p));
 };
 
 export const deleteFeaturedProduct = async (id) => {
-  const ref = doc(db, "featuredProducts", id);
-  const snap = await getDoc(ref);
-  const url = snap.data()?.image;
-  if (url) await deleteImageByUrl(url);
-  await deleteDoc(ref);
+  featuredProducts = featuredProducts.filter((p) => p.id !== id);
 };
 
-export const getHomeSettings = async () => {
-  const ref = doc(db, "home", "settings");
-  const snap = await getDoc(ref);
-  return snap.exists() ? snap.data() : { showFeaturedProducts: true };
-};
+export const getHomeSettings = async () => homeSettings;
 
 export const updateHomeSettings = async (data) => {
-  const ref = doc(db, "home", "settings");
-  await setDoc(ref, data, { merge: true });
+  homeSettings = { ...homeSettings, ...data };
 };
