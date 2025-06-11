@@ -17,20 +17,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  getOrders,
-  updateOrderStatus,
-  addServiceToBike,
-  addPartToBike,
-  addObservation,
-  removeOrder,
-  updateOrderService,
-  removeOrderService,
-  removeOrderPart,
-  updateOrderPart,
-  getOrder,
-  getServices,
-} from "../services/orderService";
+import { useOrderService } from "../services/orderService";
 
 // -------- ADAPTAÇÃO: Importação para PDF (sem remover nada do seu código) --------
 import { jsPDF } from "jspdf";
@@ -61,6 +48,20 @@ const PortalAwareDraggable = ({ children, ...props }) => (
 
 const WorkshopDashboard = () => {
   const navigate = useNavigate();
+  const {
+    getOrders,
+    updateOrderStatus,
+    addServiceToBike,
+    addPartToBike,
+    addObservation,
+    removeOrder,
+    updateOrderService,
+    removeOrderService,
+    removeOrderPart,
+    updateOrderPart,
+    getOrder,
+    getServices,
+  } = useOrderService();
 
   // Estados principais
   const [isDarkMode, setIsDarkMode] = useState(false);

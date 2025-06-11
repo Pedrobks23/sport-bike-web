@@ -14,11 +14,7 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
-import {
-  getOrdersTodayCount,
-  getCustomersCount,
-  getBikesInMaintenanceCount,
-} from "../services/dashboardService";
+import { useDashboardService } from "../services/dashboardService";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function Admin() {
@@ -30,6 +26,11 @@ export default function Admin() {
   const [statsError, setStatsError] = useState(null);
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const {
+    getOrdersTodayCount,
+    getCustomersCount,
+    getBikesInMaintenanceCount,
+  } = useDashboardService();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");

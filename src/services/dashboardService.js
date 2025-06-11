@@ -1,32 +1,26 @@
-import { db } from "../config/firebase";
+import { useData } from "../contexts/DataContext";
 
-export const getOrdersTodayCount = async () => {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const q = query(collection(db, "ordens"), where("dataCriacao", ">=", start));
-  const snap = await getDocs(q);
-  return snap.size;
-};
+export function useDashboardService() {
+  const { ordensDeServico, clientes } = useData();
 
-export const getCustomersCount = async () => {
-  const snap = await getDocs(collection(db, "clientes"));
-  return snap.size;
-};
+  const getOrdersTodayCount = async () => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return ordensDeServico.filter(
+      (o) => new Date(o.dataCriacao) >= start
+    ).length;
+  };
 
-export const getBikesInMaintenanceCount = async () => {
-  const q = query(
-    collection(db, "ordens"),
-    where("status", "in", ["Pendente", "Em Andamento"])
-  );
-  const snap = await getDocs(q);
-  let total = 0;
-  snap.forEach((doc) => {
-    const data = doc.data();
-    if (Array.isArray(data.bicicletas)) {
-      total += data.bicicletas.length;
-    } else if (data.bicicleta) {
-      total += 1;
-    }
-  });
-  return total;
-};
+  const getCustomersCount = async () => clientes.length;
+
+  const getBikesInMaintenanceCount = async () => {
+    return ordensDeServico.reduce((total, o) => {
+      if (["Pendente", "Em Andamento"].includes(o.status)) {
+        total += o.bicicletas ? o.bicicletas.length : 0;
+      }
+      return total;
+    }, 0);
+  };
+
+  return { getOrdersTodayCount, getCustomersCount, getBikesInMaintenanceCount };
+}
