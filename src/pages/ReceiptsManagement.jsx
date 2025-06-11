@@ -23,7 +23,7 @@ import {
   deleteReceipt,
   getNextReceiptNumber,
 } from "../services/receiptService";
-import { getLatestCompletedOrderByPhone } from "../services/orderService";
+import { useOrderService } from "../services/orderService";
 const storeInfo = {
   name: "Bikes & Go",
   company: "Bikes & Go Ltda.",
@@ -55,6 +55,7 @@ const emptyForm = {
 const ReceiptsManagement = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { getLatestCompletedOrderByPhone } = useOrderService();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [form, setForm] = useState({
     ...emptyForm,
