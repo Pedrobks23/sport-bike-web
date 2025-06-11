@@ -188,11 +188,13 @@ const ReportsManagement = () => {
         });
 
       const processedData = processOrders(orders, reportType);
+<<<<<< vpzrsv-codex/refatorar-integração-com-firestore
       if (processedData.length === 0) {
         setReportData(MOCK_DATA[reportType] || []);
       } else {
         setReportData(processedData);
       }
+
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     } finally {

@@ -4,7 +4,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { useData } from "../contexts/DataContext";
+<<<<<< vpzrsv-codex/refatorar-integração-com-firestore
 import { svgToPngDataUrl } from "../utils/image";
+
 import {
   ArrowLeft,
   Search,
