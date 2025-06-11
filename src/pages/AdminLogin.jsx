@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
 import { auth } from "../config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "../contexts/AuthContext";
@@ -7,10 +8,31 @@ import { useAuth } from "../contexts/AuthContext";
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => !prev);
+    if (!isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
 
   // Se já estiver autenticado, redireciona para /admin
   React.useEffect(() => {
@@ -55,16 +77,30 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex flex-col justify-center items-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <img src="/assets/Logo.png" alt="Sport & Bike" className="h-24" />
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}> 
+      <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
+        <button
+          onClick={toggleDarkMode}
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md"
+          aria-label="Alternar tema"
+        >
+          {isDarkMode ? "🌞" : "🌙"}
+        </button>
+
+        <div className="mb-8 relative">
+          <div className="absolute -inset-4 bg-amber-400 rounded-full blur-lg opacity-75 animate-pulse"></div>
+          <div className="relative">
+            <img src="/assets/Logo.png" alt="Sport & Bike" className="w-24 h-24" />
+          </div>
         </div>
 
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-center text-[#333] mb-8">
-            Área Administrativa
-          </h1>
+        <div className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Área Administrativa</h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Acesse o painel de controle da <span className="text-amber-600 dark:text-amber-400">Sport & Bike</span>
+            </p>
+          </div>
 
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -73,58 +109,103 @@ const AdminLogin = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 E-mail
               </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                required
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Senha
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                required
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                  Lembrar-me
+                </label>
+              </div>
+              <div className="text-sm">
+                <a href="#" className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400">
+                  Esqueceu a senha?
+                </a>
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#FFC107] text-[#333] py-2 px-4 rounded-md hover:bg-[#FFB000] transition-colors font-bold disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
             >
-              {loading ? "Entrando..." : "Entrar"}
+              {loading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  <span>Entrar</span>
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <button
               onClick={() => navigate("/")}
-              className="text-gray-600 hover:text-[#FFC107] transition-colors text-sm"
+              className="text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center space-x-1 transition-colors"
             >
-              Voltar para o site
+              <ArrowLeft className="w-4 h-4" />
+              <span>Voltar para o site</span>
             </button>
           </div>
         </div>
+
+        <div className="mt-8 text-center text-gray-600 dark:text-gray-400 text-sm">
+          <p>© 2025 Sport & Bike. Todos os direitos reservados.</p>
+          <p className="mt-1">25 anos de tradição no ciclismo</p>
+        </div>
+
+        <div className="fixed top-20 left-20 w-64 h-64 bg-amber-300 rounded-full blur-3xl opacity-20 animate-blob"></div>
+        <div className="fixed bottom-20 right-20 w-80 h-80 bg-orange-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="fixed bottom-40 left-40 w-72 h-72 bg-yellow-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
     </div>
   );
