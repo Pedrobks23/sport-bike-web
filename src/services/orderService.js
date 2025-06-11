@@ -1,14 +1,15 @@
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  getDocs, 
-  updateDoc, 
-  doc, 
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  updateDoc,
+  doc,
   deleteDoc,
   getDoc,
-  serverTimestamp 
+  serverTimestamp,
+  limit
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -392,6 +393,30 @@ export const removeOrderPart = async (orderId, bikeIndex, partIndex) => {
     return true;
   } catch (error) {
     console.error('Erro ao remover peça:', error);
+    throw error;
+  }
+};
+
+export const getLatestCompletedOrderByPhone = async (phone) => {
+  try {
+    const ordersRef = collection(db, 'ordens');
+    const q = query(ordersRef, where('cliente.telefone', '==', phone));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    let latest = null;
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.status === 'Pronto') {
+        if (!latest ||
+            (data.dataAtualizacao?.toMillis() || 0) >
+              (latest.dataAtualizacao?.toMillis() || 0)) {
+          latest = { id: docSnap.id, ...data };
+        }
+      }
+    });
+    return latest;
+  } catch (error) {
+    console.error('Erro ao buscar ordem pronta:', error);
     throw error;
   }
 };

@@ -776,6 +776,17 @@ const WorkshopDashboard = () => {
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
               {order.status}
             </span>
+            {order.status === "Pronto" && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/admin/receipts?phone=${order.cliente?.telefone}`);
+                }}
+                className="ml-2 bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded"
+              >
+                Gerar Recibo
+              </button>
+            )}
           </div>
         </div>
       </div>
