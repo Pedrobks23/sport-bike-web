@@ -291,15 +291,15 @@ function NewOrder() {
 
       // Carrega a imagem dinamicamente
       const logoImg = new Image();
-      logoImg.src = "/assets/logo.svg";
-
-      // Aguarda a imagem carregar
+      logoImg.src = logo;
       await new Promise((resolve) => {
         logoImg.onload = resolve;
+        logoImg.onerror = resolve;
       });
 
-      // Adiciona logo
-      docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      if (logoImg.complete) {
+        docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      }
 
       // Cabeçalho
       docPDF.setFontSize(16);

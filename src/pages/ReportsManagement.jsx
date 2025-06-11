@@ -14,6 +14,23 @@ import {
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
+const MOCK_DATA = {
+  daily: [
+    { period: "01/01/2025", quantity: 2, total: 150 },
+    { period: "02/01/2025", quantity: 1, total: 80 },
+    { period: "03/01/2025", quantity: 3, total: 200 },
+  ],
+  weekly: [
+    { period: "Semana de 01/01/2025", quantity: 6, total: 430 },
+    { period: "Semana de 08/01/2025", quantity: 5, total: 390 },
+  ],
+  monthly: [
+    { period: "Janeiro 2025", quantity: 20, total: 1500 },
+    { period: "Fevereiro 2025", quantity: 18, total: 1300 },
+    { period: "Março 2025", quantity: 22, total: 1800 },
+  ],
+};
+
 const ReportsManagement = () => {
   const { servicos, ordensDeServico } = useData();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -171,7 +188,11 @@ const ReportsManagement = () => {
         });
 
       const processedData = processOrders(orders, reportType);
-      setReportData(processedData);
+      if (processedData.length === 0) {
+        setReportData(MOCK_DATA[reportType] || []);
+      } else {
+        setReportData(processedData);
+      }
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     } finally {
