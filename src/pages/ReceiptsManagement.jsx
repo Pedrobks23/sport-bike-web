@@ -27,9 +27,9 @@ import {
 import { getLatestCompletedOrderByPhone } from "../services/orderService";
 const storeInfo = {
   name: "Sport & Bike",
-  company: "RP COMERCIO DE BICICLETAS E SERVICOS LTDA",
-  cnpj: "17.338.208/0001-18",
-  address: "Rua Manuel Jesuíno, 706, Loja de Bicicletas",
+  company: "Pereira Comércio LTDA",
+  cnpj: "52.532.493/0001-04",
+  address: "Rua Ana Bilhar, 1680",
   city: "Varjota, Fortaleza-CE",
   cep: "60175-214",
   email: "comercialsportbike@gmail.com",
