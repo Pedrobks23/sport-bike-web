@@ -150,10 +150,10 @@ export default function Admin() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <img src="/assets/Logo.png" alt="Sport & Bike" className="w-10 h-10" />
+                <img src="/assets/logo.svg" alt="Bikes & Go" className="w-10 h-10" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Área Administrativa</h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Sport & Bike - Dashboard</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Bikes & Go - Dashboard</p>
                 </div>
               </div>
               <div className="hidden md:flex items-center space-x-4">
@@ -206,7 +206,7 @@ export default function Admin() {
           <div className="mb-12">
             <div className="bg-gradient-to-r from-amber-400 to-amber-600 rounded-2xl p-8 text-white shadow-2xl">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Bem-vindo ao Dashboard</h2>
-              <p className="text-xl opacity-90 max-w-2xl">Gerencie todos os aspectos da Sport & Bike através desta central administrativa moderna e intuitiva.</p>
+              <p className="text-xl opacity-90 max-w-2xl">Gerencie todos os aspectos da Bikes & Go através desta central administrativa moderna e intuitiva.</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -273,7 +273,7 @@ export default function Admin() {
             <div className="flex flex-col md:flex-row items-center justify-between">
               <div className="flex items-center space-x-2 mb-4 md:mb-0">
                 <Bike className="w-5 h-5 text-amber-500" />
-                <span className="text-gray-600 dark:text-gray-400">© 2025 Sport & Bike - Sistema Administrativo</span>
+                <span className="text-gray-600 dark:text-gray-400">© 2025 Bikes & Go - Sistema Administrativo</span>
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-500">Versão 2.0 - Última atualização: Janeiro 2025</div>
             </div>

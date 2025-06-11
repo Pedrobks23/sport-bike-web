@@ -222,7 +222,7 @@ export default function Home() {
   }
 
   const handleWhatsApp = (message) => {
-    const baseUrl = "https://api.whatsapp.com/send/?phone=558532677425&text="
+    const baseUrl = "https://api.whatsapp.com/send/?phone=5511900000000&text="
     const url = `${baseUrl}${encodeURIComponent(message)}&type=phone_number&app_absent=0`
     window.open(url, "_blank")
   }
@@ -278,8 +278,8 @@ export default function Home() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
-                <span className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</span>
+                <img src="/assets/logo.svg" alt="Bikes & Go" className="w-12 h-12" />
+                <span className="text-2xl font-bold text-gray-800 dark:text-white">Bikes & Go</span>
               </div>
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-8">
@@ -301,7 +301,7 @@ export default function Home() {
                     <MessageCircle className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
+                    onClick={() => window.open("https://www.instagram.com/bikesandgo/", "_blank")}
                     className="text-pink-500 hover:text-pink-600 transition-colors"
                     title="Instagram"
                   >
@@ -357,7 +357,7 @@ export default function Home() {
                       <MessageCircle className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
+                      onClick={() => window.open("https://www.instagram.com/bikesandgo/", "_blank")}
                       className="text-pink-500 hover:text-pink-600 transition-colors"
                     >
                       <Instagram className="w-5 h-5" />
@@ -663,7 +663,7 @@ export default function Home() {
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Localização Sport & Bike"
+                  title="Localização Bikes & Go"
                 ></iframe>
               </div>
               <div className="space-y-8">
@@ -672,7 +672,7 @@ export default function Home() {
                     <MapPin className="w-6 h-6 text-amber-500" />
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Endereço</h3>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300">R. Ana Bilhar, 1680 - Varjota, Fortaleza - CE</p>
+                <p className="text-gray-600 dark:text-gray-300">Av. Exemplo, 1234 - Centro, Exemplo - XX</p>
                 </div>
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
@@ -680,9 +680,9 @@ export default function Home() {
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Telefones</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
-                    (85) 3267-7425 | (85) 3122-5874
+                    (11) 90000-0000 | (11) 90000-0001
                     <br />
-                    WhatsApp: (85) 3267-7425
+                    WhatsApp: (11) 90000-0000
                   </p>
                 </div>
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
@@ -706,7 +706,7 @@ export default function Home() {
                     <MessageCircle className="w-6 h-6" />
                   </button>
                   <button
-                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
+                  onClick={() => window.open("https://www.instagram.com/bikesandgo/", "_blank")}
                     className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white p-4 rounded-full hover:shadow-lg transition-all transform hover:scale-110"
                   >
                     <Instagram className="w-6 h-6" />
@@ -772,17 +772,17 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <div className="flex items-center space-x-2 mb-4">
-                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
-                  <span className="text-2xl font-bold">Sport & Bike</span>
+                  <img src="/assets/logo.svg" alt="Bikes & Go" className="w-12 h-12" />
+                  <span className="text-2xl font-bold">Bikes & Go</span>
                 </div>
                 <p className="text-gray-400">Desde 1999 oferecendo o melhor do ciclismo em Fortaleza.</p>
               </div>
               <div>
                 <h4 className="text-lg font-bold mb-4">Contato</h4>
                 <div className="space-y-2 text-gray-400">
-                  <p>(85) 3267-7425 | (85) 3122-5874</p>
-                  <p>WhatsApp: (85) 3267-7425</p>
-                  <p>comercialsportbike@gmail.com</p>
+                  <p>(11) 90000-0000 | (11) 90000-0001</p>
+                  <p>WhatsApp: (11) 90000-0000</p>
+                  <p>contato@bikesandgo.com</p>
                 </div>
               </div>
               <div>
@@ -795,7 +795,7 @@ export default function Home() {
                     <MessageCircle className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
+                    onClick={() => window.open("https://www.instagram.com/bikesandgo/", "_blank")}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-full hover:opacity-80 transition-opacity"
                   >
                     <Instagram className="w-5 h-5" />
@@ -805,7 +805,7 @@ export default function Home() {
             </div>
             <div className="border-t border-gray-700 mt-8 pt-8 text-center">
               <p className="text-gray-400 mb-4">
-                © {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.
+                © {new Date().getFullYear()} Bikes & Go. Todos os direitos reservados.
               </p>
               <button
                 onClick={() => {

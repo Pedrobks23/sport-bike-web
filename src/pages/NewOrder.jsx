@@ -19,7 +19,7 @@ import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
-const logo = new URL("/assets/Logo.png", import.meta.url).href;
+const logo = new URL("/assets/logo.svg", import.meta.url).href;
 
 function NewOrder() {
   const navigate = useNavigate();
@@ -317,7 +317,7 @@ function NewOrder() {
 
       // Carrega a imagem dinamicamente
       const logoImg = new Image();
-      logoImg.src = "/assets/Logo.png";
+      logoImg.src = "/assets/logo.svg";
 
       // Aguarda a imagem carregar
       await new Promise((resolve) => {
@@ -334,12 +334,12 @@ function NewOrder() {
 
       docPDF.setFontSize(10);
       docPDF.setFont("helvetica", "normal");
-      centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
+      centerText("Av. Exemplo, 1234 - Centro, Exemplo - XX", 30);
       centerText(
-        "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
+        "Tel: (11) 90000-0000 | (11) 90000-0001 | WhatsApp: (11) 90000-0000",
         35
       );
-      centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
+      centerText("@bikesandgo | contato@bikesandgo.com", 40);
 
       // Info da OS
       docPDF.setFontSize(12);
@@ -380,7 +380,7 @@ function NewOrder() {
 
       docPDF.setFont("helvetica", "normal");
       const tutorialLinhas = [
-        "1. Acesse: https://sportbikece.vercel.app/consulta",
+        "1. Acesse: https://bikesandgo.com/consulta",
         "2. Digite o número da OS (ex.: OS-202401001) ou seu telefone.",
         "3. Clique no botão 'Consultar' para ver o status.",
       ];

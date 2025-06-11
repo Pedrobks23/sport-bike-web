@@ -26,18 +26,18 @@ import {
 } from "../services/receiptService";
 import { getLatestCompletedOrderByPhone } from "../services/orderService";
 const storeInfo = {
-  name: "Sport & Bike",
-  company: "Pereira Comércio LTDA",
-  cnpj: "52.532.493/0001-04",
-  address: "Rua Ana Bilhar, 1680",
-  city: "Varjota, Fortaleza-CE",
-  cep: "60175-214",
-  email: "comercialsportbike@gmail.com",
-  phone1: "+55 (85) 3267-7425",
-  phone2: "+55 (85) 3122-5874",
-  instagram: "sportbike_fortaleza",
-  responsible: "Gilberto Pereira",
-  cityName: "Fortaleza",
+  name: "Bikes & Go",
+  company: "Bikes & Go Ltda.",
+  cnpj: "00.000.000/0001-00",
+  address: "Av. Exemplo, 1234",
+  city: "Centro, Exemplo - XX",
+  cep: "00000-000",
+  email: "contato@bikesandgo.com",
+  phone1: "+55 (11) 90000-0000",
+  phone2: "+55 (11) 90000-0001",
+  instagram: "bikesandgo",
+  responsible: "Equipe Bikes & Go",
+  cityName: "Exemplo",
 };
 
 
