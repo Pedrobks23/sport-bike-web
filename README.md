@@ -1,6 +1,6 @@
-# Sport & Bike Web
+# projeto whitelabel
 
-A management system for the Sport & Bike bicycle store built with React, Vite and Firebase. It provides tools for creating workshop orders, managing customers and services and issuing receipts with PDF generation.
+Um sistema de gestão genérico para lojas de bicicleta, construído com React, Vite e Firebase. Possibilita abrir ordens de serviço, gerenciar clientes e serviços e emitir recibos em PDF.
 
 ## Features
 

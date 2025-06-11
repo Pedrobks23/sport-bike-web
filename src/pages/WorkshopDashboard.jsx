@@ -479,7 +479,7 @@ const WorkshopDashboard = () => {
       };
 
       const logoImg = new Image();
-      logoImg.src = "/assets/Logo.png";
+      logoImg.src = "/assets/logo.svg";
       await new Promise((resolve) => {
         logoImg.onload = resolve;
       });
@@ -491,12 +491,12 @@ const WorkshopDashboard = () => {
 
       docPDF.setFontSize(10);
       docPDF.setFont("helvetica", "normal");
-      centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
+      centerText("Av. Exemplo, 1234 - Centro, Exemplo - XX", 30);
       centerText(
-        "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
+        "Tel: (11) 90000-0000 | (11) 90000-0001 | WhatsApp: (11) 90000-0000",
         35
       );
-      centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
+      centerText("@bikesandgo | contato@bikesandgo.com", 40);
 
       docPDF.setFontSize(12);
       docPDF.setFont("helvetica", "bold");
@@ -530,7 +530,7 @@ const WorkshopDashboard = () => {
 
       docPDF.setFont("helvetica", "normal");
       const tutorialLinhas = [
-        "1. Acesse: https://sportbikece.vercel.app/consulta",
+        "1. Acesse: https://bikesandgo.com/consulta",
         "2. Digite o número da OS ou seu telefone.",
         "3. Clique em 'Consultar' para ver o status.",
       ];

@@ -90,7 +90,7 @@ const AdminLogin = () => {
         <div className="mb-8 relative">
           <div className="absolute -inset-4 bg-amber-400 rounded-full blur-lg opacity-75 animate-pulse"></div>
           <div className="relative">
-            <img src="/assets/Logo.png" alt="Sport & Bike" className="w-24 h-24" />
+            <img src="/assets/logo.svg" alt="Bikes & Go" className="w-24 h-24" />
           </div>
         </div>
 
@@ -98,7 +98,7 @@ const AdminLogin = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Área Administrativa</h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Acesse o painel de controle da <span className="text-amber-600 dark:text-amber-400">Sport & Bike</span>
+              Acesse o painel de controle da <span className="text-amber-600 dark:text-amber-400">Bikes & Go</span>
             </p>
           </div>
 
@@ -199,7 +199,7 @@ const AdminLogin = () => {
         </div>
 
         <div className="mt-8 text-center text-gray-600 dark:text-gray-400 text-sm">
-          <p>© 2025 Sport & Bike. Todos os direitos reservados.</p>
+          <p>© 2025 Bikes & Go. Todos os direitos reservados.</p>
           <p className="mt-1">25 anos de tradição no ciclismo</p>
         </div>
 

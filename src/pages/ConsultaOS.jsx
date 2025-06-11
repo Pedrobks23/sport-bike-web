@@ -16,7 +16,7 @@ import {
   User,
 } from "lucide-react";
 
-const logo = "/assets/Logo.png";
+const logo = "/assets/logo.svg";
 
 const ConsultaOS = () => {
   const navigate = useNavigate();
@@ -264,12 +264,12 @@ const ConsultaOS = () => {
       centerText("ORDEM DE SERVIÇO", 20);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
+      centerText("Av. Exemplo, 1234 - Centro, Exemplo - XX", 30);
       centerText(
-        "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
+        "Tel: (11) 90000-0000 | (11) 90000-0001 | WhatsApp: (11) 90000-0000",
         35
       );
-      centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
+      centerText("@bikesandgo | contato@bikesandgo.com", 40);
 
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
@@ -414,9 +414,9 @@ const ConsultaOS = () => {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center space-x-3">
-                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
+                  <img src="/assets/logo.svg" alt="Bikes & Go" className="w-12 h-12" />
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Bikes & Go</h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400">25 anos de tradição</p>
                   </div>
                 </div>
