@@ -29,7 +29,7 @@ import {
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
-import { getAllServicesOrdered } from "../services/serviceService"
+import { useServiceService } from "../services/serviceService"
 
 const normalizeDriveUrl = (url) => {
   if (!url) return url
@@ -128,6 +128,7 @@ export default function Home() {
   ]
 
   const [officeServices, setOfficeServices] = useState([])
+  const { getAllServicesOrdered } = useServiceService()
 
   useEffect(() => {
     const fetchServices = async () => {

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db } from "../config/firebase";
+import { useData } from "../contexts/DataContext";
 import { ArrowLeft } from "lucide-react";
 
 const NewCustomer = () => {
   const navigate = useNavigate();
+  const { addCliente } = useData();
   const [customer, setCustomer] = useState({
     nome: "",
     telefone: "",
@@ -21,9 +22,10 @@ const NewCustomer = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await addDoc(collection(db, "clientes"), {
+      await addCliente({
+        id: Date.now().toString(),
         ...customer,
-        dataCriacao: new Date(),
+        dataCriacao: new Date().toISOString(),
       });
       navigate("/admin/customers");
     } catch (error) {

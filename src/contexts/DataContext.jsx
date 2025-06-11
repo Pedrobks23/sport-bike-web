@@ -70,6 +70,8 @@ export function DataProvider({ children }) {
     },
   ]);
 
+  const [receipts, setReceipts] = useState([]);
+
   // --- Clientes CRUD ---
   const addCliente = async (cliente) => {
     setClientes((prev) => [...prev, cliente]);
@@ -261,10 +263,37 @@ export function DataProvider({ children }) {
     return completed[0] || null;
   };
 
+  // --- Recibos ---
+  const createReceipt = async (receipt) => {
+    setReceipts((prev) => [...prev, { id: Date.now().toString(), ...receipt }]);
+  };
+
+  const updateReceipt = async (id, updates) => {
+    setReceipts((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+  };
+
+  const deleteReceipt = async (id) => {
+    setReceipts((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const getReceipts = async () => receipts;
+
+  const getNextReceiptNumber = async () => {
+    const year = new Date().getFullYear();
+    const last = receipts
+      .filter((r) => r.numero && r.numero.endsWith(`-${year}`))
+      .sort((a, b) => b.numero.localeCompare(a.numero))[0];
+    const seq = (parseInt(last?.numero?.split("-")[0] || 0, 10) + 1)
+      .toString()
+      .padStart(3, "0");
+    return `${seq}-${year}`;
+  };
+
   const value = {
     clientes,
     servicos,
     ordensDeServico,
+    receipts,
     addCliente,
     updateCliente,
     deleteCliente,
@@ -289,6 +318,11 @@ export function DataProvider({ children }) {
     addObservation,
     getServices,
     getLatestCompletedOrderByPhone,
+    createReceipt,
+    updateReceipt,
+    deleteReceipt,
+    getReceipts,
+    getNextReceiptNumber,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -1,8 +1,9 @@
 // src/hooks/useOrdens.js
 import { useState } from "react";
-import { consultarOS } from "../config/firebase";
+import { useData } from "../contexts/DataContext";
 
 export const useOrdens = () => {
+  const { ordensDeServico } = useData();
   const [ordens, setOrdens] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -11,7 +12,18 @@ export const useOrdens = () => {
     setLoading(true);
     setError(null);
     try {
-      const resultado = await consultarOS(tipo, valor);
+      let resultado = [];
+      if (tipo === "historico") {
+        resultado = ordensDeServico.filter((o) =>
+          o.cliente?.telefone?.includes(valor)
+        );
+      } else if (tipo === "os") {
+        resultado = ordensDeServico.filter((o) => o.codigo === valor);
+      } else if (tipo === "telefone") {
+        resultado = ordensDeServico.filter((o) =>
+          o.cliente?.telefone?.includes(valor)
+        );
+      }
       setOrdens(resultado);
     } catch (err) {
       setError(err.message);
