@@ -64,6 +64,8 @@ function NewOrder() {
   // Ex.: newPart[bikeId] = { nome: "", valor: "" }
   const [newPart, setNewPart] = useState({});
 
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
   // Estado de agendamento e observações
   const [scheduledDate, setScheduledDate] = useState("");
   const [observacoes, setObservacoes] = useState("");
@@ -80,6 +82,14 @@ function NewOrder() {
   // Carrega serviços ao montar
   useEffect(() => {
     loadServices();
+  }, []);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
   }, []);
 
   // Recalcula total sempre que serviços selecionados ou tabela de serviços mudar
@@ -111,16 +121,20 @@ function NewOrder() {
     try {
       const servicosRef = collection(db, "servicos");
       const snapshot = await getDocs(servicosRef);
-      const servicesData = {};
 
+      // Coletamos as entradas em um array para permitir ordenação
+      const entries = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
         Object.entries(data).forEach(([nome, valor]) => {
-          // Remove R$, aspas e espaços, e troca vírgula por ponto
           const valorLimpo = valor.replace(/['"R$\s]/g, "").replace(",", ".");
-          servicesData[nome] = parseFloat(valorLimpo);
+          entries.push([nome, parseFloat(valorLimpo)]);
         });
       });
+
+      // Ordena alfabeticamente pelo nome do serviço
+      entries.sort((a, b) => a[0].localeCompare(b[0]));
+      const servicesData = Object.fromEntries(entries);
 
       setAvailableServices(servicesData);
     } catch (err) {
@@ -827,29 +841,30 @@ function NewOrder() {
   // RENDER DO COMPONENTE
   // -----------------------------
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* HEADER */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        {/* HEADER */}
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate("/admin")}
-                className="mr-4 text-gray-600 hover:text-gray-900 flex items-center"
+                onClick={() => navigate('/admin')}
+                className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Voltar
+                <ArrowLeft className="w-5 h-5" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Nova Ordem de Serviço
-              </h1>
+              <div className="flex items-center space-x-3">
+                <div className="bg-gradient-to-r from-green-400 to-green-600 p-2 rounded-full">
+                  <PlusCircle className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Nova Ordem de Serviço</h1>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* MAIN */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 pb-24">
+        {/* MAIN */}
+        <main className="container mx-auto px-4 py-8 pb-24">
         {error && (
           <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}
@@ -857,7 +872,7 @@ function NewOrder() {
         )}
 
         {/* SEÇÃO CLIENTE */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
           <h2 className="text-xl font-bold mb-4">Cliente</h2>
 
           <div className="flex gap-4 mb-4">
@@ -948,7 +963,7 @@ function NewOrder() {
         </div>
 
         {/* SEÇÃO BICICLETAS */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
           <h2 className="text-xl font-bold mb-4">Bicicletas do Cliente</h2>
 
           {bikes.length > 0 && (
@@ -1026,7 +1041,7 @@ function NewOrder() {
         {selectedBikes.length > 0 && (
           <>
             {/* SERVIÇOS */}
-            <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
               <h2 className="text-xl font-bold mb-4">Serviços</h2>
               <p className="mb-4 text-sm text-gray-700">
                 Selecione a quantidade de cada serviço para cada bicicleta.
@@ -1043,7 +1058,9 @@ function NewOrder() {
                       } - ${bikeInfo.cor}`}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {Object.entries(availableServices).map(
+                      {Object.entries(availableServices)
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(
                         ([serviceName, price]) => {
                           const quantity =
                             selectedServices[bikeId]?.[serviceName] || 0;
@@ -1098,7 +1115,7 @@ function NewOrder() {
             </div>
 
             {/* PEÇAS */}
-            <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
               <h2 className="text-xl font-bold mb-4">Peças</h2>
               {selectedBikes.map((bikeId, index) => {
                 const bikeInfo = bikes.find((b) => b.id === bikeId);
@@ -1177,7 +1194,7 @@ function NewOrder() {
 
         {/* SEÇÃO AGENDAMENTO E OBSERVAÇÕES (apenas se houver bikes selecionadas) */}
         {selectedBikes.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
             <h2 className="text-xl font-bold mb-4">Agendamento</h2>
             <div className="mb-4">
               <label
@@ -1245,6 +1262,7 @@ function NewOrder() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
