@@ -9,6 +9,7 @@ import {
   deleteDoc,
   getDocs,
   addDoc,
+  getCountFromServer,
 } from "firebase/firestore";
 import { db, consultarOS } from "../config/firebase";
 import {
@@ -90,6 +91,33 @@ const BikeEditModal = React.memo(
   )
 );
 
+const HistoryModal = React.memo(({ orders, onClose }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
+      <h2 className="text-xl font-bold mb-4">Histórico de Serviços</h2>
+      <ul className="space-y-2">
+        {orders.map((o) => (
+          <li key={o.id} className="border rounded p-2 text-sm">
+            <p className="font-semibold">#{o.codigo || o.id}</p>
+            <p>
+              {new Date(o.dataCriacao).toLocaleDateString('pt-BR')} - R${' '}
+              {parseFloat(o.valorTotal || 0).toFixed(2)}
+            </p>
+          </li>
+        ))}
+        {orders.length === 0 && (
+          <li className="text-center text-gray-500">Nenhum registro encontrado</li>
+        )}
+      </ul>
+      <div className="mt-4 text-right">
+        <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-700">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+));
+
 const CustomerList = () => {
   const navigate = useNavigate();
 
@@ -105,8 +133,10 @@ const CustomerList = () => {
   const [isEditingBike, setIsEditingBike] = useState(false);
   const [selectedBike, setSelectedBike] = useState(null);
   const [customerBikes, setCustomerBikes] = useState({});
+  const [bikeCounts, setBikeCounts] = useState({});
   const [customerOrders, setCustomerOrders] = useState({});
   const [expandedCustomer, setExpandedCustomer] = useState(null);
+  const [historyCustomer, setHistoryCustomer] = useState(null);
   const [showAddBikeModal, setShowAddBikeModal] = useState(false);
   const [newBike, setNewBike] = useState({
     marca: "",
@@ -144,6 +174,7 @@ const CustomerList = () => {
         ...prev,
         [customerId]: bikes,
       }));
+      setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
 
       setShowAddBikeModal(false);
       setNewBike({ marca: "", modelo: "", cor: "" });
@@ -165,10 +196,27 @@ const CustomerList = () => {
         ...prev,
         [customerId]: prev[customerId].filter((bike) => bike.id !== bikeId),
       }));
+      setBikeCounts((prev) => ({
+        ...prev,
+        [customerId]: Math.max((prev[customerId] || 1) - 1, 0),
+      }));
     } catch (error) {
       console.error("Erro ao remover bicicleta:", error);
       alert("Erro ao remover bicicleta. Tente novamente.");
     }
+  };
+
+  const handleViewHistory = async (customer) => {
+    const customerId = customer.id;
+    if (!customerOrders[customerId]) {
+      try {
+        const ordens = await consultarOS("historico", customer.telefone || "");
+        setCustomerOrders((prev) => ({ ...prev, [customerId]: ordens }));
+      } catch (error) {
+        console.error("Erro ao carregar ordens:", error);
+      }
+    }
+    setHistoryCustomer(customerId);
   };
 
   const handleUpdateBike = async () => {
@@ -235,6 +283,7 @@ const CustomerList = () => {
           bikes.push({ id: doc.id, ...doc.data() });
         });
         setCustomerBikes((prev) => ({ ...prev, [customerId]: bikes }));
+        setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
       } catch (error) {
         console.error("Erro ao carregar bicicletas:", error);
       }
@@ -262,21 +311,23 @@ const CustomerList = () => {
         id: doc.id,
         ...doc.data(),
       }));
-      const bikesMap = {};
+
+      const counts = {};
       await Promise.all(
         clientesData.map(async (c) => {
-          const bikesRef = collection(db, `clientes/${c.id}/bikes`);
-          const bikeSnap = await getDocs(bikesRef);
-          const bikes = [];
-          bikeSnap.forEach((b) => {
-            bikes.push({ id: b.id, ...b.data() });
-          });
-          bikesMap[c.id] = bikes;
+          try {
+            const countSnap = await getCountFromServer(
+              collection(db, `clientes/${c.id}/bikes`)
+            );
+            counts[c.id] = countSnap.data().count;
+          } catch {
+            counts[c.id] = 0;
+          }
         })
       );
 
       setCustomers(clientesData);
-      setCustomerBikes(bikesMap);
+      setBikeCounts(counts);
     } catch (error) {
       console.error("Erro ao carregar clientes:", error);
     } finally {
@@ -504,7 +555,7 @@ const CustomerList = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <Bike className="w-4 h-4 mr-2" />
-                      <span className="text-sm">Bicicletas: {customerBikes[customer.id]?.length || 0}</span>
+                      <span className="text-sm">Bicicletas: {bikeCounts[customer.id] ?? customerBikes[customer.id]?.length ?? 0}</span>
                     </div>
                     <div className="flex space-x-2">
                       <button
@@ -515,7 +566,16 @@ const CustomerList = () => {
                         className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
                       >
                         Adicionar
-                    </button>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewHistory(customer);
+                        }}
+                        className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                      >
+                        Histórico
+                      </button>
                     </div>
                   {expandedCustomer === customer.id && (
                     <div className="mt-4 space-y-2">
@@ -691,6 +751,22 @@ const CustomerList = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {isEditingBike && selectedBike && (
+        <BikeEditModal
+          selectedBike={selectedBike}
+          onUpdate={handleUpdateBike}
+          onClose={() => setIsEditingBike(false)}
+          onChange={(bike) => setSelectedBike(bike)}
+        />
+      )}
+
+      {historyCustomer && (
+        <HistoryModal
+          orders={customerOrders[historyCustomer] || []}
+          onClose={() => setHistoryCustomer(null)}
+        />
       )}
 
       {showAddBikeModal && (
