@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { useData } from "../contexts/DataContext";
+import { svgToPngDataUrl } from "../utils/image";
 import {
   ArrowLeft,
   Search,
@@ -266,7 +267,10 @@ const ConsultaOS = () => {
         doc.text(text, x, y);
       };
 
-      doc.addImage(logo, "PNG", 20, 10, 40, 40);
+      const logoData = await svgToPngDataUrl(logo);
+      if (logoData) {
+        doc.addImage(logoData, "PNG", 20, 10, 40, 40);
+      }
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
       centerText("ORDEM DE SERVIÇO", 20);

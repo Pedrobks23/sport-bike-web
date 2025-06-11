@@ -125,8 +125,8 @@ const ReceiptsManagement = () => {
       const order = await getLatestCompletedOrderByPhone(phone);
       if (order) {
         const items = [];
-        if (order.dataAtualizacao) {
-          const dt = new Date(order.dataAtualizacao.toMillis());
+        if (order.dataAtualizacao || order.dataCriacao) {
+          const dt = new Date(order.dataAtualizacao || order.dataCriacao);
           const dateStr = dt.toISOString().split("T")[0];
           setForm((prev) => ({ ...prev, date: dateStr }));
         }

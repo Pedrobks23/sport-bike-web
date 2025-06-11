@@ -5,6 +5,7 @@ import { useData } from "../contexts/DataContext";
 import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import { svgToPngDataUrl } from "../utils/image";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
 const logo = new URL("/assets/logo.svg", import.meta.url).href;
@@ -289,16 +290,9 @@ function NewOrder() {
         docPDF.text(text, x, y);
       };
 
-      // Carrega a imagem dinamicamente
-      const logoImg = new Image();
-      logoImg.src = logo;
-      await new Promise((resolve) => {
-        logoImg.onload = resolve;
-        logoImg.onerror = resolve;
-      });
-
-      if (logoImg.complete) {
-        docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      const logoData = await svgToPngDataUrl(logo);
+      if (logoData) {
+        docPDF.addImage(logoData, "PNG", 20, 10, 40, 40);
       }
 
       // Cabeçalho
