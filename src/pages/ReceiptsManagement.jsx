@@ -24,6 +24,7 @@ import {
   deleteReceipt,
   getNextReceiptNumber,
 } from "../services/receiptService";
+import { getLatestCompletedOrderByPhone } from "../services/orderService";
 const storeInfo = {
   name: "Sport & Bike",
   company: "RP COMERCIO DE BICICLETAS E SERVICOS LTDA",
@@ -92,9 +93,47 @@ const ReceiptsManagement = () => {
           cpf: data.cpf || "",
           endereco: data.endereco || prev.endereco || "",
         }));
+        await loadLatestOrder(data.telefone || form.telefone);
       }
     } catch (err) {
       console.error("Erro ao buscar cliente:", err);
+    }
+  };
+
+  const loadLatestOrder = async (phone) => {
+    try {
+      const order = await getLatestCompletedOrderByPhone(phone);
+      if (order) {
+        const items = [];
+        order.bicicletas?.forEach((bike) => {
+          if (bike.serviceValues) {
+            Object.entries(bike.serviceValues).forEach(([name, svc]) => {
+              const qtd = bike.services?.[name] || 1;
+              const unit = parseFloat(svc.valorFinal ?? svc.valor ?? 0);
+              items.push({ descricao: name, qtd, unit });
+            });
+          } else if (bike.valorServicos) {
+            Object.entries(bike.valorServicos).forEach(([name, val]) => {
+              const qtd = bike.services?.[name] || 1;
+              items.push({ descricao: name, qtd, unit: parseFloat(val) });
+            });
+          }
+          if (Array.isArray(bike.pecas)) {
+            bike.pecas.forEach((peca) => {
+              items.push({
+                descricao: peca.nome || peca.descricao || "Peça",
+                qtd: 1,
+                unit: parseFloat(peca.valor || 0),
+              });
+            });
+          }
+        });
+        if (items.length > 0) {
+          setForm((prev) => ({ ...prev, itens: items }));
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao buscar ordem para recibo:", err);
     }
   };
 
