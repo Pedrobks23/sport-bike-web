@@ -10,7 +10,7 @@ import {
   getDocs,
   addDoc,
 } from "firebase/firestore";
-import { db } from "../config/firebase";
+import { db, consultarOS } from "../config/firebase";
 import {
   ArrowLeft,
   Users,
@@ -89,7 +89,6 @@ const BikeEditModal = React.memo(
     </div>
   )
 );
-const AUTH_PASSWORD = "admin123";
 
 const CustomerList = () => {
   const navigate = useNavigate();
@@ -106,6 +105,7 @@ const CustomerList = () => {
   const [isEditingBike, setIsEditingBike] = useState(false);
   const [selectedBike, setSelectedBike] = useState(null);
   const [customerBikes, setCustomerBikes] = useState({});
+  const [customerOrders, setCustomerOrders] = useState({});
   const [expandedCustomer, setExpandedCustomer] = useState(null);
   const [showAddBikeModal, setShowAddBikeModal] = useState(false);
   const [newBike, setNewBike] = useState({
@@ -113,10 +113,7 @@ const CustomerList = () => {
     modelo: "",
     cor: "",
   });
-  const [filterHasBikes, setFilterHasBikes] = useState(false);
-  const [selectedIds, setSelectedIds] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: "nome", direction: "asc" });
-  const [historyCustomer, setHistoryCustomer] = useState(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -222,33 +219,37 @@ const CustomerList = () => {
     }
   }, [isEditingBike, prevIsEditingBike]);
   // Funções para carregar dados
-  const loadCustomerBikes = async (customerId) => {
-    try {
-      if (expandedCustomer === customerId) {
-        setExpandedCustomer(null);
-        return;
-      }
-
-      if (customerBikes[customerId]) {
-        setExpandedCustomer(customerId);
-        return;
-      }
-
-      const bikesRef = collection(db, `clientes/${customerId}/bikes`);
-      const querySnapshot = await getDocs(bikesRef);
-      const bikes = [];
-      querySnapshot.forEach((doc) => {
-        bikes.push({ id: doc.id, ...doc.data() });
-      });
-
-      setCustomerBikes((prev) => ({
-        ...prev,
-        [customerId]: bikes,
-      }));
-      setExpandedCustomer(customerId);
-    } catch (error) {
-      console.error("Erro ao carregar bicicletas:", error);
+  const toggleCustomer = async (customer) => {
+    const customerId = customer.id;
+    if (expandedCustomer === customerId) {
+      setExpandedCustomer(null);
+      return;
     }
+
+    if (!customerBikes[customerId]) {
+      try {
+        const bikesRef = collection(db, `clientes/${customerId}/bikes`);
+        const querySnapshot = await getDocs(bikesRef);
+        const bikes = [];
+        querySnapshot.forEach((doc) => {
+          bikes.push({ id: doc.id, ...doc.data() });
+        });
+        setCustomerBikes((prev) => ({ ...prev, [customerId]: bikes }));
+      } catch (error) {
+        console.error("Erro ao carregar bicicletas:", error);
+      }
+    }
+
+    if (!customerOrders[customerId]) {
+      try {
+        const ordens = await consultarOS("historico", customer.telefone || "");
+        setCustomerOrders((prev) => ({ ...prev, [customerId]: ordens }));
+      } catch (error) {
+        console.error("Erro ao carregar ordens:", error);
+      }
+    }
+
+    setExpandedCustomer(customerId);
   };
 
   const loadCustomers = async () => {
@@ -261,8 +262,21 @@ const CustomerList = () => {
         id: doc.id,
         ...doc.data(),
       }));
+      const bikesMap = {};
+      await Promise.all(
+        clientesData.map(async (c) => {
+          const bikesRef = collection(db, `clientes/${c.id}/bikes`);
+          const bikeSnap = await getDocs(bikesRef);
+          const bikes = [];
+          bikeSnap.forEach((b) => {
+            bikes.push({ id: b.id, ...b.data() });
+          });
+          bikesMap[c.id] = bikes;
+        })
+      );
 
       setCustomers(clientesData);
+      setCustomerBikes(bikesMap);
     } catch (error) {
       console.error("Erro ao carregar clientes:", error);
     } finally {
@@ -312,64 +326,6 @@ const CustomerList = () => {
       alert("Erro ao remover cliente. Tente novamente.");
     }
   };
-
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === sortedCustomers.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(sortedCustomers.map((c) => c.id));
-    }
-  };
-
-  const deleteSelected = async () => {
-    if (selectedIds.length > 5) {
-      const pwd = window.prompt("Digite a senha de autenticação para continuar:");
-      if (pwd !== AUTH_PASSWORD) {
-        alert("Senha incorreta");
-        return;
-      }
-    }
-    if (
-      selectedIds.length > 0 &&
-      window.confirm("Remover clientes selecionados?")
-    ) {
-      for (const id of selectedIds) {
-        await handleDeleteCustomer(id);
-      }
-      setSelectedIds([]);
-    }
-  };
-
-  const exportCSV = () => {
-    const list = (selectedIds.length ? customers.filter((c) => selectedIds.includes(c.id)) : customers).map(
-      (c) => [
-        c.id,
-        c.nome,
-        c.telefone,
-        c.email,
-        c.endereco,
-        customerBikes[c.id]?.length || 0,
-      ]
-    );
-    const csv = [
-      ["ID", "Nome", "Telefone", "Email", "Endereco", "Bikes"].join(","),
-      ...list.map((r) => r.join(",")),
-    ].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "clientes.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handleSort = (key) => {
     setSortConfig((prev) => ({
       key,
@@ -381,19 +337,12 @@ const CustomerList = () => {
     if (sortConfig.key !== key) return null;
     return sortConfig.direction === "asc" ? "▲" : "▼";
   };
-
-  const openHistory = async (customer) => {
-    await loadCustomerBikes(customer.id);
-    setHistoryCustomer(customer);
-  };
-
   const filteredCustomers = customers
     .filter(
       (c) =>
         c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.telefone?.includes(searchTerm)
     )
-    .filter((c) => !filterHasBikes || (customerBikes[c.id]?.length || 0) > 0);
 
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
     const aVal =
@@ -494,53 +443,24 @@ const CustomerList = () => {
           </div>
 
         <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
-          <div className="flex justify-between items-center mb-4">
-            <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
-                className="mr-2 rounded"
-                checked={filterHasBikes}
-                onChange={(e) => setFilterHasBikes(e.target.checked)}
-              />
-              Somente com bicicletas
-            </label>
-            <div className="space-x-3">
-              <button onClick={toggleSelectAll} className="text-sm text-gray-600">
-                Selecionar todos
-              </button>
-              <button onClick={deleteSelected} className="text-red-600 text-sm">
-                Excluir selecionados
-              </button>
-              <button onClick={exportCSV} className="text-blue-600 text-sm">
-                Exportar CSV
-              </button>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedCustomers.map((customer) => (
               <div
                 key={customer.id}
-                className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                onClick={() => toggleCustomer(customer)}
+                className="group cursor-pointer bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex">
-                    <input
-                      type="checkbox"
-                      className="mr-2 mt-1"
-                      checked={selectedIds.includes(customer.id)}
-                      onChange={() => toggleSelect(customer.id)}
-                    />
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                        {customer.nome}
-                      </h3>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">ID: {customer.id}</span>
-                    </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      {customer.nome}
+                    </h3>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">ID: {customer.id}</span>
                   </div>
                   <div className="flex space-x-1">
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedCustomer(customer);
                         setEditedCustomer(customer);
                         setIsEditing(true);
@@ -551,7 +471,10 @@ const CustomerList = () => {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteCustomer(customer.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCustomer(customer.id);
+                      }}
                       className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                       title="Excluir cliente"
                     >
@@ -592,14 +515,55 @@ const CustomerList = () => {
                         className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
                       >
                         Adicionar
-                      </button>
-                      <button
-                        onClick={() => openHistory(customer)}
-                        className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                      >
-                        Ver bikes
-                      </button>
+                    </button>
                     </div>
+                  {expandedCustomer === customer.id && (
+                    <div className="mt-4 space-y-2">
+                      {customerBikes[customer.id]?.map((bike) => (
+                        <div key={bike.id} className="flex items-center justify-between text-sm">
+                          <span>{bike.marca} {bike.modelo} - {bike.cor}</span>
+                          <div className="space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCustomer(customer);
+                                setSelectedBike(bike);
+                                setIsEditingBike(true);
+                              }}
+                              className="p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBike(customer.id, bike.id);
+                              }}
+                              className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )) || (
+                        <p className="text-sm text-gray-500">Nenhuma bicicleta cadastrada</p>
+                      )}
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 text-sm">
+                        {(() => {
+                          const orders = customerOrders[customer.id] || [];
+                          const last = orders[0];
+                          const total = orders.reduce((acc, o) => acc + (parseFloat(o.valorTotal) || 0), 0);
+                          return (
+                            <>
+                              <p>Última OS: {last ? new Date(last.dataCriacao).toLocaleDateString("pt-BR") : "-"}</p>
+                              <p>Total gasto: R$ {total.toFixed(2)}</p>
+                              <p>Serviços realizados: {orders.length}</p>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
                   </div>
                 </div>
               </div>
@@ -620,58 +584,10 @@ const CustomerList = () => {
           >
             <Plus className="w-5 h-5" />
           </button>
-          {historyCustomer && (
-            <div className="fixed inset-y-0 right-0 w-80 bg-white dark:bg-gray-800 shadow-lg z-50 overflow-y-auto">
-              <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
-                <h3 className="font-semibold">{historyCustomer.nome}</h3>
-                <button onClick={() => setHistoryCustomer(null)} className="text-gray-500 hover:text-gray-700">✕</button>
-              </div>
-              <div className="p-4 space-y-2">
-                {customerBikes[historyCustomer.id]?.length ? (
-                  customerBikes[historyCustomer.id].map((bike) => (
-                    <div key={bike.id} className="flex items-center justify-between text-sm">
-                      <span>{bike.marca} {bike.modelo} - {bike.cor}</span>
-                      <div className="space-x-1">
-                        <button
-                          onClick={() => {
-                            setSelectedCustomer(historyCustomer);
-                            setSelectedBike(bike);
-                            setIsEditingBike(true);
-                          }}
-                          className="p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteBike(historyCustomer.id, bike.id)}
-                          className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">Nenhuma bicicleta cadastrada</p>
-                )}
-              </div>
-            </div>
-          )}
+
         </main>
       </div>
     </div>
-
-      {isEditingBike && (
-        <BikeEditModal
-          selectedBike={selectedBike}
-          onChange={setSelectedBike}
-          onClose={() => {
-            setIsEditingBike(false);
-            setSelectedBike(null);
-          }}
-          onUpdate={handleUpdateBike}
-        />
-      )}
 
       {isEditing && editedCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
