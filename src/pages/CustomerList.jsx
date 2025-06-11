@@ -89,6 +89,8 @@ const BikeEditModal = React.memo(
     </div>
   )
 );
+const AUTH_PASSWORD = "admin123";
+
 const CustomerList = () => {
   const navigate = useNavigate();
 
@@ -326,6 +328,13 @@ const CustomerList = () => {
   };
 
   const deleteSelected = async () => {
+    if (selectedIds.length > 5) {
+      const pwd = window.prompt("Digite a senha de autenticação para continuar:");
+      if (pwd !== AUTH_PASSWORD) {
+        alert("Senha incorreta");
+        return;
+      }
+    }
     if (
       selectedIds.length > 0 &&
       window.confirm("Remover clientes selecionados?")
@@ -484,112 +493,127 @@ const CustomerList = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-4 shadow-xl">
-            <div className="flex justify-between items-center mb-4">
-              <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  className="mr-2 rounded"
-                  checked={filterHasBikes}
-                  onChange={(e) => setFilterHasBikes(e.target.checked)}
-                />
-                Somente com bicicletas
-              </label>
-              <div className="space-x-3">
-                <button onClick={deleteSelected} className="text-red-600 text-xs">
-                  Excluir selecionados
-                </button>
-                <button onClick={exportCSV} className="text-blue-600 text-xs">
-                  Exportar CSV
-                </button>
-              </div>
+        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+          <div className="flex justify-between items-center mb-4">
+            <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                className="mr-2 rounded"
+                checked={filterHasBikes}
+                onChange={(e) => setFilterHasBikes(e.target.checked)}
+              />
+              Somente com bicicletas
+            </label>
+            <div className="space-x-3">
+              <button onClick={toggleSelectAll} className="text-sm text-gray-600">
+                Selecionar todos
+              </button>
+              <button onClick={deleteSelected} className="text-red-600 text-sm">
+                Excluir selecionados
+              </button>
+              <button onClick={exportCSV} className="text-blue-600 text-sm">
+                Exportar CSV
+              </button>
             </div>
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-600 dark:text-gray-400">
-                  <th className="px-2 py-2">
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedCustomers.map((customer) => (
+              <div
+                key={customer.id}
+                className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex">
                     <input
                       type="checkbox"
-                      checked={selectedIds.length === sortedCustomers.length && sortedCustomers.length > 0}
-                      onChange={toggleSelectAll}
+                      className="mr-2 mt-1"
+                      checked={selectedIds.includes(customer.id)}
+                      onChange={() => toggleSelect(customer.id)}
                     />
-                  </th>
-                  <th className="px-2 py-2 cursor-pointer" onClick={() => handleSort('nome')}>
-                    Nome {sortIndicator('nome')}
-                  </th>
-                  <th className="px-2 py-2 cursor-pointer" onClick={() => handleSort('telefone')}>
-                    Telefone {sortIndicator('telefone')}
-                  </th>
-                  <th className="px-2 py-2">Email</th>
-                  <th className="px-2 py-2">Endereço</th>
-                  <th className="px-2 py-2 cursor-pointer" onClick={() => handleSort('bikes')}>
-                    Bikes {sortIndicator('bikes')}
-                  </th>
-                  <th className="px-2 py-2">Status</th>
-                  <th className="px-2 py-2">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {sortedCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-2 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(customer.id)}
-                        onChange={() => toggleSelect(customer.id)}
-                      />
-                    </td>
-                    <td className="px-2 py-2 font-medium text-gray-800 dark:text-gray-200">
-                      <button onClick={() => openHistory(customer)} className="hover:underline">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                         {customer.nome}
-                      </button>
-                    </td>
-                    <td className="px-2 py-2">{customer.telefone || '—'}</td>
-                    <td className="px-2 py-2">{customer.email || '—'}</td>
-                    <td className="px-2 py-2">{customer.endereco || '—'}</td>
-                    <td className="px-2 py-2">{customerBikes[customer.id]?.length || 0}</td>
-                    <td className="px-2 py-2">
-                      {(customerBikes[customer.id]?.length || 0) === 0 ? 'Sem bicicleta' : 'Com bicicleta'}
-                    </td>
-                    <td className="px-2 py-2 space-x-1">
-                      <button
-                        onClick={() => {
-                          setSelectedCustomer(customer);
-                          setEditedCustomer(customer);
-                          setIsEditing(true);
-                        }}
-                        className="p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteCustomer(customer.id)}
-                        className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      </h3>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">ID: {customer.id}</span>
+                    </div>
+                  </div>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() => {
+                        setSelectedCustomer(customer);
+                        setEditedCustomer(customer);
+                        setIsEditing(true);
+                      }}
+                      className="p-2 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                      title="Editar cliente"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCustomer(customer.id)}
+                      className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      title="Excluir cliente"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <Phone className="w-4 h-4 mr-2" />
+                    <span className="text-sm truncate">{customer.telefone || 'Não informado'}</span>
+                  </div>
+
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <Mail className="w-4 h-4 mr-2" />
+                    <span className="text-sm truncate">{customer.email || 'Não informado'}</span>
+                  </div>
+
+                  <div className="flex items-start text-gray-600 dark:text-gray-400">
+                    <MapPin className="w-4 h-4 mr-2 mt-0.5" />
+                    <span className="text-sm line-clamp-2">{customer.endereco || 'Não informado'}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-gray-600 dark:text-gray-400">
+                      <Bike className="w-4 h-4 mr-2" />
+                      <span className="text-sm">Bicicletas: {customerBikes[customer.id]?.length || 0}</span>
+                    </div>
+                    <div className="flex space-x-2">
                       <button
                         onClick={() => {
                           setSelectedCustomer(customer);
                           setShowAddBikeModal(true);
                         }}
-                        className="p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded"
+                        className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
                       >
-                        <Plus className="w-4 h-4" />
+                        Adicionar
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {sortedCustomers.length === 0 && (
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum cliente encontrado</h3>
-                <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos clientes</p>
+                      <button
+                        onClick={() => openHistory(customer)}
+                        className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                      >
+                        Ver bikes
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+            ))}
           </div>
+
+          {sortedCustomers.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum cliente encontrado</h3>
+              <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos clientes</p>
+            </div>
+          )}
+        </div>
           <button
             onClick={() => navigate('/admin/customers/new')}
             className="fixed bottom-6 right-6 p-4 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
@@ -605,9 +629,27 @@ const CustomerList = () => {
               <div className="p-4 space-y-2">
                 {customerBikes[historyCustomer.id]?.length ? (
                   customerBikes[historyCustomer.id].map((bike) => (
-                    <p key={bike.id} className="text-sm">
-                      {bike.marca} {bike.modelo} - {bike.cor}
-                    </p>
+                    <div key={bike.id} className="flex items-center justify-between text-sm">
+                      <span>{bike.marca} {bike.modelo} - {bike.cor}</span>
+                      <div className="space-x-1">
+                        <button
+                          onClick={() => {
+                            setSelectedCustomer(historyCustomer);
+                            setSelectedBike(bike);
+                            setIsEditingBike(true);
+                          }}
+                          className="p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBike(historyCustomer.id, bike.id)}
+                          className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   ))
                 ) : (
                   <p className="text-sm text-gray-500">Nenhuma bicicleta cadastrada</p>
