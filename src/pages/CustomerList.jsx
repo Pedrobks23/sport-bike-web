@@ -9,9 +9,21 @@ import {
   deleteDoc,
   getDocs,
   addDoc,
+  getCountFromServer,
 } from "firebase/firestore";
-import { db } from "../config/firebase";
-import { Search, Bike } from "lucide-react";
+import { db, consultarOS } from "../config/firebase";
+import {
+  ArrowLeft,
+  Users,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Phone,
+  Mail,
+  MapPin,
+  Bike,
+} from "lucide-react";
 
 // Componente BikeEditModal
 const BikeEditModal = React.memo(
@@ -78,8 +90,38 @@ const BikeEditModal = React.memo(
     </div>
   )
 );
+
+const HistoryModal = React.memo(({ orders, onClose }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
+      <h2 className="text-xl font-bold mb-4">Histórico de Serviços</h2>
+      <ul className="space-y-2">
+        {orders.map((o) => (
+          <li key={o.id} className="border rounded p-2 text-sm">
+            <p className="font-semibold">#{o.codigo || o.id}</p>
+            <p>
+              {new Date(o.dataCriacao).toLocaleDateString('pt-BR')} - R${' '}
+              {parseFloat(o.valorTotal || 0).toFixed(2)}
+            </p>
+          </li>
+        ))}
+        {orders.length === 0 && (
+          <li className="text-center text-gray-500">Nenhum registro encontrado</li>
+        )}
+      </ul>
+      <div className="mt-4 text-right">
+        <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-700">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+));
+
 const CustomerList = () => {
   const navigate = useNavigate();
+
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Estados
   const [customers, setCustomers] = useState([]);
@@ -91,13 +133,25 @@ const CustomerList = () => {
   const [isEditingBike, setIsEditingBike] = useState(false);
   const [selectedBike, setSelectedBike] = useState(null);
   const [customerBikes, setCustomerBikes] = useState({});
+  const [bikeCounts, setBikeCounts] = useState({});
+  const [customerOrders, setCustomerOrders] = useState({});
   const [expandedCustomer, setExpandedCustomer] = useState(null);
+  const [historyCustomer, setHistoryCustomer] = useState(null);
   const [showAddBikeModal, setShowAddBikeModal] = useState(false);
   const [newBike, setNewBike] = useState({
     marca: "",
     modelo: "",
     cor: "",
   });
+  const [sortConfig, setSortConfig] = useState({ key: "nome", direction: "asc" });
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   // Funções para manipulação de bicicletas
   const handleAddBike = async (customerId) => {
@@ -120,6 +174,7 @@ const CustomerList = () => {
         ...prev,
         [customerId]: bikes,
       }));
+      setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
 
       setShowAddBikeModal(false);
       setNewBike({ marca: "", modelo: "", cor: "" });
@@ -141,10 +196,27 @@ const CustomerList = () => {
         ...prev,
         [customerId]: prev[customerId].filter((bike) => bike.id !== bikeId),
       }));
+      setBikeCounts((prev) => ({
+        ...prev,
+        [customerId]: Math.max((prev[customerId] || 1) - 1, 0),
+      }));
     } catch (error) {
       console.error("Erro ao remover bicicleta:", error);
       alert("Erro ao remover bicicleta. Tente novamente.");
     }
+  };
+
+  const handleViewHistory = async (customer) => {
+    const customerId = customer.id;
+    if (!customerOrders[customerId]) {
+      try {
+        const ordens = await consultarOS("historico", customer.telefone || "");
+        setCustomerOrders((prev) => ({ ...prev, [customerId]: ordens }));
+      } catch (error) {
+        console.error("Erro ao carregar ordens:", error);
+      }
+    }
+    setHistoryCustomer(customerId);
   };
 
   const handleUpdateBike = async () => {
@@ -195,33 +267,38 @@ const CustomerList = () => {
     }
   }, [isEditingBike, prevIsEditingBike]);
   // Funções para carregar dados
-  const loadCustomerBikes = async (customerId) => {
-    try {
-      if (expandedCustomer === customerId) {
-        setExpandedCustomer(null);
-        return;
-      }
-
-      if (customerBikes[customerId]) {
-        setExpandedCustomer(customerId);
-        return;
-      }
-
-      const bikesRef = collection(db, `clientes/${customerId}/bikes`);
-      const querySnapshot = await getDocs(bikesRef);
-      const bikes = [];
-      querySnapshot.forEach((doc) => {
-        bikes.push({ id: doc.id, ...doc.data() });
-      });
-
-      setCustomerBikes((prev) => ({
-        ...prev,
-        [customerId]: bikes,
-      }));
-      setExpandedCustomer(customerId);
-    } catch (error) {
-      console.error("Erro ao carregar bicicletas:", error);
+  const toggleCustomer = async (customer) => {
+    const customerId = customer.id;
+    if (expandedCustomer === customerId) {
+      setExpandedCustomer(null);
+      return;
     }
+
+    if (!customerBikes[customerId]) {
+      try {
+        const bikesRef = collection(db, `clientes/${customerId}/bikes`);
+        const querySnapshot = await getDocs(bikesRef);
+        const bikes = [];
+        querySnapshot.forEach((doc) => {
+          bikes.push({ id: doc.id, ...doc.data() });
+        });
+        setCustomerBikes((prev) => ({ ...prev, [customerId]: bikes }));
+        setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
+      } catch (error) {
+        console.error("Erro ao carregar bicicletas:", error);
+      }
+    }
+
+    if (!customerOrders[customerId]) {
+      try {
+        const ordens = await consultarOS("historico", customer.telefone || "");
+        setCustomerOrders((prev) => ({ ...prev, [customerId]: ordens }));
+      } catch (error) {
+        console.error("Erro ao carregar ordens:", error);
+      }
+    }
+
+    setExpandedCustomer(customerId);
   };
 
   const loadCustomers = async () => {
@@ -235,7 +312,22 @@ const CustomerList = () => {
         ...doc.data(),
       }));
 
+      const counts = {};
+      await Promise.all(
+        clientesData.map(async (c) => {
+          try {
+            const countSnap = await getCountFromServer(
+              collection(db, `clientes/${c.id}/bikes`)
+            );
+            counts[c.id] = countSnap.data().count;
+          } catch {
+            counts[c.id] = 0;
+          }
+        })
+      );
+
       setCustomers(clientesData);
+      setBikeCounts(counts);
     } catch (error) {
       console.error("Erro ao carregar clientes:", error);
     } finally {
@@ -285,161 +377,286 @@ const CustomerList = () => {
       alert("Erro ao remover cliente. Tente novamente.");
     }
   };
+  const handleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const sortIndicator = (key) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === "asc" ? "▲" : "▼";
+  };
+  const filteredCustomers = customers
+    .filter(
+      (c) =>
+        c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.telefone?.includes(searchTerm)
+    )
+
+  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    const aVal =
+      sortConfig.key === "bikes"
+        ? customerBikes[a.id]?.length || 0
+        : a[sortConfig.key] || "";
+    const bVal =
+      sortConfig.key === "bikes"
+        ? customerBikes[b.id]?.length || 0
+        : b[sortConfig.key] || "";
+    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const totalClients = customers.length;
+  const activeClients = customers.filter(
+    (c) => c.telefone && c.telefone !== "0"
+  ).length;
+  const clientsWithAddress = customers.filter(
+    (c) => c.endereco && c.endereco.trim() !== ""
+  ).length;
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center">
-            <button
-              onClick={() => navigate("/admin")}
-              className="text-gray-600 hover:text-[#FFC107] transition-colors mr-4"
-            >
-              Voltar
-            </button>
-            <h1 className="text-xl font-bold text-[#333]">
-              Gerenciar Clientes
-            </h1>
+    <>
+      <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+        <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gradient-to-r from-purple-400 to-purple-600 p-2 rounded-full">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Clientes</h1>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/admin/customers/new')}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Novo Cliente</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar clientes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-            />
+        <main className="container mx-auto px-4 py-8">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Buscar clientes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {customers
-            .filter(
-              (customer) =>
-                customer.nome
-                  ?.toLowerCase()
-                  .includes(searchTerm.toLowerCase()) ||
-                customer.telefone?.includes(searchTerm)
-            )
-            .map((customer) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total de Clientes</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{totalClients}</p>
+                </div>
+                <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
+                  <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Ativos</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{activeClients}</p>
+                </div>
+                <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
+                  <Phone className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Com Endereço</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{clientsWithAddress}</p>
+                </div>
+                <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
+                  <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedCustomers.map((customer) => (
               <div
                 key={customer.id}
-                className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                onClick={() => toggleCustomer(customer)}
+                className="group cursor-pointer bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
               >
-                <h3 className="text-lg font-bold text-[#333] mb-2">
-                  {customer.nome}
-                </h3>
-                <p className="text-gray-600 mb-1">
-                  Telefone: {customer.telefone}
-                </p>
-                <p className="text-gray-600 mb-4">Email: {customer.email}</p>
-                <p className="text-gray-600 mb-4">
-                  Endereço: {customer.endereco || "-"}
-                </p>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      {customer.nome}
+                    </h3>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">ID: {customer.id}</span>
+                  </div>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCustomer(customer);
+                        setEditedCustomer(customer);
+                        setIsEditing(true);
+                      }}
+                      className="p-2 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                      title="Editar cliente"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCustomer(customer.id);
+                      }}
+                      className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      title="Excluir cliente"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-800 flex items-center">
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <Phone className="w-4 h-4 mr-2" />
+                    <span className="text-sm truncate">{customer.telefone || 'Não informado'}</span>
+                  </div>
+
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <Mail className="w-4 h-4 mr-2" />
+                    <span className="text-sm truncate">{customer.email || 'Não informado'}</span>
+                  </div>
+
+                  <div className="flex items-start text-gray-600 dark:text-gray-400">
+                    <MapPin className="w-4 h-4 mr-2 mt-0.5" />
+                    <span className="text-sm line-clamp-2">{customer.endereco || 'Não informado'}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <Bike className="w-4 h-4 mr-2" />
-                      Bicicletas
-                    </h4>
-                    <div className="flex gap-2">
+                      <span className="text-sm">Bicicletas: {bikeCounts[customer.id] ?? customerBikes[customer.id]?.length ?? 0}</span>
+                    </div>
+                    <div className="flex space-x-2">
                       <button
                         onClick={() => {
                           setSelectedCustomer(customer);
                           setShowAddBikeModal(true);
                         }}
-                        className="text-sm text-green-600 hover:text-green-800"
+                        className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
                       >
                         Adicionar
                       </button>
                       <button
-                        onClick={() => loadCustomerBikes(customer.id)}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewHistory(customer);
+                        }}
+                        className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                       >
-                        {expandedCustomer === customer.id
-                          ? "Ocultar bikes"
-                          : "Ver bikes"}
+                        Histórico
                       </button>
                     </div>
-                  </div>
-                  {expandedCustomer === customer.id &&
-                    customerBikes[customer.id]?.map((bike) => (
-                      <div
-                        key={bike.id}
-                        className="bg-gray-50 p-3 rounded-md mb-2 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="font-medium">
-                            {bike.marca} {bike.modelo}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Cor: {bike.cor}
-                          </p>
+                  {expandedCustomer === customer.id && (
+                    <div className="mt-4 space-y-2">
+                      {customerBikes[customer.id]?.map((bike) => (
+                        <div key={bike.id} className="flex items-start justify-between gap-2 text-sm">
+                          <span className="flex-1 min-w-0 break-words">
+                            {bike.marca} {bike.modelo} - {bike.cor}
+                          </span>
+                          <div className="flex-shrink-0 space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCustomer(customer);
+                                setSelectedBike(bike);
+                                setIsEditingBike(true);
+                              }}
+                              className="p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBike(customer.id, bike.id);
+                              }}
+                              className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedCustomer(customer);
-                              setSelectedBike(bike);
-                              setIsEditingBike(true);
-                            }}
-                            className="text-yellow-600 hover:text-yellow-700"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleDeleteBike(customer.id, bike.id)
-                            }
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Excluir
-                          </button>
-                        </div>
+                      )) || (
+                        <p className="text-sm text-gray-500">Nenhuma bicicleta cadastrada</p>
+                      )}
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 text-sm">
+                        {(() => {
+                          const orders = customerOrders[customer.id] || [];
+                          const last = orders[0];
+                          const total = orders.reduce((acc, o) => acc + (parseFloat(o.valorTotal) || 0), 0);
+                          return (
+                            <>
+                              <p>Última OS: {last ? new Date(last.dataCriacao).toLocaleDateString("pt-BR") : "-"}</p>
+                              <p>Total gasto: R$ {total.toFixed(2)}</p>
+                              <p>Serviços realizados: {orders.length}</p>
+                            </>
+                          );
+                        })()}
                       </div>
-                    ))}
-                </div>
-
-                <div className="flex space-x-2 mt-4">
-                  <button
-                    onClick={() => {
-                      setSelectedCustomer(customer);
-                      setEditedCustomer(customer);
-                      setIsEditing(true);
-                    }}
-                    className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition-colors"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDeleteCustomer(customer.id)}
-                    className="px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200 transition-colors"
-                  >
-                    Excluir
-                  </button>
+                    </div>
+                  )}
+                  </div>
                 </div>
               </div>
             ))}
-        </div>
-      </div>
+          </div>
 
-      {isEditingBike && (
-        <BikeEditModal
-          selectedBike={selectedBike}
-          onChange={setSelectedBike}
-          onClose={() => {
-            setIsEditingBike(false);
-            setSelectedBike(null);
-          }}
-          onUpdate={handleUpdateBike}
-        />
-      )}
+          {sortedCustomers.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum cliente encontrado</h3>
+              <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos clientes</p>
+            </div>
+          )}
+        </div>
+          <button
+            onClick={() => navigate('/admin/customers/new')}
+            className="fixed bottom-6 right-6 p-4 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+
+        </main>
+      </div>
+    </div>
 
       {isEditing && editedCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -545,6 +762,22 @@ const CustomerList = () => {
         </div>
       )}
 
+      {isEditingBike && selectedBike && (
+        <BikeEditModal
+          selectedBike={selectedBike}
+          onUpdate={handleUpdateBike}
+          onClose={() => setIsEditingBike(false)}
+          onChange={(bike) => setSelectedBike(bike)}
+        />
+      )}
+
+      {historyCustomer && (
+        <HistoryModal
+          orders={customerOrders[historyCustomer] || []}
+          onClose={() => setHistoryCustomer(null)}
+        />
+      )}
+
       {showAddBikeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -610,7 +843,7 @@ const CustomerList = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
