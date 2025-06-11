@@ -111,6 +111,10 @@ const CustomerList = () => {
     modelo: "",
     cor: "",
   });
+  const [filterHasBikes, setFilterHasBikes] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: "nome", direction: "asc" });
+  const [historyCustomer, setHistoryCustomer] = useState(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -307,6 +311,95 @@ const CustomerList = () => {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === sortedCustomers.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(sortedCustomers.map((c) => c.id));
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (
+      selectedIds.length > 0 &&
+      window.confirm("Remover clientes selecionados?")
+    ) {
+      for (const id of selectedIds) {
+        await handleDeleteCustomer(id);
+      }
+      setSelectedIds([]);
+    }
+  };
+
+  const exportCSV = () => {
+    const list = (selectedIds.length ? customers.filter((c) => selectedIds.includes(c.id)) : customers).map(
+      (c) => [
+        c.id,
+        c.nome,
+        c.telefone,
+        c.email,
+        c.endereco,
+        customerBikes[c.id]?.length || 0,
+      ]
+    );
+    const csv = [
+      ["ID", "Nome", "Telefone", "Email", "Endereco", "Bikes"].join(","),
+      ...list.map((r) => r.join(",")),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "clientes.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const sortIndicator = (key) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === "asc" ? "▲" : "▼";
+  };
+
+  const openHistory = async (customer) => {
+    await loadCustomerBikes(customer.id);
+    setHistoryCustomer(customer);
+  };
+
+  const filteredCustomers = customers
+    .filter(
+      (c) =>
+        c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.telefone?.includes(searchTerm)
+    )
+    .filter((c) => !filterHasBikes || (customerBikes[c.id]?.length || 0) > 0);
+
+  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    const aVal =
+      sortConfig.key === "bikes"
+        ? customerBikes[a.id]?.length || 0
+        : a[sortConfig.key] || "";
+    const bVal =
+      sortConfig.key === "bikes"
+        ? customerBikes[b.id]?.length || 0
+        : b[sortConfig.key] || "";
+    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
   const totalClients = customers.length;
   const activeClients = customers.filter(
     (c) => c.telefone && c.telefone !== "0"
@@ -391,132 +484,135 @@ const CustomerList = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {customers
-              .filter(
-                (customer) =>
-                  customer.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  customer.telefone?.includes(searchTerm)
-              )
-              .map((customer) => (
-                <div
-                  key={customer.id}
-                  className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+          <div className="overflow-x-auto bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-4 shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  className="mr-2 rounded"
+                  checked={filterHasBikes}
+                  onChange={(e) => setFilterHasBikes(e.target.checked)}
+                />
+                Somente com bicicletas
+              </label>
+              <div className="space-x-3">
+                <button onClick={deleteSelected} className="text-red-600 text-xs">
+                  Excluir selecionados
+                </button>
+                <button onClick={exportCSV} className="text-blue-600 text-xs">
+                  Exportar CSV
+                </button>
+              </div>
+            </div>
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-600 dark:text-gray-400">
+                  <th className="px-2 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === sortedCustomers.length && sortedCustomers.length > 0}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
+                  <th className="px-2 py-2 cursor-pointer" onClick={() => handleSort('nome')}>
+                    Nome {sortIndicator('nome')}
+                  </th>
+                  <th className="px-2 py-2 cursor-pointer" onClick={() => handleSort('telefone')}>
+                    Telefone {sortIndicator('telefone')}
+                  </th>
+                  <th className="px-2 py-2">Email</th>
+                  <th className="px-2 py-2">Endereço</th>
+                  <th className="px-2 py-2 cursor-pointer" onClick={() => handleSort('bikes')}>
+                    Bikes {sortIndicator('bikes')}
+                  </th>
+                  <th className="px-2 py-2">Status</th>
+                  <th className="px-2 py-2">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {sortedCustomers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-2 py-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(customer.id)}
+                        onChange={() => toggleSelect(customer.id)}
+                      />
+                    </td>
+                    <td className="px-2 py-2 font-medium text-gray-800 dark:text-gray-200">
+                      <button onClick={() => openHistory(customer)} className="hover:underline">
                         {customer.nome}
-                      </h3>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">ID: {customer.id}</span>
-                    </div>
-                    <div className="flex space-x-1">
+                      </button>
+                    </td>
+                    <td className="px-2 py-2">{customer.telefone || '—'}</td>
+                    <td className="px-2 py-2">{customer.email || '—'}</td>
+                    <td className="px-2 py-2">{customer.endereco || '—'}</td>
+                    <td className="px-2 py-2">{customerBikes[customer.id]?.length || 0}</td>
+                    <td className="px-2 py-2">
+                      {(customerBikes[customer.id]?.length || 0) === 0 ? 'Sem bicicleta' : 'Com bicicleta'}
+                    </td>
+                    <td className="px-2 py-2 space-x-1">
                       <button
                         onClick={() => {
                           setSelectedCustomer(customer);
                           setEditedCustomer(customer);
                           setIsEditing(true);
                         }}
-                        className="p-2 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                        title="Editar cliente"
+                        className="p-1 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteCustomer(customer.id)}
-                        className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                        title="Excluir cliente"
+                        className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
-                      <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm truncate">{customer.telefone || 'Não informado'}</span>
-                    </div>
-                    <div className="flex items-center text-gray-600 dark:text-gray-400">
-                      <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm truncate">{customer.email || 'Não informado'}</span>
-                    </div>
-                    <div className="flex items-start text-gray-600 dark:text-gray-400">
-                      <MapPin className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm line-clamp-2">{customer.endereco || 'Não informado'}</span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-gray-600 dark:text-gray-400">
-                        <Bike className="w-4 h-4 mr-2" />
-                        <span className="text-sm">Bicicletas: {customerBikes[customer.id]?.length || 0}</span>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setShowAddBikeModal(true);
-                          }}
-                          className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
-                        >
-                          Adicionar
-                        </button>
-                        <button
-                          onClick={() => loadCustomerBikes(customer.id)}
-                          className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                        >
-                          {expandedCustomer === customer.id ? 'Ocultar bikes' : 'Ver bikes'}
-                        </button>
-                      </div>
-                    </div>
-                    {expandedCustomer === customer.id &&
-                      customerBikes[customer.id]?.map((bike) => (
-                        <div
-                          key={bike.id}
-                          className="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-md mb-2 flex justify-between items-center mt-2"
-                        >
-                          <div>
-                            <p className="font-medium">
-                              {bike.marca} {bike.modelo}
-                            </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Cor: {bike.cor}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setSelectedCustomer(customer);
-                                setSelectedBike(bike);
-                                setIsEditingBike(true);
-                              }}
-                              className="text-yellow-600 hover:text-yellow-700"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBike(customer.id, bike.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ))}
+                      <button
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowAddBikeModal(true);
+                        }}
+                        className="p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {sortedCustomers.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum cliente encontrado</h3>
+                <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos clientes</p>
+              </div>
+            )}
           </div>
-
-          {customers.filter(
-            (customer) =>
-              customer.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              customer.telefone?.includes(searchTerm)
-          ).length === 0 && (
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum cliente encontrado</h3>
-              <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos clientes</p>
+          <button
+            onClick={() => navigate('/admin/customers/new')}
+            className="fixed bottom-6 right-6 p-4 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+          {historyCustomer && (
+            <div className="fixed inset-y-0 right-0 w-80 bg-white dark:bg-gray-800 shadow-lg z-50 overflow-y-auto">
+              <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-semibold">{historyCustomer.nome}</h3>
+                <button onClick={() => setHistoryCustomer(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              <div className="p-4 space-y-2">
+                {customerBikes[historyCustomer.id]?.length ? (
+                  customerBikes[historyCustomer.id].map((bike) => (
+                    <p key={bike.id} className="text-sm">
+                      {bike.marca} {bike.modelo} - {bike.cor}
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Nenhuma bicicleta cadastrada</p>
+                )}
+              </div>
             </div>
           )}
         </main>
