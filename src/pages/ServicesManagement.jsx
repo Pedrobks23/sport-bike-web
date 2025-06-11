@@ -30,6 +30,7 @@ const ServicesManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [mostRequestedService, setMostRequestedService] = useState("");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -60,6 +61,40 @@ const ServicesManagement = () => {
       "from-teal-400 to-teal-600",
     ];
     return colors[index % colors.length];
+  };
+
+  const loadMostRequestedService = async () => {
+    try {
+      const ordersRef = collection(db, "ordens");
+      const snapshot = await getDocs(ordersRef);
+
+      const serviceCounts = {};
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (Array.isArray(data.bicicletas)) {
+          data.bicicletas.forEach((bike) => {
+            if (bike.services) {
+              Object.entries(bike.services).forEach(([name, qty]) => {
+                const count = parseInt(qty || 0);
+                serviceCounts[name] = (serviceCounts[name] || 0) + (isNaN(count) ? 1 : count);
+              });
+            }
+          });
+        }
+      });
+
+      let topService = "";
+      let topCount = 0;
+      Object.entries(serviceCounts).forEach(([name, count]) => {
+        if (count > topCount) {
+          topService = name;
+          topCount = count;
+        }
+      });
+      setMostRequestedService(topService);
+    } catch (error) {
+      console.error("Erro ao obter serviço mais solicitado:", error);
+    }
   };
 
   const loadServices = async () => {
@@ -288,6 +323,7 @@ const ServicesManagement = () => {
 
   useEffect(() => {
     loadServices();
+    loadMostRequestedService();
   }, []);
 
   return (
@@ -356,6 +392,18 @@ const ServicesManagement = () => {
                 </div>
                 <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full">
                   <DollarSign className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Mais Solicitado</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{mostRequestedService || '-'}</p>
+                </div>
+                <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
+                  <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </div>
