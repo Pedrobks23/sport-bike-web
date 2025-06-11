@@ -16,7 +16,7 @@ export default function ManageHomePage() {
     }
   }, [])
 
-  const featuredProducts = [
+  const [featuredProducts, setFeaturedProducts] = useState([
     {
       id: 1,
       name: "Bicicleta IGK",
@@ -41,27 +41,61 @@ export default function ManageHomePage() {
       image: "/placeholder.svg?height=200&width=300",
       featured: false,
     },
-  ]
+  ])
 
   const handleToggleFeatured = (id) => {
-    alert(
-      `Produto ${id} ${featuredProducts.find((p) => p.id === id)?.featured ? "removido dos" : "adicionado aos"} destaques`
+    setFeaturedProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, featured: !p.featured } : p))
     )
   }
 
   const handleNewProduct = () => {
-    alert("Redirecionando para cadastro de novo produto...")
+    const name = prompt("Nome do produto:")
+    if (!name) return
+    const category = prompt("Categoria:") || ""
+    const price = prompt("Preço:") || ""
+    const newId =
+      featuredProducts.length > 0
+        ? Math.max(...featuredProducts.map((p) => p.id)) + 1
+        : 1
+    setFeaturedProducts((prev) => [
+      ...prev,
+      {
+        id: newId,
+        name,
+        category,
+        price,
+        image: "/placeholder.svg?height=200&width=300",
+        featured: false,
+      },
+    ])
   }
 
   const handleEditProduct = (id) => {
-    alert(`Editando produto ${id}`)
+    const product = featuredProducts.find((p) => p.id === id)
+    if (!product) return
+    const name = prompt("Nome do produto:", product.name)
+    if (!name) return
+    const category = prompt("Categoria:", product.category) || product.category
+    const price = prompt("Preço:", product.price) || product.price
+    setFeaturedProducts((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, name, category, price } : p
+      )
+    )
   }
 
   const handleDeleteProduct = (id) => {
     if (confirm("Tem certeza que deseja excluir este produto?")) {
-      alert(`Produto ${id} excluído`)
+      setFeaturedProducts((prev) => prev.filter((p) => p.id !== id))
     }
   }
+
+  const filteredProducts = featuredProducts.filter(
+    (product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
@@ -124,18 +158,14 @@ export default function ManageHomePage() {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts
-              .filter(
-                (product) =>
-                  product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  product.category.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((product) => (
-                <div
-                  key={product.id}
-                  className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-                >
+          {showFeaturedProducts && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                  >
                   <div className="relative">
                     <img
                       src={product.image || "/placeholder.svg"}
@@ -190,17 +220,15 @@ export default function ManageHomePage() {
                   </div>
                 </div>
               ))}
-          </div>
-          {featuredProducts.filter(
-            (product) =>
-              product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              product.category.toLowerCase().includes(searchTerm.toLowerCase())
-          ).length === 0 && (
-            <div className="text-center py-12">
-              <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum produto encontrado</h3>
-              <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos produtos</p>
-            </div>
+              </div>
+              {filteredProducts.length === 0 && (
+                <div className="text-center py-12">
+                  <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum produto encontrado</h3>
+                  <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos produtos</p>
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>

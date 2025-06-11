@@ -37,6 +37,7 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   const [formData, setFormData] = useState(product || emptyProduct)
   const [imageFile, setImageFile] = useState(null)
   const [preview, setPreview] = useState(product?.image || "")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -57,9 +58,15 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     setPreview(normalizeDriveUrl(value))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSave({ ...formData, imageFile })
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      await onSave({ ...formData, imageFile })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -110,14 +117,28 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
             />
             <label className="block text-sm font-medium mb-1">Upload da Imagem</label>
             <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
-            {preview && <img src={preview} alt="Pré-visualização" className="mt-2 w-full h-40 object-cover rounded" />}
+            {preview && (
+              <img
+                src={preview}
+                alt="Pré-visualização"
+                className="mt-2 w-full h-60 object-cover rounded"
+              />
+            )}
           </div>
           <div className="flex justify-end gap-4 mt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300">
               Cancelar
             </button>
-            <button type="submit" className="px-6 py-2 bg-blue-500 text-white rounded">
-              Salvar
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`px-6 py-2 rounded text-white ${
+                isSubmitting
+                  ? "bg-blue-300 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600"
+              }`}
+            >
+              {isSubmitting ? "Salvando..." : "Salvar"}
             </button>
           </div>
         </form>
@@ -266,7 +287,12 @@ export default function HomeManagement() {
                     className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
                   >
                     <div className="relative">
-                      <img src={product.image} alt={product.name} className="w-full h-48 object-cover" loading="lazy" />
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-60 object-cover"
+                        loading="lazy"
+                      />
                     </div>
                     <div className="p-6">
                       <div className="mb-4">

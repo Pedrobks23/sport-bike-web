@@ -1,17 +1,40 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { consultarOS, updateOrdemURL } from "../config/firebase";
+import {
+  ArrowLeft,
+  Search,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  History,
+  Phone,
+  Calendar,
+  User,
+} from "lucide-react";
 
 const logo = "/assets/Logo.png";
 
 const ConsultaOS = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [ordens, setOrdens] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   // Verifica se há uma OS na URL ao carregar
   useEffect(() => {
@@ -378,104 +401,101 @@ const ConsultaOS = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] relative overflow-hidden">
-      <div
-        className="absolute top-0 left-0 w-[500px] h-[500px] 
-        bg-[#FFC107] rounded-full opacity-20 blur-3xl -translate-x-1/2 -translate-y-1/2"
-      />
-      <div
-        className="absolute bottom-0 right-0 w-[500px] h-[500px] 
-        bg-[#FFC107] rounded-full opacity-20 blur-3xl translate-x-1/2 translate-y-1/2"
-      />
-
-      <header className="relative z-10 bg-white shadow-sm">
-        <div className="container mx-auto px-4 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/")}
-              className="text-[#333] hover:text-[#FFC107] transition-colors"
-            >
-              ← Voltar
-            </button>
-            <img src="/assets/Logo.png" alt="Sport & Bike" className="h-36" />
-          </div>
-        </div>
-      </header>
-
-      <main className="relative z-10 container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-center text-[#333] mb-8">
-            Consulta de Ordem de Serviço
-          </h1>
-
-          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <form onSubmit={handleSubmit} className="mb-4">
-              <div className="mb-6">
-                <label
-                  htmlFor="search"
-                  className="block text-gray-700 font-medium mb-2"
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+      <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => navigate("/")}
+                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 >
-                  Digite o número da OS ou telefone
-                </label>
-                <input
-                  type="text"
-                  id="search"
-                  value={searchValue}
-                  onChange={handleInputChange}
-                  placeholder="OS-20241204B ou (85) 99999-9999"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 
-                    focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                  maxLength={20}
-                />
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center space-x-3">
+                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</h1>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">25 anos de tradição</p>
+                  </div>
+                </div>
               </div>
-
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#FFC107] text-[#333] font-bold py-3 px-6 
-                  rounded-lg transition duration-300 hover:bg-[#FFB000] 
-                  disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  const newTheme = isDarkMode ? "light" : "dark";
+                  setIsDarkMode(!isDarkMode);
+                  localStorage.setItem("theme", newTheme);
+                  document.documentElement.classList.toggle("dark", newTheme === "dark");
+                }}
+                className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
-                {loading ? "Consultando..." : "Consultar"}
+                {isDarkMode ? "🌞" : "🌙"}
               </button>
-            </form>
-
-            {error && (
-              <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
-                {error}
-              </div>
-            )}
+            </div>
           </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-12">
+          <div className="max-w-3xl mx-auto">
+            <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-800 dark:text-white mb-8">
+              Consulta de Ordem de Serviço
+            </h1>
+
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-2xl mb-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Digite o número da OS ou telefone
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
+                    <input
+                      type="text"
+                      id="search"
+                      value={searchValue}
+                      onChange={handleInputChange}
+                      placeholder="OS-20241204B ou (85) 99999-9999"
+                      className="pl-12 w-full px-6 py-4 text-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                      maxLength={20}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-4 px-8 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg disabled:transform-none disabled:cursor-not-allowed"
+                >
+                  {loading ? "Consultando..." : "Consultar"}
+                </button>
+
+                {error && <div className="p-4 bg-red-100 text-red-700 rounded-lg">{error}</div>}
+              </form>
+            </div>
 
           {ordens.length > 0 && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {ordens.map((ordem) => {
                 const valorAtualizado = calcularValorAtualizado(ordem);
 
                 return (
-                  <div key={ordem.id} className="bg-white p-6 rounded-lg shadow-md">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-1">
-                          OS {ordem.codigo || "-"}
-                        </h3>
-                        <p className="text-gray-600">
-                          Cliente: {ordem.cliente?.nome || "-"}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                          ordem.status
-                        )}`}
-                      >
-                        {ordem.status || "Pendente"}
+                  <div
+                    key={ordem.id}
+                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-2xl animate-fade-in"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white">OS {ordem.codigo || "-"}</h3>
+                      <span className={`flex items-center space-x-2 px-4 py-1 rounded-full ${getStatusColor(ordem.status)}`}> 
+                        {ordem.status === "Pendente" ? <Clock className="w-5 h-5" /> : ordem.status === "Em Andamento" ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                        <span className="font-semibold">{ordem.status || "Pendente"}</span>
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       {ordem.bicicletas?.map((bike, index) => (
                         <div key={index} className="border rounded-lg p-4">
-                          <h4 className="font-bold text-gray-700 mb-2">
+                          <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-2">
                             Bicicleta {index + 1}
                           </h4>
                           <p>
@@ -489,19 +509,19 @@ const ConsultaOS = () => {
                           </p>
 
                           <div className="mt-3">
-                            <strong className="text-gray-700">Serviços:</strong>
+                            <strong className="text-gray-700 dark:text-gray-300">Serviços:</strong>
                             {bike.services &&
                               Object.entries(bike.services)
                                 .filter(([_, quantity]) => quantity > 0)
                                 .map(([service, quantity], idx) => (
-                                  <p key={idx} className="text-gray-600 ml-4">
+                                  <p key={idx} className="text-gray-600 dark:text-gray-400 ml-4">
                                     • {service}: {quantity}x
                                   </p>
                                 ))}
                           </div>
 
                           {bike.observacoes && (
-                            <p className="mt-3 text-gray-600">
+                            <p className="mt-3 text-gray-600 dark:text-gray-400">
                               <strong>Observações:</strong> {bike.observacoes}
                             </p>
                           )}
@@ -509,7 +529,7 @@ const ConsultaOS = () => {
                       ))}
 
                       <div>
-                        <h4 className="font-bold text-gray-700 mb-2">Datas</h4>
+                        <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-2">Datas</h4>
                         <p>
                           <strong>Agendamento:</strong>{" "}
                           {formatarData(ordem.dataAgendamento, true)}
@@ -528,10 +548,10 @@ const ConsultaOS = () => {
                     <div className="border-t pt-4">
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="text-gray-600">
+                          <p className="text-gray-600 dark:text-gray-400">
                             Total de Bikes: {ordem.totalBikes || 1}
                           </p>
-                          <p className="text-xl font-bold text-gray-800">
+                          <p className="text-xl font-bold text-gray-800 dark:text-white">
                             {/* Agora usamos o valor recalculado */}
                             Valor Total: {formatarDinheiro(valorAtualizado)}
                           </p>
@@ -539,13 +559,10 @@ const ConsultaOS = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => generatePDF(ordem)}
-                            className="bg-blue-500 text-white font-bold py-2 px-4 
-                              rounded-lg hover:bg-blue-600 transition-colors"
+                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
                           >
                             Gerar PDF
                           </button>
-                          {/* Removendo o botão "Ver Detalhes" */}
-                          {/* Se quiser remover completamente, basta não exibir nada aqui. */}
                         </div>
                       </div>
                     </div>
@@ -555,18 +572,29 @@ const ConsultaOS = () => {
             </div>
           )}
 
+            <div className="text-center mt-8">
+              <button
+                onClick={() => handleHistoryClick()}
+                disabled={loading}
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 text-gray-800 dark:text-white px-6 py-3 rounded-xl font-medium transition-all hover:shadow-lg inline-flex items-center space-x-2"
+              >
+                <History className="w-5 h-5" />
+                <span>{loading ? "Carregando..." : "Ver Histórico"}</span>
+              </button>
+            </div>
+          </div>
+        </main>
+
+        <div className="fixed bottom-6 right-6 z-50">
           <button
-            onClick={handleHistoryClick}
-            disabled={loading}
-            className="fixed bottom-6 right-6 bg-[#FFC107] text-[#333] font-bold 
-              py-3 px-6 rounded-full shadow-lg hover:bg-[#FFB000] 
-              transition-colors flex items-center gap-2 z-50"
+            onClick={() => handleHistoryClick()}
+            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110"
+            title="Ver Histórico"
           >
-            <span className="text-xl">📋</span>
-            {loading ? "Carregando..." : "Ver Histórico"}
+            <History className="w-6 h-6" />
           </button>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
