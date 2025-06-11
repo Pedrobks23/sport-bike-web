@@ -402,7 +402,7 @@ const ConsultaOS = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+      <div className="bg-gradient-to-br from-brand-50 via-orange-50 to-brand-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
@@ -456,7 +456,7 @@ const ConsultaOS = () => {
                       value={searchValue}
                       onChange={handleInputChange}
                       placeholder="OS-20241204B ou (85) 99999-9999"
-                      className="pl-12 w-full px-6 py-4 text-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                      className="pl-12 w-full px-6 py-4 text-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
                       maxLength={20}
                     />
                   </div>
@@ -465,7 +465,7 @@ const ConsultaOS = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-4 px-8 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg disabled:transform-none disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-4 px-8 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg disabled:transform-none disabled:cursor-not-allowed"
                 >
                   {loading ? "Consultando..." : "Consultar"}
                 </button>
@@ -588,7 +588,7 @@ const ConsultaOS = () => {
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={() => handleHistoryClick()}
-            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110"
+            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110"
             title="Ver Histórico"
           >
             <History className="w-6 h-6" />

@@ -93,7 +93,7 @@ export default function ManageReceiptsPage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+      <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -130,7 +130,7 @@ export default function ManageReceiptsPage() {
                         type="date"
                         value={formData.date}
                         onChange={(e) => handleInputChange("date", e.target.value)}
-                        className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -142,7 +142,7 @@ export default function ManageReceiptsPage() {
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => handleInputChange("phone", e.target.value)}
-                        className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                         placeholder="(85) 99999-9999"
                       />
                     </div>
@@ -158,7 +158,7 @@ export default function ManageReceiptsPage() {
                         type="text"
                         value={formData.name}
                         onChange={(e) => handleInputChange("name", e.target.value)}
-                        className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                        className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                         placeholder="Nome completo"
                       />
                     </div>
@@ -169,7 +169,7 @@ export default function ManageReceiptsPage() {
                       type="text"
                       value={formData.cpf}
                       onChange={(e) => handleInputChange("cpf", e.target.value)}
-                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       placeholder="000.000.000-00"
                     />
                   </div>
@@ -182,7 +182,7 @@ export default function ManageReceiptsPage() {
                     <textarea
                       value={formData.address}
                       onChange={(e) => handleInputChange("address", e.target.value)}
-                      className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       rows={2}
                       placeholder="Endereço completo"
                     />
@@ -194,7 +194,7 @@ export default function ManageReceiptsPage() {
                   <select
                     value={formData.paymentMethod}
                     onChange={(e) => handleInputChange("paymentMethod", e.target.value)}
-                    className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                   >
                     <option value="">Selecionar...</option>
                     <option value="dinheiro">Dinheiro</option>
@@ -224,7 +224,7 @@ export default function ManageReceiptsPage() {
                             type="text"
                             value={item.description}
                             onChange={(e) => handleItemChange(index, "description", e.target.value)}
-                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                             placeholder="Descrição"
                           />
                         </div>
@@ -233,7 +233,7 @@ export default function ManageReceiptsPage() {
                             type="number"
                             value={item.quantity}
                             onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                             placeholder="Qtd."
                           />
                         </div>
@@ -242,7 +242,7 @@ export default function ManageReceiptsPage() {
                             type="text"
                             value={item.unit}
                             onChange={(e) => handleItemChange(index, "unit", e.target.value)}
-                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                             placeholder="Unit."
                           />
                         </div>
@@ -251,7 +251,7 @@ export default function ManageReceiptsPage() {
                             type="text"
                             value={item.price}
                             onChange={(e) => handleItemChange(index, "price", e.target.value)}
-                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                             placeholder="Preço"
                           />
                         </div>
@@ -318,7 +318,7 @@ export default function ManageReceiptsPage() {
                         <button className="p-2 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
                           <Download className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors">
+                        <button className="p-2 text-brand-500 hover:bg-brand-100 dark:hover:bg-brand-900/30 rounded-lg transition-colors">
                           <Edit className="w-4 h-4" />
                         </button>
                         <button className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors">

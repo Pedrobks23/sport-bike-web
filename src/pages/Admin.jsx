@@ -90,8 +90,8 @@ export default function Admin() {
       icon: <Wrench className="w-8 h-8" />,
       title: "Ordens de Serviço",
       description: "Cadastrar e gerenciar ordens de serviço",
-      color: "from-amber-400 to-amber-600",
-      hoverColor: "hover:from-amber-500 hover:to-amber-700",
+      color: "from-brand-400 to-brand-600",
+      hoverColor: "hover:from-brand-500 hover:to-brand-700",
       path: "/admin/orders",
     },
     {
@@ -145,7 +145,7 @@ export default function Admin() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+      <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -204,7 +204,7 @@ export default function Admin() {
             <p className="text-red-500 text-center mb-4">{statsError}</p>
           )}
           <div className="mb-12">
-            <div className="bg-gradient-to-r from-amber-400 to-amber-600 rounded-2xl p-8 text-white shadow-2xl">
+            <div className="bg-gradient-to-r from-brand-400 to-brand-600 rounded-2xl p-8 text-white shadow-2xl">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Bem-vindo ao Dashboard</h2>
               <p className="text-xl opacity-90 max-w-2xl">Gerencie todos os aspectos da Bikes & Go através desta central administrativa moderna e intuitiva.</p>
             </div>
@@ -255,12 +255,12 @@ export default function Admin() {
                     </div>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                           {module.title}
                         </h4>
                         <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{module.description}</p>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-amber-500 group-hover:translate-x-1 transition-all duration-300" />
+                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-brand-500 group-hover:translate-x-1 transition-all duration-300" />
                     </div>
                   </div>
                 </div>
@@ -272,7 +272,7 @@ export default function Admin() {
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col md:flex-row items-center justify-between">
               <div className="flex items-center space-x-2 mb-4 md:mb-0">
-                <Bike className="w-5 h-5 text-amber-500" />
+                <Bike className="w-5 h-5 text-brand-500" />
                 <span className="text-gray-600 dark:text-gray-400">© 2025 Bikes & Go - Sistema Administrativo</span>
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-500">Versão 2.0 - Última atualização: Janeiro 2025</div>

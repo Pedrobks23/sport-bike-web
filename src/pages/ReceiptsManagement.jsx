@@ -333,7 +333,7 @@ const ReceiptsManagement = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+      <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -475,7 +475,7 @@ const ReceiptsManagement = () => {
                         type="text"
                         value={item.descricao}
                         onChange={(e) => handleItemChange(index, "descricao", e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                         placeholder="Descrição"
                       />
                     </div>
@@ -484,7 +484,7 @@ const ReceiptsManagement = () => {
                         type="number"
                         value={item.qtd}
                         onChange={(e) => handleItemChange(index, "qtd", e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                         placeholder="Qtd."
                       />
                     </div>
@@ -493,7 +493,7 @@ const ReceiptsManagement = () => {
                         type="text"
                         value={item.unit}
                         onChange={(e) => handleItemChange(index, "unit", e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                         placeholder="Unit."
                       />
                     </div>
@@ -506,7 +506,7 @@ const ReceiptsManagement = () => {
                             ? (Number(item.qtd) * Number(item.unit)).toFixed(2)
                             : ""
                         }
-                        className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                         placeholder="Preço"
                       />
                     </div>
@@ -583,7 +583,7 @@ const ReceiptsManagement = () => {
                     <button
                       type="button"
                       onClick={() => handleEdit(receipt)}
-                      className="p-2 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
+                      className="p-2 text-brand-500 hover:bg-brand-100 dark:hover:bg-brand-900/30 rounded-lg transition-colors"
                     >
                       <Edit className="w-4 h-4" />
                     </button>

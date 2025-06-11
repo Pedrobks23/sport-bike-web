@@ -55,7 +55,7 @@ const ServicesManagement = () => {
       "from-green-400 to-green-600",
       "from-purple-400 to-purple-600",
       "from-red-400 to-red-600",
-      "from-amber-400 to-amber-600",
+      "from-brand-400 to-brand-600",
       "from-indigo-400 to-indigo-600",
       "from-pink-400 to-pink-600",
       "from-teal-400 to-teal-600",
@@ -328,7 +328,7 @@ const ServicesManagement = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+      <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -390,8 +390,8 @@ const ServicesManagement = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-400">Mais Caro</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">R$ {maxPrice}</p>
                 </div>
-                <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full">
-                  <DollarSign className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                <div className="bg-brand-100 dark:bg-brand-900/30 p-3 rounded-full">
+                  <DollarSign className="w-6 h-6 text-brand-600 dark:text-brand-400" />
                 </div>
               </div>
             </div>

@@ -276,7 +276,7 @@ const ReportsManagement = () => {
   }, [reportType]);
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+      <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -316,7 +316,7 @@ const ReportsManagement = () => {
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 >
                   <option value="daily">Diário</option>
                   <option value="weekly">Semanal</option>
@@ -329,7 +329,7 @@ const ReportsManagement = () => {
                 <select
                   value={selectedService}
                   onChange={(e) => setSelectedService(e.target.value)}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 >
                   <option value="all">Todos os serviços</option>
                   {services.map((service) => (
@@ -346,7 +346,7 @@ const ReportsManagement = () => {
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 />
               </div>
 
@@ -356,7 +356,7 @@ const ReportsManagement = () => {
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                   max={new Date().toISOString().split("T")[0]}
                 />
               </div>
@@ -398,8 +398,8 @@ const ReportsManagement = () => {
                     R$ {averageTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full">
-                  <TrendingUp className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                <div className="bg-brand-100 dark:bg-brand-900/30 p-3 rounded-full">
+                  <TrendingUp className="w-6 h-6 text-brand-600 dark:text-brand-400" />
                 </div>
               </div>
             </div>
@@ -465,7 +465,7 @@ const ReportsManagement = () => {
                   <tr className="border-t-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
                     <td className="py-3 px-4 font-bold text-gray-800 dark:text-white">TOTAL GERAL</td>
                     <td className="py-3 px-4 text-center font-bold text-gray-800 dark:text-white">{totalServices}</td>
-                    <td className="py-3 px-4 text-right font-bold text-amber-600 dark:text-amber-400 text-lg">
+                    <td className="py-3 px-4 text-right font-bold text-brand-600 dark:text-brand-400 text-lg">
                       R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
