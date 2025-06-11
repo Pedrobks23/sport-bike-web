@@ -19,8 +19,7 @@ import {
   getCustomersCount,
   getBikesInMaintenanceCount,
 } from "../services/dashboardService";
-import { auth } from "../config/firebase";
-import { signOut } from "firebase/auth";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Admin() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -30,6 +29,7 @@ export default function Admin() {
   const [bikesMaintenance, setBikesMaintenance] = useState(0);
   const [statsError, setStatsError] = useState(null);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -128,14 +128,10 @@ export default function Admin() {
     },
   ];
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     if (confirm("Tem certeza que deseja sair?")) {
-      try {
-        await signOut(auth);
-        navigate("/admin/login");
-      } catch (err) {
-        console.error("Erro ao fazer logout:", err);
-      }
+      logout();
+      navigate("/admin/login");
     }
   };
 

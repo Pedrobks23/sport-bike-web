@@ -1,14 +1,3 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
 import { db } from "../config/firebase";
 import { uploadImage, deleteImageByUrl } from "./uploadImage";
 

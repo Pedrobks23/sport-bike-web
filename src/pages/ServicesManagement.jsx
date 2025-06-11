@@ -9,15 +9,7 @@ import {
   DollarSign,
   FileText,
 } from "lucide-react";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  deleteField,
-} from "firebase/firestore";
+
 import { db } from "../config/firebase";
 import { useNavigate } from "react-router-dom";
 

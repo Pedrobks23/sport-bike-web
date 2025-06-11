@@ -1,10 +1,4 @@
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
+
 
 async function resizeImage(file, maxSize = 1280) {
   return new Promise((resolve) => {

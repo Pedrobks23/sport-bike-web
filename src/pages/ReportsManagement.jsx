@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
-import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
 import {
   LineChart,
