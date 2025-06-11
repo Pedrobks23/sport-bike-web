@@ -1,6 +1,18 @@
-import React, { useState, useEffect, useRef, useImperativeHandle } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Trash, Edit } from "lucide-react";
+import {
+  ArrowLeft,
+  Receipt,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Download,
+  Calendar,
+  User,
+  Phone,
+  MapPin,
+} from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import jsPDF from "jspdf";
@@ -38,112 +50,23 @@ const emptyForm = {
   pagamento: "",
 };
 
-const ItemEditor = React.forwardRef(({ value, onChange }, ref) => {
-  const [items, setItems] = useState(value || []);
-  const [item, setItem] = useState({ descricao: "", qtd: 1, unit: "" });
-
-  useEffect(() => {
-    onChange(items);
-  }, [items]);
-
-  useImperativeHandle(ref, () => ({
-    finalize() {
-      let newItems = items;
-      if (item.descricao) {
-        newItems = [
-          ...items,
-          { descricao: item.descricao, qtd: Number(item.qtd), unit: Number(item.unit) },
-        ];
-        setItems(newItems);
-        setItem({ descricao: "", qtd: 1, unit: "" });
-      }
-      return newItems;
-    },
-  }));
-
-  const handleField = (e) => {
-    const { name, value } = e.target;
-    setItem((p) => ({ ...p, [name]: value }));
-  };
-
-  const add = () => {
-    if (!item.descricao) return;
-    setItems([
-      ...items,
-      { descricao: item.descricao, qtd: Number(item.qtd), unit: Number(item.unit) },
-    ]);
-    setItem({ descricao: "", qtd: 1, unit: "" });
-  };
-
-  const remove = (idx) => setItems(items.filter((_, i) => i !== idx));
-
-  return (
-    <div>
-      <div className="flex gap-2 mb-2">
-        <input
-          name="descricao"
-          value={item.descricao}
-          onChange={handleField}
-          placeholder="Descrição"
-          className="flex-1 border rounded px-2 py-1"
-        />
-        <input
-          name="qtd"
-          type="number"
-          value={item.qtd}
-          onChange={handleField}
-          className="w-16 border rounded px-2 py-1"
-        />
-        <input
-          name="unit"
-          type="number"
-          step="0.01"
-          value={item.unit}
-          onChange={handleField}
-          className="w-24 border rounded px-2 py-1"
-        />
-        <button type="button" onClick={add} className="bg-blue-500 text-white px-3 rounded">
-          +
-        </button>
-      </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr>
-            <th className="border px-2">Descrição</th>
-            <th className="border px-2">Qtd.</th>
-            <th className="border px-2">Unit.</th>
-            <th className="border px-2">Preço</th>
-            <th className="border px-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it, idx) => (
-            <tr key={idx}>
-              <td className="border px-2">{it.descricao}</td>
-              <td className="border px-2 text-center">{it.qtd}</td>
-              <td className="border px-2 text-right">R$ {it.unit.toFixed(2)}</td>
-              <td className="border px-2 text-right">R$ {(it.qtd * it.unit).toFixed(2)}</td>
-              <td className="border px-2 text-center">
-                <button type="button" onClick={() => remove(idx)} className="text-red-500">
-                  x
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-});
 
 const ReceiptsManagement = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState(emptyForm);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [form, setForm] = useState({
+    ...emptyForm,
+    itens: [{ descricao: "", qtd: 1, unit: "" }],
+  });
   const [receipts, setReceipts] = useState([]);
   const [editingId, setEditingId] = useState(null);
-  const itemEditorRef = useRef(null);
 
   useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
     loadReceipts();
   }, []);
 
@@ -180,19 +103,41 @@ const ReceiptsManagement = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...form.itens];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setForm((prev) => ({ ...prev, itens: newItems }));
+  };
+
+  const addItem = () => {
+    setForm((prev) => ({
+      ...prev,
+      itens: [...prev.itens, { descricao: "", qtd: 1, unit: "" }],
+    }));
+  };
+
+  const removeItem = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      itens: prev.itens.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const finalItems = itemEditorRef.current.finalize();
-      setForm((prev) => ({ ...prev, itens: finalItems }));
-      const total = finalItems.reduce((sum, it) => sum + it.qtd * it.unit, 0);
+      const finalItems = form.itens.filter((it) => it.descricao);
+      const total = finalItems.reduce(
+        (sum, it) => sum + Number(it.qtd) * Number(it.unit),
+        0
+      );
       if (editingId) {
         await updateReceipt(editingId, { ...form, itens: finalItems, valor: total });
       } else {
         const numero = await getNextReceiptNumber();
         await createReceipt({ ...form, itens: finalItems, valor: total, numero });
       }
-      setForm(emptyForm);
+      setForm({ ...emptyForm, itens: [{ descricao: "", qtd: 1, unit: "" }] });
       setEditingId(null);
       loadReceipts();
     } catch (err) {
@@ -207,7 +152,10 @@ const ReceiptsManagement = () => {
       telefone: receipt.telefone,
       cpf: receipt.cpf,
       endereco: receipt.endereco || "",
-      itens: receipt.itens || [],
+      itens:
+        receipt.itens && receipt.itens.length > 0
+          ? receipt.itens
+          : [{ descricao: "", qtd: 1, unit: "" }],
       pagamento: receipt.pagamento || "",
     });
     setEditingId(receipt.id);
@@ -297,22 +245,30 @@ const ReceiptsManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center">
-            <button
-              onClick={() => navigate("/admin")}
-              className="mr-4 text-gray-600 hover:text-gray-900 flex items-center"
-            >
-              <ArrowLeft className="w-5 h-5 mr-1" /> Voltar
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">Gerenciar Recibos</h1>
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => navigate("/admin")}
+                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gradient-to-r from-green-400 to-green-600 p-2 rounded-full">
+                    <Receipt className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Recibos</h1>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow mb-8">
+        </header>
+        <main className="container mx-auto px-4 py-8">
+          <form onSubmit={handleSubmit} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Data</label>
@@ -392,12 +348,75 @@ const ReceiptsManagement = () => {
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Itens</label>
-              <ItemEditor
-                ref={itemEditorRef}
-                value={form.itens}
-                onChange={(items) => setForm((p) => ({ ...p, itens: items }))}
-              />
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-sm font-medium">Itens</label>
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:from-blue-600 hover:to-blue-700 transition-all inline-flex items-center space-x-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {form.itens.map((item, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-5">
+                      <input
+                        type="text"
+                        value={item.descricao}
+                        onChange={(e) => handleItemChange(index, "descricao", e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        placeholder="Descrição"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="number"
+                        value={item.qtd}
+                        onChange={(e) => handleItemChange(index, "qtd", e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        placeholder="Qtd."
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        value={item.unit}
+                        onChange={(e) => handleItemChange(index, "unit", e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        placeholder="Unit."
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={
+                          item.qtd && item.unit
+                            ? (Number(item.qtd) * Number(item.unit)).toFixed(2)
+                            : ""
+                        }
+                        className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        placeholder="Preço"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      {form.itens.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(index)}
+                          className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <div className="mt-4 text-right">
@@ -410,46 +429,73 @@ const ReceiptsManagement = () => {
           </div>
         </form>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cliente
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Valor
-                </th>
-                <th className="px-3 py-2" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {receipts.map((r) => (
-                <tr key={r.id}>
-                  <td className="px-3 py-2 whitespace-nowrap">{r.date}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{r.nome}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">R$ {Number(r.valor || 0).toFixed(2)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-right flex gap-2">
-                    <button onClick={() => generatePDF(r)} className="text-blue-600 hover:text-blue-800">
-                      <FileText className="w-4 h-4" />
+        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Recibos Emitidos</h2>
+            <button
+              type="button"
+              onClick={() => {}}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all inline-flex items-center space-x-2"
+            >
+              <Search className="w-4 h-4" />
+              <span>Buscar</span>
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {receipts.map((receipt) => (
+              <div
+                key={receipt.id}
+                className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-600 dark:text-gray-400">DATA</span>
+                        <p className="text-gray-800 dark:text-white">{receipt.date}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600 dark:text-gray-400">CLIENTE</span>
+                        <p className="text-gray-800 dark:text-white">{receipt.nome}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600 dark:text-gray-400">VALOR</span>
+                        <p className="text-gray-800 dark:text-white font-semibold">R$ {Number(receipt.valor || 0).toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 ml-4">
+                    <button
+                      type="button"
+                      onClick={() => generatePDF(receipt)}
+                      className="p-2 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleEdit(r)} className="text-yellow-600 hover:text-yellow-800">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(receipt)}
+                      className="p-2 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
+                    >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(r.id)} className="text-red-600 hover:text-red-800">
-                      <Trash className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(receipt.id)}
+                      className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
     </div>
+  </div>
   );
 };
 
