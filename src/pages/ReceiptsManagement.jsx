@@ -49,6 +49,7 @@ const emptyForm = {
   endereco: "",
   itens: [],
   pagamento: "",
+  desconto: "",
 };
 
 
@@ -91,7 +92,11 @@ const ReceiptsManagement = () => {
   };
 
   const searchClient = async (phoneOverride) => {
-    const phone = phoneOverride || form.telefone;
+    const rawPhone =
+      typeof phoneOverride === "string" && phoneOverride
+        ? phoneOverride
+        : form.telefone;
+    const phone = rawPhone ? String(rawPhone) : "";
     if (!phone) return;
     try {
       const clientRef = doc(db, "clientes", phone);
@@ -116,6 +121,11 @@ const ReceiptsManagement = () => {
       const order = await getLatestCompletedOrderByPhone(phone);
       if (order) {
         const items = [];
+        if (order.dataAtualizacao) {
+          const dt = new Date(order.dataAtualizacao.toMillis());
+          const dateStr = dt.toISOString().split("T")[0];
+          setForm((prev) => ({ ...prev, date: dateStr }));
+        }
         order.bicicletas?.forEach((bike) => {
           if (bike.serviceValues) {
             Object.entries(bike.serviceValues).forEach(([name, svc]) => {
@@ -177,15 +187,28 @@ const ReceiptsManagement = () => {
     e.preventDefault();
     try {
       const finalItems = form.itens.filter((it) => it.descricao);
-      const total = finalItems.reduce(
+      const totalItems = finalItems.reduce(
         (sum, it) => sum + Number(it.qtd) * Number(it.unit),
         0
       );
+      const desconto = parseFloat(form.desconto || 0);
+      const total = totalItems - desconto;
       if (editingId) {
-        await updateReceipt(editingId, { ...form, itens: finalItems, valor: total });
+        await updateReceipt(editingId, {
+          ...form,
+          itens: finalItems,
+          valor: total,
+          desconto,
+        });
       } else {
         const numero = await getNextReceiptNumber();
-        await createReceipt({ ...form, itens: finalItems, valor: total, numero });
+        await createReceipt({
+          ...form,
+          itens: finalItems,
+          valor: total,
+          desconto,
+          numero,
+        });
       }
       setForm({ ...emptyForm, itens: [{ descricao: "", qtd: 1, unit: "" }] });
       setEditingId(null);
@@ -207,6 +230,7 @@ const ReceiptsManagement = () => {
           ? receipt.itens
           : [{ descricao: "", qtd: 1, unit: "" }],
       pagamento: receipt.pagamento || "",
+      desconto: receipt.desconto || "",
     });
     setEditingId(receipt.id);
   };
@@ -282,9 +306,18 @@ const ReceiptsManagement = () => {
 
     const afterTableY = pdf.previousAutoTable.finalY + 20;
     pdf.setFont("helvetica", "bold");
-    pdf.text(`Total ${valorFmt}`, 40, afterTableY);
+    let y = afterTableY;
+    if (r.desconto) {
+      const discountFmt = Number(r.desconto).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      });
+      pdf.text(`Desconto ${discountFmt}`, 40, y);
+      y += 18;
+    }
+    pdf.text(`Total ${valorFmt}`, 40, y);
     pdf.setFont("helvetica", "normal");
-    pdf.text(`Meio de pagamento: ${r.pagamento || "-"}`, 40, afterTableY + 18);
+    pdf.text(`Meio de pagamento: ${r.pagamento || "-"}`, 40, y + 18);
 
     const footerY = afterTableY + 80;
     center(storeInfo.cityName, footerY);
@@ -344,7 +377,7 @@ const ReceiptsManagement = () => {
                 />
                 <button
                   type="button"
-                  onClick={searchClient}
+                  onClick={() => searchClient()}
                   className="px-4 py-2 bg-blue-500 text-white rounded"
                 >
                   Buscar
@@ -396,6 +429,17 @@ const ReceiptsManagement = () => {
                 <option>Cartão de crédito</option>
                 <option>Cartão de débito</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Desconto</label>
+              <input
+                type="number"
+                name="desconto"
+                value={form.desconto}
+                onChange={handleChange}
+                className="w-full border rounded px-3 py-2"
+                step="0.01"
+              />
             </div>
             <div className="md:col-span-2">
               <div className="flex items-center justify-between mb-4">
