@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Receipt,
@@ -54,6 +54,7 @@ const emptyForm = {
 
 const ReceiptsManagement = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [form, setForm] = useState({
     ...emptyForm,
@@ -71,6 +72,15 @@ const ReceiptsManagement = () => {
     loadReceipts();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const phoneParam = params.get("phone");
+    if (phoneParam) {
+      setForm((prev) => ({ ...prev, telefone: phoneParam }));
+      searchClient(phoneParam);
+    }
+  }, [location.search]);
+
   const loadReceipts = async () => {
     try {
       const data = await getReceipts();
@@ -80,10 +90,11 @@ const ReceiptsManagement = () => {
     }
   };
 
-  const searchClient = async () => {
-    if (!form.telefone) return;
+  const searchClient = async (phoneOverride) => {
+    const phone = phoneOverride || form.telefone;
+    if (!phone) return;
     try {
-      const clientRef = doc(db, "clientes", form.telefone);
+      const clientRef = doc(db, "clientes", phone);
       const snapshot = await getDoc(clientRef);
       if (snapshot.exists()) {
         const data = snapshot.data();
@@ -93,7 +104,7 @@ const ReceiptsManagement = () => {
           cpf: data.cpf || "",
           endereco: data.endereco || prev.endereco || "",
         }));
-        await loadLatestOrder(data.telefone || form.telefone);
+        await loadLatestOrder(data.telefone || phone);
       }
     } catch (err) {
       console.error("Erro ao buscar cliente:", err);

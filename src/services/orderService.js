@@ -400,17 +400,21 @@ export const removeOrderPart = async (orderId, bikeIndex, partIndex) => {
 export const getLatestCompletedOrderByPhone = async (phone) => {
   try {
     const ordersRef = collection(db, 'ordens');
-    const q = query(
-      ordersRef,
-      where('cliente.telefone', '==', phone),
-      where('status', '==', 'Pronto'),
-      orderBy('dataAtualizacao', 'desc'),
-      limit(1)
-    );
+    const q = query(ordersRef, where('cliente.telefone', '==', phone));
     const snap = await getDocs(q);
     if (snap.empty) return null;
-    const docData = snap.docs[0];
-    return { id: docData.id, ...docData.data() };
+    let latest = null;
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.status === 'Pronto') {
+        if (!latest ||
+            (data.dataAtualizacao?.toMillis() || 0) >
+              (latest.dataAtualizacao?.toMillis() || 0)) {
+          latest = { id: docSnap.id, ...data };
+        }
+      }
+    });
+    return latest;
   } catch (error) {
     console.error('Erro ao buscar ordem pronta:', error);
     throw error;
