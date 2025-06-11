@@ -13,16 +13,10 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
-import { db } from "../config/firebase";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import {
-  createReceipt,
-  getReceipts,
-  updateReceipt,
-  deleteReceipt,
-  getNextReceiptNumber,
-} from "../services/receiptService";
+import { useData } from "../contexts/DataContext";
+import { useReceiptService } from "../services/receiptService";
 import { useOrderService } from "../services/orderService";
 const storeInfo = {
   name: "Bikes & Go",
@@ -55,6 +49,14 @@ const emptyForm = {
 const ReceiptsManagement = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { clientes } = useData();
+  const {
+    createReceipt,
+    getReceipts,
+    updateReceipt,
+    deleteReceipt,
+    getNextReceiptNumber,
+  } = useReceiptService();
   const { getLatestCompletedOrderByPhone } = useOrderService();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [form, setForm] = useState({
@@ -100,10 +102,8 @@ const ReceiptsManagement = () => {
     const phone = rawPhone ? String(rawPhone) : "";
     if (!phone) return;
     try {
-      const clientRef = doc(db, "clientes", phone);
-      const snapshot = await getDoc(clientRef);
-      if (snapshot.exists()) {
-        const data = snapshot.data();
+      const data = clientes.find((c) => c.telefone === phone);
+      if (data) {
         setForm((prev) => ({
           ...prev,
           nome: data.nome || "",

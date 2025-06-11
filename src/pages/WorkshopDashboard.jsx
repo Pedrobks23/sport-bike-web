@@ -22,6 +22,8 @@ import { useOrderService } from "../services/orderService";
 // -------- ADAPTAÇÃO: Importação para PDF (sem remover nada do seu código) --------
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+
+const logo = new URL("/assets/logo.svg", import.meta.url).href;
 // ---------------------------------------------------------------------------------
 
 const PortalAwareDraggable = ({ children, ...props }) => (
@@ -476,12 +478,15 @@ const WorkshopDashboard = () => {
       };
 
       const logoImg = new Image();
-      logoImg.src = "/assets/logo.svg";
+      logoImg.src = logo;
       await new Promise((resolve) => {
         logoImg.onload = resolve;
+        logoImg.onerror = resolve;
       });
 
-      docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      if (logoImg.complete) {
+        docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      }
       docPDF.setFontSize(16);
       docPDF.setFont("helvetica", "bold");
       centerText("ORDEM DE SERVIÇO", 20);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { db, consultarOS } from "../config/firebase";
+import { useData } from "../contexts/DataContext";
 import {
   ArrowLeft,
   Users,
@@ -109,6 +109,15 @@ const HistoryModal = React.memo(({ orders, onClose }) => (
 
 const CustomerList = () => {
   const navigate = useNavigate();
+  const {
+    clientes,
+    addBikeToCliente,
+    updateBike,
+    deleteBike,
+    updateCliente,
+    deleteCliente,
+    ordensDeServico,
+  } = useData();
 
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -145,26 +154,13 @@ const CustomerList = () => {
   // Funções para manipulação de bicicletas
   const handleAddBike = async (customerId) => {
     try {
-      const bikesRef = collection(db, `clientes/${customerId}/bikes`);
-      await addDoc(bikesRef, {
+      await addBikeToCliente(customerId, {
+        id: Date.now().toString(),
         ...newBike,
-        dataCriacao: new Date(),
-        dataAtualizacao: new Date(),
       });
-
-      // Atualiza a lista de bikes do cliente
-      const querySnapshot = await getDocs(bikesRef);
-      const bikes = [];
-      querySnapshot.forEach((doc) => {
-        bikes.push({ id: doc.id, ...doc.data() });
-      });
-
-      setCustomerBikes((prev) => ({
-        ...prev,
-        [customerId]: bikes,
-      }));
+      const bikes = clientes.find((c) => c.id === customerId)?.bikes || [];
+      setCustomerBikes((prev) => ({ ...prev, [customerId]: bikes }));
       setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
-
       setShowAddBikeModal(false);
       setNewBike({ marca: "", modelo: "", cor: "" });
     } catch (error) {
@@ -174,21 +170,13 @@ const CustomerList = () => {
   };
 
   const handleDeleteBike = async (customerId, bikeId) => {
-    if (!window.confirm("Tem certeza que deseja remover esta bicicleta?"))
-      return;
+    if (!window.confirm("Tem certeza que deseja remover esta bicicleta?")) return;
 
     try {
-      const bikeRef = doc(db, `clientes/${customerId}/bikes`, bikeId);
-      await deleteDoc(bikeRef);
-
-      setCustomerBikes((prev) => ({
-        ...prev,
-        [customerId]: prev[customerId].filter((bike) => bike.id !== bikeId),
-      }));
-      setBikeCounts((prev) => ({
-        ...prev,
-        [customerId]: Math.max((prev[customerId] || 1) - 1, 0),
-      }));
+      await deleteBike(customerId, bikeId);
+      const bikes = clientes.find((c) => c.id === customerId)?.bikes || [];
+      setCustomerBikes((prev) => ({ ...prev, [customerId]: bikes }));
+      setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
     } catch (error) {
       console.error("Erro ao remover bicicleta:", error);
       alert("Erro ao remover bicicleta. Tente novamente.");
@@ -199,7 +187,9 @@ const CustomerList = () => {
     const customerId = customer.id;
     if (!customerOrders[customerId]) {
       try {
-        const ordens = await consultarOS("historico", customer.telefone || "");
+        const ordens = ordensDeServico.filter(
+          (o) => o.cliente.telefone === customer.telefone
+        );
         setCustomerOrders((prev) => ({ ...prev, [customerId]: ordens }));
       } catch (error) {
         console.error("Erro ao carregar ordens:", error);
@@ -212,21 +202,13 @@ const CustomerList = () => {
     if (!selectedBike || !selectedCustomer) return;
 
     try {
-      const bikeRef = doc(
-        db,
-        `clientes/${selectedCustomer.id}/bikes`,
-        selectedBike.id
-      );
-      await updateDoc(bikeRef, {
+      await updateBike(selectedCustomer.id, selectedBike.id, {
         marca: selectedBike.marca,
         modelo: selectedBike.modelo,
         cor: selectedBike.cor,
-        dataAtualizacao: new Date(),
       });
-
-      const updatedBikes = customerBikes[selectedCustomer.id].map((bike) =>
-        bike.id === selectedBike.id ? selectedBike : bike
-      );
+      const updatedBikes =
+        clientes.find((c) => c.id === selectedCustomer.id)?.bikes || [];
       setCustomerBikes((prev) => ({
         ...prev,
         [selectedCustomer.id]: updatedBikes,
@@ -264,23 +246,16 @@ const CustomerList = () => {
     }
 
     if (!customerBikes[customerId]) {
-      try {
-        const bikesRef = collection(db, `clientes/${customerId}/bikes`);
-        const querySnapshot = await getDocs(bikesRef);
-        const bikes = [];
-        querySnapshot.forEach((doc) => {
-          bikes.push({ id: doc.id, ...doc.data() });
-        });
-        setCustomerBikes((prev) => ({ ...prev, [customerId]: bikes }));
-        setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
-      } catch (error) {
-        console.error("Erro ao carregar bicicletas:", error);
-      }
+      const bikes = clientes.find((c) => c.id === customerId)?.bikes || [];
+      setCustomerBikes((prev) => ({ ...prev, [customerId]: bikes }));
+      setBikeCounts((prev) => ({ ...prev, [customerId]: bikes.length }));
     }
 
     if (!customerOrders[customerId]) {
       try {
-        const ordens = await consultarOS("historico", customer.telefone || "");
+        const ordens = ordensDeServico.filter(
+          (o) => o.cliente.telefone === customer.telefone
+        );
         setCustomerOrders((prev) => ({ ...prev, [customerId]: ordens }));
       } catch (error) {
         console.error("Erro ao carregar ordens:", error);
@@ -292,33 +267,12 @@ const CustomerList = () => {
 
   const loadCustomers = async () => {
     try {
-      const customersRef = collection(db, "clientes");
-      const q = query(customersRef);
-      const querySnapshot = await getDocs(q);
-
-      const clientesData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
+      setCustomers(clientes);
       const counts = {};
-      await Promise.all(
-        clientesData.map(async (c) => {
-          try {
-            const countSnap = await getCountFromServer(
-              collection(db, `clientes/${c.id}/bikes`)
-            );
-            counts[c.id] = countSnap.data().count;
-          } catch {
-            counts[c.id] = 0;
-          }
-        })
-      );
-
-      setCustomers(clientesData);
+      clientes.forEach((c) => {
+        counts[c.id] = c.bikes ? c.bikes.length : 0;
+      });
       setBikeCounts(counts);
-    } catch (error) {
-      console.error("Erro ao carregar clientes:", error);
     } finally {
       setLoading(false);
     }
@@ -326,18 +280,16 @@ const CustomerList = () => {
 
   useEffect(() => {
     loadCustomers();
-  }, []);
+  }, [clientes]);
 
   const handleUpdateCustomer = async () => {
     if (!editedCustomer || !selectedCustomer) return;
 
     try {
-      const customerRef = doc(db, "clientes", selectedCustomer.id);
-      await updateDoc(customerRef, {
+      await updateCliente(selectedCustomer.id, {
         ...editedCustomer,
-        dataAtualizacao: new Date(),
+        dataAtualizacao: new Date().toISOString(),
       });
-
       await loadCustomers();
       setIsEditing(false);
       setSelectedCustomer(null);
@@ -352,7 +304,7 @@ const CustomerList = () => {
     if (!window.confirm("Tem certeza que deseja remover este cliente?")) return;
 
     try {
-      await deleteDoc(doc(db, "clientes", customerId));
+      await deleteCliente(customerId);
       await loadCustomers();
       setSelectedCustomer(null);
 

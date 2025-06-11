@@ -10,11 +10,18 @@ import {
   FileText,
 } from "lucide-react";
 
-import { db } from "../config/firebase";
+import { useData } from "../contexts/DataContext";
 import { useNavigate } from "react-router-dom";
 
 const ServicesManagement = () => {
   const navigate = useNavigate();
+  const {
+    servicos,
+    ordensDeServico,
+    addServico,
+    updateServico,
+    deleteServico,
+  } = useData();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,67 +63,38 @@ const ServicesManagement = () => {
   };
 
   const loadMostRequestedService = async () => {
-    try {
-      const ordersRef = collection(db, "ordens");
-      const snapshot = await getDocs(ordersRef);
-
-      const serviceCounts = {};
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (Array.isArray(data.bicicletas)) {
-          data.bicicletas.forEach((bike) => {
-            if (bike.services) {
-              Object.entries(bike.services).forEach(([name, qty]) => {
-                const count = parseInt(qty || 0);
-                serviceCounts[name] = (serviceCounts[name] || 0) + (isNaN(count) ? 1 : count);
-              });
-            }
+    const serviceCounts = {};
+    ordensDeServico.forEach((ordem) => {
+      ordem.bicicletas?.forEach((bike) => {
+        if (bike.services) {
+          Object.entries(bike.services).forEach(([name, qty]) => {
+            const count = parseInt(qty || 0, 10);
+            serviceCounts[name] = (serviceCounts[name] || 0) + (isNaN(count) ? 1 : count);
           });
         }
       });
-
-      let topService = "";
-      let topCount = 0;
-      Object.entries(serviceCounts).forEach(([name, count]) => {
-        if (count > topCount) {
-          topService = name;
-          topCount = count;
-        }
-      });
-      setMostRequestedService(topService);
-    } catch (error) {
-      console.error("Erro ao obter serviço mais solicitado:", error);
-    }
+    });
+    let topService = "";
+    let topCount = 0;
+    Object.entries(serviceCounts).forEach(([name, count]) => {
+      if (count > topCount) {
+        topService = name;
+        topCount = count;
+      }
+    });
+    setMostRequestedService(topService);
   };
 
   const loadServices = async () => {
     try {
-      const servicesRef = collection(db, "servicos");
-      const snapshot = await getDocs(servicesRef);
-
-      const servicesData = [];
-
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        // Para cada campo no documento, criar um serviço
-        Object.entries(data).forEach(([nome, valor]) => {
-          // Remove as aspas do valor se existirem
-          const valorNumerico = parseFloat(valor.replace(/['"]/g, ""));
-
-          servicesData.push({
-            id: `${doc.id}_${nome}`,
-            nome: nome,
-            descricao: nome,
-            valor: valorNumerico,
-          });
-        });
-      });
-
+      const servicesData = servicos.map((s) => ({
+        id: s.id,
+        nome: s.nome,
+        descricao: s.nome,
+        valor: s.valor,
+      }));
       servicesData.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-      console.log("Serviços carregados:", servicesData);
       setServices(servicesData);
-    } catch (error) {
-      console.error("Erro ao carregar serviços:", error);
     } finally {
       setLoading(false);
     }
@@ -129,23 +107,11 @@ const ServicesManagement = () => {
         return;
       }
 
-      // Pegar o documento existente
-      const servicesRef = collection(db, "servicos");
-      const snapshot = await getDocs(servicesRef);
-      let docRef;
-
-      if (snapshot.empty) {
-        // Se não existir documento, criar um novo
-        docRef = await addDoc(servicesRef, {
-          [serviceData.nome]: serviceData.valor.toString(),
-        });
-      } else {
-        // Se existir, atualizar o primeiro documento
-        docRef = doc(db, "servicos", snapshot.docs[0].id);
-        await updateDoc(docRef, {
-          [serviceData.nome]: serviceData.valor.toString(),
-        });
-      }
+      await addServico({
+        id: Date.now().toString(),
+        nome: serviceData.nome,
+        valor: parseFloat(serviceData.valor),
+      });
 
       await loadServices();
       setShowAddModal(false);
@@ -157,24 +123,13 @@ const ServicesManagement = () => {
 
   const handleEditService = async (serviceData) => {
     try {
-      const servicesRef = collection(db, "servicos");
-      const snapshot = await getDocs(servicesRef);
-
-      if (!snapshot.empty) {
-        const docRef = doc(db, "servicos", snapshot.docs[0].id);
-
-        // Remover o serviço antigo e adicionar o novo
-        const oldName = selectedService.nome;
-        const updates = {
-          [oldName]: deleteField(), // Remove o campo antigo
-          [serviceData.nome]: serviceData.valor.toString(), // Adiciona o novo
-        };
-
-        await updateDoc(docRef, updates);
-        await loadServices();
-        setShowEditModal(false);
-        setSelectedService(null);
-      }
+      await updateServico(selectedService.id, {
+        nome: serviceData.nome,
+        valor: parseFloat(serviceData.valor),
+      });
+      await loadServices();
+      setShowEditModal(false);
+      setSelectedService(null);
     } catch (error) {
       console.error("Erro ao editar serviço:", error);
       alert("Erro ao editar serviço");
@@ -292,20 +247,8 @@ const ServicesManagement = () => {
       )
     ) {
       try {
-        const servicesRef = collection(db, "servicos");
-        const snapshot = await getDocs(servicesRef);
-
-        if (!snapshot.empty) {
-          const docRef = doc(db, "servicos", snapshot.docs[0].id);
-
-          // Criar um objeto com o campo a ser removido
-          const updates = {
-            [service.nome]: deleteField(),
-          };
-
-          await updateDoc(docRef, updates);
-          await loadServices();
-        }
+        await deleteServico(service.id);
+        await loadServices();
       } catch (error) {
         console.error("Erro ao excluir serviço:", error);
         alert("Erro ao excluir serviço");

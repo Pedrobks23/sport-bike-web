@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { db } from "../config/firebase";
+import { useData } from "../contexts/DataContext";
 import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -11,6 +11,15 @@ const logo = new URL("/assets/logo.svg", import.meta.url).href;
 
 function NewOrder() {
   const navigate = useNavigate();
+  const {
+    clientes,
+    servicos,
+    ordensDeServico,
+    addCliente,
+    addBikeToCliente,
+    addOrdem,
+    getServices,
+  } = useData();
 
   // -----------------------------
   // ESTADOS GERAIS
@@ -97,19 +106,7 @@ function NewOrder() {
   // -----------------------------
   async function loadServices() {
     try {
-      const servicosRef = collection(db, "servicos");
-      const snapshot = await getDocs(servicosRef);
-      const servicesData = {};
-
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        Object.entries(data).forEach(([nome, valor]) => {
-          // Remove R$, aspas e espaços, e troca vírgula por ponto
-          const valorLimpo = valor.replace(/['"R$\s]/g, "").replace(",", ".");
-          servicesData[nome] = parseFloat(valorLimpo);
-        });
-      });
-
+      const servicesData = await getServices();
       setAvailableServices(servicesData);
     } catch (err) {
       console.error("Erro ao carregar serviços:", err);
@@ -120,16 +117,10 @@ function NewOrder() {
   // Carrega bicicletas do cliente
   async function loadClientBikes(clientPhone) {
     try {
-      const bikesRef = collection(db, "clientes", clientPhone, "bikes");
-      const snapshot = await getDocs(bikesRef);
-      const bikesData = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      }));
-      setBikes(bikesData);
+      const cliente = clientes.find((c) => c.telefone === clientPhone);
+      setBikes(cliente?.bikes || []);
     } catch (err) {
       console.error("Erro ao carregar bicicletas:", err);
-      setError("Erro ao carregar bicicletas do cliente");
     }
   }
 
@@ -140,17 +131,15 @@ function NewOrder() {
     if (!telefone) return;
     try {
       setLoading(true);
-      const clientRef = doc(db, "clientes", telefone);
-      const clientDoc = await getDoc(clientRef);
-
-      if (clientDoc.exists()) {
-        setClientData(clientDoc.data());
+      const found = clientes.find((c) => c.telefone === telefone);
+      if (found) {
+        setClientData(found);
         await loadClientBikes(telefone);
       } else {
         setClientData(null);
         setBikes([]);
         setShowClientForm(true);
-        setNewClient((prev) => ({ ...prev, telefone: telefone }));
+        setNewClient((prev) => ({ ...prev, telefone }));
       }
     } catch (err) {
       console.error("Erro ao buscar cliente:", err);
@@ -168,12 +157,11 @@ function NewOrder() {
       }
       setLoading(true);
 
-      const clientRef = doc(db, "clientes", newClient.telefone);
-      await setDoc(clientRef, {
+      await addCliente({
+        id: Date.now().toString(),
         ...newClient,
-        dataCriacao: serverTimestamp(),
+        dataCriacao: new Date().toISOString(),
       });
-
       setClientData(newClient);
       setShowClientForm(false);
       await loadClientBikes(newClient.telefone);
@@ -192,12 +180,10 @@ function NewOrder() {
   async function handleAddBike() {
     try {
       setLoading(true);
-      const bikesRef = collection(db, "clientes", telefone, "bikes");
-      await addDoc(bikesRef, {
+      await addBikeToCliente(telefone, {
+        id: Date.now().toString(),
         ...newBike,
-        dataCriacao: serverTimestamp(),
       });
-
       await loadClientBikes(telefone);
       setNewBike({ marca: "", modelo: "", cor: "" });
       setShowBikeForm(false);
@@ -305,15 +291,15 @@ function NewOrder() {
 
       // Carrega a imagem dinamicamente
       const logoImg = new Image();
-      logoImg.src = "/assets/logo.svg";
-
-      // Aguarda a imagem carregar
+      logoImg.src = logo;
       await new Promise((resolve) => {
         logoImg.onload = resolve;
+        logoImg.onerror = resolve;
       });
 
-      // Adiciona logo
-      docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      if (logoImg.complete) {
+        docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      }
 
       // Cabeçalho
       docPDF.setFontSize(16);
@@ -713,20 +699,8 @@ function NewOrder() {
       const ano = now.getFullYear();
       const mes = String(now.getMonth() + 1).padStart(2, "0");
 
-      const ordensRef = collection(db, "ordens");
-      const mesAtualQuery = query(
-        ordensRef,
-        where("codigo", ">=", `OS-${ano}${mes}`),
-        where("codigo", "<=", `OS-${ano}${mes}\uf8ff`),
-        orderBy("codigo", "desc"),
-        limit(1)
-      );
-
-      const mesAtualSnap = await getDocs(mesAtualQuery);
-      const ultimaOrdem = mesAtualSnap.docs[0]?.data();
-      const sequencial = (ultimaOrdem?.sequencial || 0) + 1;
-
-      const codigoOS = `OS-${ano}${mes}${String(sequencial).padStart(3, "0")}`;
+      const sequencial = ordensDeServico.length + 1;
+      const codigoOS = String(sequencial).padStart(3, "0");
       const urlOS = `${window.location.origin}/consulta?os=${codigoOS}`;
 
       // Prepara as bicicletas selecionadas
@@ -795,8 +769,7 @@ function NewOrder() {
         dataAtualizacao: new Date().toISOString(),
       };
 
-      // Salva no Firestore
-      await addDoc(ordensRef, newOrder);
+      await addOrdem({ id: Date.now().toString(), ...newOrder });
 
       // Armazena a ordem para imprimir
       setCreatedOrder(newOrder);
