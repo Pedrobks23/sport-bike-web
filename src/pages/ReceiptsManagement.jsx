@@ -63,6 +63,7 @@ const ReceiptsManagement = () => {
   });
   const [receipts, setReceipts] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [hasLastOrder, setHasLastOrder] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -109,7 +110,10 @@ const ReceiptsManagement = () => {
           cpf: data.cpf || "",
           endereco: data.endereco || prev.endereco || "",
         }));
-        await loadLatestOrder(data.telefone || phone);
+        const latest = await getLatestCompletedOrderByPhone(data.telefone || phone);
+        setHasLastOrder(!!latest);
+      } else {
+        setHasLastOrder(false);
       }
     } catch (err) {
       console.error("Erro ao buscar cliente:", err);
@@ -366,7 +370,7 @@ const ReceiptsManagement = () => {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Telefone</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap items-start">
                 <input
                   type="text"
                   name="telefone"
@@ -382,6 +386,15 @@ const ReceiptsManagement = () => {
                 >
                   Buscar
                 </button>
+                {hasLastOrder && (
+                  <button
+                    type="button"
+                    onClick={() => loadLatestOrder(form.telefone)}
+                    className="px-4 py-2 bg-green-500 text-white rounded"
+                  >
+                    Gerar Recibo da Última OS
+                  </button>
+                )}
               </div>
             </div>
             <div>
