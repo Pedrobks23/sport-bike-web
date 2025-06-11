@@ -12,7 +12,6 @@
   "dependencies": {
     "@tanstack/react-query": "^5.62.3",
     "date-fns": "^4.1.0",
-    "firebase": "^11.0.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

@@ -13,7 +13,6 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
-import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import jsPDF from "jspdf";
 import "jspdf-autotable";

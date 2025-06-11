@@ -1,17 +1,4 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-  getDoc,
-  orderBy,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
+
 import { db } from "../config/firebase";
 
 export const createReceipt = async (data) => {

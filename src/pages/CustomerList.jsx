@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  collection,
-  query,
-  onSnapshot,
-  doc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  addDoc,
-  getCountFromServer,
-} from "firebase/firestore";
 import { db, consultarOS } from "../config/firebase";
 import {
   ArrowLeft,

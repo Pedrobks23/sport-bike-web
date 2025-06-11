@@ -16,8 +16,7 @@ import {
   Calendar,
   DollarSign,
 } from "lucide-react";
-import { auth } from "../config/firebase";
-import { signOut } from "firebase/auth";
+import { useAuth } from "../contexts/AuthContext";
 import {
   getOrders,
   updateOrderStatus,
@@ -190,14 +189,11 @@ const WorkshopDashboard = () => {
   };
 
   // Logout
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/admin/login");
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-      setError("Erro ao fazer logout");
-    }
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/admin/login");
   };
 
   // Filtro de ordens baseado na busca

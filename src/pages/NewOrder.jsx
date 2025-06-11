@@ -1,18 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-  orderBy,
-  limit,
-} from "firebase/firestore";
+
 import { db } from "../config/firebase";
 import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";

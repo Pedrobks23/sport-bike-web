@@ -1,16 +1,3 @@
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  getDocs,
-  updateDoc,
-  doc,
-  deleteDoc,
-  getDoc,
-  serverTimestamp,
-  limit
-} from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 export const getOrders = async () => {

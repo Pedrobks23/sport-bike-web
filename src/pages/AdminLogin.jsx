@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
-import { auth } from "../config/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "../contexts/AuthContext";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -41,39 +35,10 @@ const AdminLogin = () => {
     }
   }, [user, navigate]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // O useEffect acima cuidará do redirecionamento
-    } catch (err) {
-      console.error("Erro ao fazer login:", err);
-      let errorMessage = "Erro ao fazer login. Verifique suas credenciais.";
-
-      switch (err.code) {
-        case "auth/invalid-email":
-          errorMessage = "E-mail inválido.";
-          break;
-        case "auth/user-disabled":
-          errorMessage = "Usuário desabilitado.";
-          break;
-        case "auth/user-not-found":
-          errorMessage = "Usuário não encontrado.";
-          break;
-        case "auth/wrong-password":
-          errorMessage = "Senha incorreta.";
-          break;
-        default:
-          errorMessage = "Erro ao fazer login. Tente novamente.";
-      }
-
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
+    login("admin@example.com");
+    navigate("/admin", { replace: true });
   };
 
   return (
@@ -102,11 +67,6 @@ const AdminLogin = () => {
             </p>
           </div>
 
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -118,11 +78,8 @@ const AdminLogin = () => {
                 <input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
                   className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                  required
                 />
               </div>
             </div>
@@ -136,11 +93,8 @@ const AdminLogin = () => {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                  required
                 />
                 <button
                   type="button"
@@ -173,17 +127,10 @@ const AdminLogin = () => {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2"
             >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  <span>Entrar</span>
-                </>
-              )}
+              <LogIn className="w-5 h-5" />
+              <span>Entrar</span>
             </button>
           </form>
 

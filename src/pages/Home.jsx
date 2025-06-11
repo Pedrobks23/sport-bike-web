@@ -27,8 +27,7 @@ import {
   ChevronUp,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { auth } from "../config/firebase"
-import { onAuthStateChanged } from "firebase/auth"
+import { useAuth } from "../contexts/AuthContext"
 import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
 
@@ -45,6 +44,7 @@ const normalizeDriveUrl = (url) => {
 
 export default function Home() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [currentProduct, setCurrentProduct] = useState(0)
@@ -144,16 +144,14 @@ export default function Home() {
   // access admin area shortcut
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.ctrlKey && event.shiftKey && event.key === "A") {
-        event.preventDefault()
-        onAuthStateChanged(auth, (user) => {
+        if (event.ctrlKey && event.shiftKey && event.key === "A") {
+          event.preventDefault()
           if (user) {
             navigate("/admin")
           } else {
             navigate("/admin/login")
           }
-        })
-      }
+        }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
@@ -808,15 +806,13 @@ export default function Home() {
                 © {new Date().getFullYear()} Bikes & Go. Todos os direitos reservados.
               </p>
               <button
-                onClick={() => {
-                  onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                      navigate("/admin")
-                    } else {
-                      navigate("/admin/login")
-                    }
-                  })
-                }}
+              onClick={() => {
+                if (user) {
+                  navigate("/admin")
+                } else {
+                  navigate("/admin/login")
+                }
+              }}
                 className="text-brand-500 hover:text-brand-400 transition-colors text-sm"
               >
                 Acesso Funcionários
