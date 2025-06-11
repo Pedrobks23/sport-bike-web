@@ -78,7 +78,7 @@ const AdminLogin = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}> 
-      <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-brand-50 via-orange-50 to-brand-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
         <button
           onClick={toggleDarkMode}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md"
@@ -88,7 +88,7 @@ const AdminLogin = () => {
         </button>
 
         <div className="mb-8 relative">
-          <div className="absolute -inset-4 bg-amber-400 rounded-full blur-lg opacity-75 animate-pulse"></div>
+          <div className="absolute -inset-4 bg-brand-400 rounded-full blur-lg opacity-75 animate-pulse"></div>
           <div className="relative">
             <img src="/assets/logo.svg" alt="Bikes & Go" className="w-24 h-24" />
           </div>
@@ -98,7 +98,7 @@ const AdminLogin = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Área Administrativa</h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Acesse o painel de controle da <span className="text-amber-600 dark:text-amber-400">Bikes & Go</span>
+              Acesse o painel de controle da <span className="text-brand-600 dark:text-brand-400">Bikes & Go</span>
             </p>
           </div>
 
@@ -121,7 +121,7 @@ const AdminLogin = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
                   required
                 />
               </div>
@@ -139,7 +139,7 @@ const AdminLogin = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
                   required
                 />
                 <button
@@ -158,14 +158,14 @@ const AdminLogin = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-brand-500 focus:ring-brand-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                   Lembrar-me
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400">
+                <a href="#" className="font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400">
                   Esqueceu a senha?
                 </a>
               </div>
@@ -174,7 +174,7 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -190,7 +190,7 @@ const AdminLogin = () => {
           <div className="mt-8 text-center">
             <button
               onClick={() => navigate("/")}
-              className="text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 inline-flex items-center space-x-1 transition-colors"
+              className="text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 inline-flex items-center space-x-1 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Voltar para o site</span>
@@ -203,7 +203,7 @@ const AdminLogin = () => {
           <p className="mt-1">25 anos de tradição no ciclismo</p>
         </div>
 
-        <div className="fixed top-20 left-20 w-64 h-64 bg-amber-300 rounded-full blur-3xl opacity-20 animate-blob"></div>
+        <div className="fixed top-20 left-20 w-64 h-64 bg-brand-300 rounded-full blur-3xl opacity-20 animate-blob"></div>
         <div className="fixed bottom-20 right-20 w-80 h-80 bg-orange-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
         <div className="fixed bottom-40 left-40 w-72 h-72 bg-yellow-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>

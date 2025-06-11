@@ -110,7 +110,7 @@ export default function ServiceOrdersPage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+      <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -122,7 +122,7 @@ export default function ServiceOrdersPage() {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center space-x-3">
-                  <div className="bg-gradient-to-r from-amber-400 to-amber-600 p-2 rounded-full">
+                  <div className="bg-gradient-to-r from-brand-400 to-brand-600 p-2 rounded-full">
                     <Wrench className="w-6 h-6 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ordens de Serviço</h1>
@@ -136,7 +136,7 @@ export default function ServiceOrdersPage() {
                     placeholder="Buscar OS ou cliente..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent w-64"
+                    className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent w-64"
                   />
                 </div>
                 <button className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -195,7 +195,7 @@ export default function ServiceOrdersPage() {
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                         {order.id}
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -240,7 +240,7 @@ export default function ServiceOrdersPage() {
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                         {order.id}
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -286,7 +286,7 @@ export default function ServiceOrdersPage() {
                     className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                         {order.id}
                       </h4>
                       <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">

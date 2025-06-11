@@ -419,7 +419,7 @@ const CustomerList = () => {
   return (
     <>
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-        <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -457,7 +457,7 @@ const CustomerList = () => {
                 placeholder="Buscar clientes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -510,7 +510,7 @@ const CustomerList = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                       {customer.nome}
                     </h3>
                     <span className="text-xs text-gray-500 dark:text-gray-400">ID: {customer.id}</span>
@@ -570,7 +570,7 @@ const CustomerList = () => {
                           setSelectedCustomer(customer);
                           setShowAddBikeModal(true);
                         }}
-                        className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                        className="text-xs bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 px-2 py-1 rounded hover:bg-brand-200 dark:hover:bg-brand-900/50 transition-colors"
                       >
                         Adicionar
                       </button>

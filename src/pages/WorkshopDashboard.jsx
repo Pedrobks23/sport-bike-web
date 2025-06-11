@@ -688,7 +688,7 @@ const WorkshopDashboard = () => {
     return (
       <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all cursor-pointer group mb-3">
         <div className="flex items-start justify-between mb-3">
-          <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+          <h4 className="font-bold text-gray-800 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
             {order.codigo}
           </h4>
           <div className="relative">
@@ -1765,7 +1765,7 @@ const WorkshopDashboard = () => {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-        <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        <div className="bg-gradient-to-br from-gray-50 via-brand-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
           {loading && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white p-4 rounded-lg">
@@ -1785,7 +1785,7 @@ const WorkshopDashboard = () => {
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <div className="flex items-center space-x-3">
-                    <div className="bg-gradient-to-r from-amber-400 to-amber-600 p-2 rounded-full">
+                    <div className="bg-gradient-to-r from-brand-400 to-brand-600 p-2 rounded-full">
                       <Wrench className="w-6 h-6 text-white" />
                     </div>
                     <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ordens de Serviço</h1>
@@ -1800,7 +1800,7 @@ const WorkshopDashboard = () => {
                       placeholder="Buscar OS ou cliente..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent w-64"
+                      className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent w-64"
                     />
                   </div>
                   <button className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -1808,7 +1808,7 @@ const WorkshopDashboard = () => {
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                    className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                   >
                     Sair
                   </button>
