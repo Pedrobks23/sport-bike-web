@@ -121,16 +121,20 @@ function NewOrder() {
     try {
       const servicosRef = collection(db, "servicos");
       const snapshot = await getDocs(servicosRef);
-      const servicesData = {};
 
+      // Coletamos as entradas em um array para permitir ordenação
+      const entries = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
         Object.entries(data).forEach(([nome, valor]) => {
-          // Remove R$, aspas e espaços, e troca vírgula por ponto
           const valorLimpo = valor.replace(/['"R$\s]/g, "").replace(",", ".");
-          servicesData[nome] = parseFloat(valorLimpo);
+          entries.push([nome, parseFloat(valorLimpo)]);
         });
       });
+
+      // Ordena alfabeticamente pelo nome do serviço
+      entries.sort((a, b) => a[0].localeCompare(b[0]));
+      const servicesData = Object.fromEntries(entries);
 
       setAvailableServices(servicesData);
     } catch (err) {
@@ -1054,7 +1058,9 @@ function NewOrder() {
                       } - ${bikeInfo.cor}`}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {Object.entries(availableServices).map(
+                      {Object.entries(availableServices)
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(
                         ([serviceName, price]) => {
                           const quantity =
                             selectedServices[bikeId]?.[serviceName] || 0;
