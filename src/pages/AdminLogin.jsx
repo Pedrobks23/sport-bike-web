@@ -77,8 +77,8 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}> 
-      <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+      <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
         <button
           onClick={toggleDarkMode}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md"
@@ -88,13 +88,13 @@ const AdminLogin = () => {
         </button>
 
         <div className="mb-8 relative">
-          <div className="absolute -inset-4 bg-amber-400 rounded-full blur-lg opacity-75 animate-pulse"></div>
+          <div className="pointer-events-none absolute -inset-4 bg-amber-400 rounded-full blur-lg opacity-75 animate-pulse"></div>
           <div className="relative">
             <img src="/assets/Logo.png" alt="Sport & Bike" className="w-24 h-24" />
           </div>
         </div>
 
-        <div className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-2xl">
+        <div className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Área Administrativa</h1>
             <p className="text-gray-600 dark:text-gray-400">
@@ -203,9 +203,9 @@ const AdminLogin = () => {
           <p className="mt-1">25 anos de tradição no ciclismo</p>
         </div>
 
-        <div className="fixed top-20 left-20 w-64 h-64 bg-amber-300 rounded-full blur-3xl opacity-20 animate-blob"></div>
-        <div className="fixed bottom-20 right-20 w-80 h-80 bg-orange-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="fixed bottom-40 left-40 w-72 h-72 bg-yellow-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="pointer-events-none -z-10 hidden md:block fixed top-20 left-20 w-64 h-64 bg-amber-300 rounded-full blur-3xl opacity-20 animate-blob"></div>
+        <div className="pointer-events-none -z-10 hidden md:block fixed bottom-20 right-20 w-80 h-80 bg-orange-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="pointer-events-none -z-10 hidden md:block fixed bottom-40 left-40 w-72 h-72 bg-yellow-300 rounded-full blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
     </div>
   );
