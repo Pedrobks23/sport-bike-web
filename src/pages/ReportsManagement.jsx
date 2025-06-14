@@ -198,20 +198,31 @@ const ReportsManagement = () => {
             servicos: totalServicos
           });
   
+          const dataFinalizacao = data.dataAtualizacao
+            ? (typeof data.dataAtualizacao === 'string'
+                ? new Date(data.dataAtualizacao)
+                : data.dataAtualizacao.toDate())
+            : (typeof data.dataCriacao === 'string'
+                ? new Date(data.dataCriacao)
+                : data.dataCriacao.toDate());
+
           return {
             id: doc.id,
-            data: data.dataCriacao ? 
-              (typeof data.dataCriacao === 'string' ? new Date(data.dataCriacao) : data.dataCriacao.toDate()) : 
-              new Date(),
+            status: data.status,
+            data: dataFinalizacao,
             valor: totalValor,
-            quantidade: totalServicos
+            quantidade: totalServicos,
           };
         })
         .filter((order) => {
           const startDate = new Date(dateRange.start);
           const endDate = new Date(dateRange.end);
           endDate.setHours(23, 59, 59);
-          return order.data >= startDate && order.data <= endDate;
+          return (
+            order.status === 'Pronto' &&
+            order.data >= startDate &&
+            order.data <= endDate
+          );
         });
   
       const processedData = processOrders(orders, reportType);
