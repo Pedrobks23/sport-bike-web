@@ -43,17 +43,14 @@ export const getNextReceiptNumber = async () => {
   const coll = collection(db, "recibos");
   const q = query(
     coll,
-    where("numero", ">=", `${year}-`),
-    where("numero", "<=", `${year}-\uf8ff`),
+    where("numero", ">=", `000-${year}`),
+    where("numero", "<=", `999-${year}`),
     orderBy("numero", "desc"),
     limit(1)
   );
   const snap = await getDocs(q);
-  const last = snap.docs[0]?.data();
-  const seq = (
-    parseInt(last?.numero?.split("-")[0] || 0, 10) + 1
-  )
-    .toString()
-    .padStart(3, "0");
+  const lastNum = snap.docs[0]?.data()?.numero;
+  const lastSeq = parseInt(lastNum?.split("-")[0] || 0, 10);
+  const seq = (lastSeq + 1).toString().padStart(3, "0");
   return `${seq}-${year}`;
 };

@@ -300,8 +300,8 @@ const ReceiptsManagement = () => {
       .split("-")
       .reverse()
       .join("/")} referente aos seguintes produtos:`;
-    const lines = pdf.splitTextToSize(declaracao, pageW - 80);
-    pdf.text(lines, 40, 92);
+    const lines = pdf.splitTextToSize(declaracao, pageW - 40);
+    pdf.text(lines, pageW / 2, 92, { align: "center" });
 
     const tableData = r.itens.map((it) => [
       it.descricao,
@@ -333,10 +333,10 @@ const ReceiptsManagement = () => {
     pdf.setFont("helvetica", "normal");
     pdf.text(`Meio de pagamento: ${r.pagamento || "-"}`, 40, y + 18);
 
-    const footerY = y + 20;
+    const footerY = y + 16;
     center(storeInfo.cityName, footerY);
-    center(storeInfo.name, footerY + 25);
-    center(storeInfo.responsible, footerY + 50);
+    center(storeInfo.name, footerY + 16);
+    center(storeInfo.responsible, footerY + 32);
 
     pdf.save(`recibo-${r.numero}.pdf`);
   };
