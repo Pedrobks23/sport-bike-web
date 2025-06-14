@@ -4,7 +4,14 @@ import { db } from "../config/firebase";
 export const getOrdersTodayCount = async () => {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
-  const q = query(collection(db, "ordens"), where("dataCriacao", ">=", start));
+  const end = new Date(start);
+  end.setHours(23, 59, 59, 999);
+
+  const q = query(
+    collection(db, "ordens"),
+    where("dataAgendamento", ">=", start.toISOString()),
+    where("dataAgendamento", "<=", end.toISOString())
+  );
   const snap = await getDocs(q);
   return snap.size;
 };

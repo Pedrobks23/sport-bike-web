@@ -249,8 +249,8 @@ const ReceiptsManagement = () => {
     }
   };
 
-  const generatePDF = (r) => {
-    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const generatePDF = async (r) => {
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
     pdf.setTextColor(0, 0, 0);
     const pageW = pdf.internal.pageSize.getWidth();
 
@@ -261,20 +261,30 @@ const ReceiptsManagement = () => {
       pdf.text(txt, (pageW - w) / 2, y);
     };
 
-    pdf.setFontSize(12);
-    pdf.text(storeInfo.name, 40, 40);
-    pdf.text(`CNPJ ${storeInfo.cnpj}`, 40, 55);
-    pdf.text(storeInfo.address, pageW / 2, 40, { align: "center" });
-    pdf.text(`${storeInfo.city} - CEP ${storeInfo.cep}`, pageW / 2, 55, { align: "center" });
-    pdf.text(storeInfo.phone1, pageW - 40, 40, { align: "right" });
-    pdf.text(storeInfo.phone2, pageW - 40, 55, { align: "right" });
-    pdf.text(storeInfo.email, pageW - 40, 70, { align: "right" });
-    pdf.text(`@${storeInfo.instagram}`, pageW - 40, 85, { align: "right" });
+    // ---- Cabeçalho inspirado no modelo da Ordem de Serviço ----
+    const logoImg = new Image();
+    logoImg.src = new URL("/assets/Logo.png", import.meta.url).href;
+    await new Promise((resolve) => {
+      logoImg.onload = resolve;
+    });
+    pdf.addImage(logoImg, "PNG", 20, 10, 40, 40);
 
-    center(storeInfo.company, 110);
+    pdf.setFontSize(16);
+    pdf.setFont("helvetica", "bold");
+    center("RECIBO", 20);
 
-    center("RECIBO", 210, 16, true);
-    center(r.numero, 230, 11);
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    center("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
+    center(
+      "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
+      35
+    );
+    center("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
+
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    center(`N\u00ba ${r.numero}`, 55);
 
     const valorFmt = Number(r.valor).toLocaleString("pt-BR", {
       style: "currency",
@@ -290,8 +300,8 @@ const ReceiptsManagement = () => {
       .split("-")
       .reverse()
       .join("/")} referente aos seguintes produtos:`;
-    const lines = pdf.splitTextToSize(declaracao, 500);
-    pdf.text(lines, 40, 260);
+    const lines = pdf.splitTextToSize(declaracao, pageW - 40);
+    pdf.text(lines, pageW / 2, 92, { align: "center" });
 
     const tableData = r.itens.map((it) => [
       it.descricao,
@@ -302,7 +312,7 @@ const ReceiptsManagement = () => {
     pdf.autoTable({
       head: [["Descrição", "Preço unit.", "Qtd.", "Preço"]],
       body: tableData,
-      startY: pdf.previousAutoTable ? pdf.previousAutoTable.finalY + 10 : 300,
+      startY: pdf.previousAutoTable ? pdf.previousAutoTable.finalY + 10 : 106,
       styles: { fontSize: 10, halign: "left", textColor: [0, 0, 0] },
       headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
       columnStyles: { 1: { halign: "right" }, 2: { halign: "center" }, 3: { halign: "right" } },
@@ -323,10 +333,10 @@ const ReceiptsManagement = () => {
     pdf.setFont("helvetica", "normal");
     pdf.text(`Meio de pagamento: ${r.pagamento || "-"}`, 40, y + 18);
 
-    const footerY = afterTableY + 80;
+    const footerY = y + 16;
     center(storeInfo.cityName, footerY);
-    center(storeInfo.name, footerY + 25);
-    center(storeInfo.responsible, footerY + 50);
+    center(storeInfo.name, footerY + 16);
+    center(storeInfo.responsible, footerY + 32);
 
     pdf.save(`recibo-${r.numero}.pdf`);
   };
@@ -377,7 +387,6 @@ const ReceiptsManagement = () => {
                   value={form.telefone}
                   onChange={handleChange}
                   className="flex-1 border rounded px-3 py-2"
-                  required
                 />
                 <button
                   type="button"
