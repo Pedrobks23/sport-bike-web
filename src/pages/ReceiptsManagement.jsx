@@ -250,7 +250,7 @@ const ReceiptsManagement = () => {
   };
 
   const generatePDF = async (r) => {
-    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
     pdf.setTextColor(0, 0, 0);
     const pageW = pdf.internal.pageSize.getWidth();
 
@@ -300,8 +300,8 @@ const ReceiptsManagement = () => {
       .split("-")
       .reverse()
       .join("/")} referente aos seguintes produtos:`;
-    const lines = pdf.splitTextToSize(declaracao, 500);
-    pdf.text(lines, 40, 260);
+    const lines = pdf.splitTextToSize(declaracao, 190);
+    pdf.text(lines, 40, 92);
 
     const tableData = r.itens.map((it) => [
       it.descricao,
@@ -312,7 +312,7 @@ const ReceiptsManagement = () => {
     pdf.autoTable({
       head: [["Descrição", "Preço unit.", "Qtd.", "Preço"]],
       body: tableData,
-      startY: pdf.previousAutoTable ? pdf.previousAutoTable.finalY + 10 : 300,
+      startY: pdf.previousAutoTable ? pdf.previousAutoTable.finalY + 10 : 106,
       styles: { fontSize: 10, halign: "left", textColor: [0, 0, 0] },
       headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0] },
       columnStyles: { 1: { halign: "right" }, 2: { halign: "center" }, 3: { halign: "right" } },
@@ -340,9 +340,9 @@ const ReceiptsManagement = () => {
       "  ser\u00e3o vendidas para custear as despesas.",
     ];
     pdf.setFontSize(9);
-    pdf.text(disclaimerLines, 40, y + 36);
+    pdf.text(disclaimerLines, 40, y + 12);
 
-    const footerY = y + 90;
+    const footerY = y + 40;
     center(storeInfo.cityName, footerY);
     center(storeInfo.name, footerY + 25);
     center(storeInfo.responsible, footerY + 50);
