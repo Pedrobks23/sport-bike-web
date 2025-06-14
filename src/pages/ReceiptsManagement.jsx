@@ -249,7 +249,7 @@ const ReceiptsManagement = () => {
     }
   };
 
-  const generatePDF = (r) => {
+  const generatePDF = async (r) => {
     const pdf = new jsPDF({ unit: "pt", format: "a4" });
     pdf.setTextColor(0, 0, 0);
     const pageW = pdf.internal.pageSize.getWidth();
@@ -261,20 +261,30 @@ const ReceiptsManagement = () => {
       pdf.text(txt, (pageW - w) / 2, y);
     };
 
-    pdf.setFontSize(12);
-    pdf.text(storeInfo.name, 40, 40);
-    pdf.text(`CNPJ ${storeInfo.cnpj}`, 40, 55);
-    pdf.text(storeInfo.address, pageW / 2, 40, { align: "center" });
-    pdf.text(`${storeInfo.city} - CEP ${storeInfo.cep}`, pageW / 2, 55, { align: "center" });
-    pdf.text(storeInfo.phone1, pageW - 40, 40, { align: "right" });
-    pdf.text(storeInfo.phone2, pageW - 40, 55, { align: "right" });
-    pdf.text(storeInfo.email, pageW - 40, 70, { align: "right" });
-    pdf.text(`@${storeInfo.instagram}`, pageW - 40, 85, { align: "right" });
+    // ---- Cabeçalho inspirado no modelo da Ordem de Serviço ----
+    const logoImg = new Image();
+    logoImg.src = "/assets/Logo.png";
+    await new Promise((resolve) => {
+      logoImg.onload = resolve;
+    });
+    pdf.addImage(logoImg, "PNG", 20, 10, 40, 40);
 
-    center(storeInfo.company, 110);
+    pdf.setFontSize(16);
+    pdf.setFont("helvetica", "bold");
+    center("RECIBO", 20);
 
-    center("RECIBO", 210, 16, true);
-    center(r.numero, 230, 11);
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    center("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
+    center(
+      "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
+      35
+    );
+    center("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
+
+    center(storeInfo.company, 55);
+
+    center(r.numero, 70, 11);
 
     const valorFmt = Number(r.valor).toLocaleString("pt-BR", {
       style: "currency",
@@ -323,7 +333,16 @@ const ReceiptsManagement = () => {
     pdf.setFont("helvetica", "normal");
     pdf.text(`Meio de pagamento: ${r.pagamento || "-"}`, 40, y + 18);
 
-    const footerY = afterTableY + 80;
+    // Termos iguais aos da Ordem de Serviço
+    const disclaimerLines = [
+      "\u2022 O prazo para conclus\u00e3o do servi\u00e7o pode ser estendido em at\u00e9 2 dias ap\u00f3s a data agendada.",
+      "\u2022 Caso a bicicleta ou pe\u00e7as n\u00e3o sejam retiradas no prazo de 180 dias ap\u00f3s o t\u00e9rmino do servi\u00e7o,",
+      "  ser\u00e3o vendidas para custear as despesas.",
+    ];
+    pdf.setFontSize(9);
+    pdf.text(disclaimerLines, 40, y + 36);
+
+    const footerY = y + 90;
     center(storeInfo.cityName, footerY);
     center(storeInfo.name, footerY + 25);
     center(storeInfo.responsible, footerY + 50);
@@ -377,7 +396,6 @@ const ReceiptsManagement = () => {
                   value={form.telefone}
                   onChange={handleChange}
                   className="flex-1 border rounded px-3 py-2"
-                  required
                 />
                 <button
                   type="button"
