@@ -216,10 +216,11 @@ const ReportsManagement = () => {
         })
         .filter((order) => {
           const startDate = new Date(dateRange.start);
+          startDate.setHours(0, 0, 0, 0);
           const endDate = new Date(dateRange.end);
-          endDate.setHours(23, 59, 59);
+          endDate.setHours(23, 59, 59, 999);
           return (
-            order.status === 'Pronto' &&
+            order.status?.toLowerCase() === 'pronto' &&
             order.data >= startDate &&
             order.data <= endDate
           );
@@ -267,13 +268,13 @@ const ReportsManagement = () => {
   }, [reportType, selectedService, dateRange]);
   useEffect(() => {
     const now = new Date();
-    let start = new Date();
+    let start = new Date(now);
     switch (reportType) {
       case "daily":
-        start.setDate(now.getDate() - 7);
+        // daily reports should default to the current day only
         break;
       case "weekly":
-        start.setDate(now.getDate() - 28);
+        start.setDate(now.getDate() - 7);
         break;
       case "monthly":
         start.setMonth(now.getMonth() - 6);
