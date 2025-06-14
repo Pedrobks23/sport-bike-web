@@ -300,7 +300,7 @@ const ReceiptsManagement = () => {
       .split("-")
       .reverse()
       .join("/")} referente aos seguintes produtos:`;
-    const lines = pdf.splitTextToSize(declaracao, 190);
+    const lines = pdf.splitTextToSize(declaracao, pageW - 80);
     pdf.text(lines, 40, 92);
 
     const tableData = r.itens.map((it) => [
@@ -333,16 +333,7 @@ const ReceiptsManagement = () => {
     pdf.setFont("helvetica", "normal");
     pdf.text(`Meio de pagamento: ${r.pagamento || "-"}`, 40, y + 18);
 
-    // Termos iguais aos da Ordem de Serviço
-    const disclaimerLines = [
-      "\u2022 O prazo para conclus\u00e3o do servi\u00e7o pode ser estendido em at\u00e9 2 dias ap\u00f3s a data agendada.",
-      "\u2022 Caso a bicicleta ou pe\u00e7as n\u00e3o sejam retiradas no prazo de 180 dias ap\u00f3s o t\u00e9rmino do servi\u00e7o,",
-      "  ser\u00e3o vendidas para custear as despesas.",
-    ];
-    pdf.setFontSize(9);
-    pdf.text(disclaimerLines, 40, y + 12);
-
-    const footerY = y + 40;
+    const footerY = y + 20;
     center(storeInfo.cityName, footerY);
     center(storeInfo.name, footerY + 25);
     center(storeInfo.responsible, footerY + 50);
