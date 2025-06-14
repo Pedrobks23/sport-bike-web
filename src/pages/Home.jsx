@@ -108,12 +108,12 @@ export default function Home() {
   const faqData = [
     {
       question: "Como funciona o aluguel de bikes?",
-      answer: "Oferecemos aluguel por dia ou semana. Reservas podem ser feitas via WhatsApp ou presencialmente. ",
+      answer: "Oferecemos aluguel por dia, semana e mensal. Reservas podem ser feitas via WhatsApp ou presencialmente. ",
     },
     {
       question: "Qual a garantia dos produtos?",
       answer:
-        "Bikes novas têm garantia de 2 anos para quadro e 1 ano para componentes. Peças e acessórios seguem garantia do fabricante. Oferecemos suporte técnico completo.",
+        "Bikes novas de alumínio tem 5 anos para quadro e 3 mesespara componentes. Peças e acessórios seguem garantia do fabricante. Oferecemos suporte técnico completo.",
     },
     {
       question: "Fazem revisão de bikes?",
