@@ -263,7 +263,7 @@ const ReceiptsManagement = () => {
 
     // ---- Cabeçalho inspirado no modelo da Ordem de Serviço ----
     const logoImg = new Image();
-    logoImg.src = "/assets/Logo.png";
+    logoImg.src = new URL("/assets/Logo.png", import.meta.url).href;
     await new Promise((resolve) => {
       logoImg.onload = resolve;
     });
@@ -282,9 +282,9 @@ const ReceiptsManagement = () => {
     );
     center("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
 
-    center(storeInfo.company, 55);
-
-    center(r.numero, 70, 11);
+    pdf.setFontSize(11);
+    pdf.setFont("helvetica", "bold");
+    center(`N\u00ba ${r.numero}`, 55);
 
     const valorFmt = Number(r.valor).toLocaleString("pt-BR", {
       style: "currency",
