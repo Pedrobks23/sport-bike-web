@@ -31,7 +31,13 @@ const normalizeDriveUrl = (url) => {
   return url
 }
 
-const emptyProduct = { name: "", price: "", image: "", category: "" }
+const emptyProduct = {
+  name: "",
+  price: "",
+  image: "",
+  category: "",
+  description: "",
+}
 
 const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   const [formData, setFormData] = useState(product || emptyProduct)
@@ -104,6 +110,16 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Descrição</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              rows="3"
             />
           </div>
           <div>
@@ -299,6 +315,11 @@ export default function HomeManagement() {
                         <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{product.category}</span>
                         <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
                         <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
+                        {product.description && (
+                          <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">
+                            {product.description}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex space-x-2">

@@ -22,6 +22,7 @@ export default function ManageHomePage() {
       name: "Bicicleta IGK",
       category: "MTB 29",
       price: "R$ 1.200",
+      description: "Modelo de entrada para trilhas",
       image: "/placeholder.svg?height=200&width=300",
       featured: true,
     },
@@ -30,6 +31,7 @@ export default function ManageHomePage() {
       name: "Speed Carbon Pro",
       category: "Speed",
       price: "R$ 3.500",
+      description: "Bicicleta de alta performance em carbono",
       image: "/placeholder.svg?height=200&width=300",
       featured: true,
     },
@@ -38,6 +40,7 @@ export default function ManageHomePage() {
       name: "Urban Comfort",
       category: "Urbana",
       price: "R$ 890",
+      description: "Perfeita para deslocamentos diários",
       image: "/placeholder.svg?height=200&width=300",
       featured: false,
     },
@@ -54,17 +57,19 @@ export default function ManageHomePage() {
     if (!name) return
     const category = prompt("Categoria:") || ""
     const price = prompt("Preço:") || ""
+    const description = prompt("Descrição:") || ""
     const newId =
       featuredProducts.length > 0
         ? Math.max(...featuredProducts.map((p) => p.id)) + 1
         : 1
     setFeaturedProducts((prev) => [
       ...prev,
-      {
+      { 
         id: newId,
         name,
         category,
         price,
+        description,
         image: "/placeholder.svg?height=200&width=300",
         featured: false,
       },
@@ -78,9 +83,10 @@ export default function ManageHomePage() {
     if (!name) return
     const category = prompt("Categoria:", product.category) || product.category
     const price = prompt("Preço:", product.price) || product.price
+    const description = prompt("Descrição:", product.description) || product.description
     setFeaturedProducts((prev) =>
       prev.map((p) =>
-        p.id === id ? { ...p, name, category, price } : p
+        p.id === id ? { ...p, name, category, price, description } : p
       )
     )
   }
@@ -197,6 +203,11 @@ export default function ManageHomePage() {
                       <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{product.category}</span>
                       <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
                       <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
+                      {product.description && (
+                        <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">
+                          {product.description}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex space-x-2">
