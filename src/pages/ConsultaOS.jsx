@@ -34,9 +34,7 @@ const ConsultaOS = () => {
     modelo: "",
     cor: "",
     osNumber: "",
-    file: null,
   });
-  const [oldPreview, setOldPreview] = useState("");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -165,43 +163,28 @@ const ConsultaOS = () => {
   };
 
   const handleOldChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "file") {
-      const file = files?.[0] || null;
-      setOldOSData((prev) => ({ ...prev, file }));
-      setOldPreview(file ? URL.createObjectURL(file) : "");
-    } else {
-      setOldOSData((prev) => ({ ...prev, [name]: value }));
-    }
+    const { name, value } = e.target;
+    setOldOSData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleOldSubmit = async () => {
-    const { nome, modelo, cor, osNumber, file } = oldOSData;
+    const { nome, modelo, cor, osNumber } = oldOSData;
     const text =
       `Olá, gostaria de saber o andamento da minha bike.\n` +
       `Nome: ${nome}\n` +
       `Modelo: ${modelo}\n` +
       `Cor: ${cor}\n` +
-      `OS: ${osNumber}`;
+      `OS: ${osNumber}\n` +
+      `Por favor, se possível, envie a foto do seu papel.`;
 
     const encoded = encodeURIComponent(text);
     const url =
       `https://api.whatsapp.com/send?phone=558532677425&text=${encoded}`;
 
-    if (file && navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ text, files: [file] });
-      } catch (err) {
-        console.error("Compartilhamento falhou:", err);
-        window.open(url, "_blank");
-      }
-    } else {
-      window.open(url, "_blank");
-    }
+    window.open(url, "_blank");
 
     setShowOldOSForm(false);
-    setOldOSData({ nome: "", modelo: "", cor: "", osNumber: "", file: null });
-    setOldPreview("");
+    setOldOSData({ nome: "", modelo: "", cor: "", osNumber: "" });
   };
 
   const detectarTipoBusca = (valor) => {
@@ -708,23 +691,6 @@ const ConsultaOS = () => {
                     placeholder="Ex: 1234"
                     className="w-full border rounded px-3 py-2"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Foto do Papel (opcional)</label>
-                  <input
-                    type="file"
-                    name="file"
-                    accept="image/*"
-                    onChange={handleOldChange}
-                    className="w-full"
-                  />
-                  {oldPreview && (
-                    <img
-                      src={oldPreview}
-                      alt="Pré-visualização"
-                      className="mt-2 w-full h-40 object-cover rounded"
-                    />
-                  )}
                 </div>
                 <div className="flex justify-end gap-4 pt-2">
                   <button type="button" onClick={() => setShowOldOSForm(false)} className="px-4 py-2 text-gray-600 dark:text-gray-300">
