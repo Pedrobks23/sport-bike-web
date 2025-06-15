@@ -17,6 +17,7 @@ import { db } from "../config/firebase";
 import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import generateWorkshopTagsPDF from "../utils/generateWorkshopTagsPDF";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
 const logo = new URL("/assets/Logo.png", import.meta.url).href;
@@ -1223,6 +1224,12 @@ function NewOrder() {
                   className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
                 >
                   Imprimir Versão Loja
+                </button>
+                <button
+                  onClick={() => generateWorkshopTagsPDF(createdOrder)}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                >
+                  Imprimir Etiquetas
                 </button>
               </div>
             )}

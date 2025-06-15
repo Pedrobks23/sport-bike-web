@@ -36,6 +36,7 @@ import {
 // -------- ADAPTAÇÃO: Importação para PDF (sem remover nada do seu código) --------
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import generateWorkshopTagsPDF from "../utils/generateWorkshopTagsPDF";
 // ---------------------------------------------------------------------------------
 
 const PortalAwareDraggable = ({ children, ...props }) => (
@@ -1360,6 +1361,12 @@ const WorkshopDashboard = () => {
                   className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                 >
                   Imprimir Versão Cliente
+                </button>
+                <button
+                  onClick={() => generateWorkshopTagsPDF(localOrder)}
+                  className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+                >
+                  Imprimir Etiquetas
                 </button>
                 {/* ----------------------------------------------------- */}
               </div>
