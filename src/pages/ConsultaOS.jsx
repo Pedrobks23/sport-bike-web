@@ -513,9 +513,9 @@ const ConsultaOS = () => {
                 onClick={() => setShowOldOSForm(true)}
                 className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 text-gray-800 dark:text-white px-6 py-3 rounded-xl font-medium transition-all hover:shadow-lg"
               >
-                Ordem Antiga
+                Ordem de Serviço em Papel
               </button>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Clique para consultar uma ordem anotada apenas no papel</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Clique para consultar uma ordem de serviço registrada em papel</p>
             </div>
 
           {ordens.length > 0 && (
@@ -643,7 +643,7 @@ const ConsultaOS = () => {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Ordem Antiga</h3>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Ordem de Serviço em Papel</h3>
                 <button
                   onClick={() => setShowOldOSForm(false)}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
