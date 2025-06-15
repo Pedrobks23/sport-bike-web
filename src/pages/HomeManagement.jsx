@@ -8,6 +8,8 @@ import {
   Plus,
   Edit,
   Trash2,
+  Eye,
+  EyeOff,
   Search,
 } from "lucide-react"
 import {
@@ -37,10 +39,15 @@ const emptyProduct = {
   image: "",
   category: "",
   description: "",
+  visible: true,
 }
 
 const ProductModal = ({ isEdit, onClose, onSave, product }) => {
-  const [formData, setFormData] = useState(product || emptyProduct)
+  const [formData, setFormData] = useState({
+    ...emptyProduct,
+    ...product,
+    visible: product?.visible ?? true,
+  })
   const [imageFile, setImageFile] = useState(null)
   const [preview, setPreview] = useState(product?.image || "")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -122,6 +129,18 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
               rows="3"
             />
           </div>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              name="visible"
+              checked={formData.visible}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, visible: e.target.checked }))
+              }
+              className="w-4 h-4"
+            />
+            <span className="text-sm">Exibir produto</span>
+          </label>
           <div>
             <label className="block text-sm font-medium mb-1">Link da Imagem (Google Drive)</label>
             <input
@@ -222,6 +241,14 @@ export default function HomeManagement() {
     }
   }
 
+  const handleToggleProductVisibility = async (id, current) => {
+    const newValue = !current
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, visible: newValue } : p))
+    )
+    await updateFeaturedProduct(id, { visible: newValue })
+  }
+
   const toggleVisibility = async () => {
     const newValue = !showFeatured
     setShowFeatured(newValue)
@@ -309,6 +336,39 @@ export default function HomeManagement() {
                         className="w-full h-60 object-cover"
                         loading="lazy"
                       />
+                      <div className="absolute top-4 right-4">
+                        <button
+                          onClick={() =>
+                            handleToggleProductVisibility(
+                              product.id,
+                              product.visible !== false
+                            )
+                          }
+                          className={`p-2 rounded-full transition-colors ${
+                            product.visible !== false
+                              ? "bg-amber-500 text-white"
+                              : "bg-white/80 text-gray-600 hover:bg-amber-500 hover:text-white"
+                          }`}
+                          title={
+                            product.visible !== false
+                              ? "Ocultar produto"
+                              : "Exibir produto"
+                          }
+                        >
+                          {product.visible !== false ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      {product.visible === false && (
+                        <div className="absolute top-4 left-4">
+                          <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                            Oculto
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="p-6">
                       <div className="mb-4">

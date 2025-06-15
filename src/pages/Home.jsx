@@ -171,7 +171,9 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       const prods = await getFeaturedProducts()
-      const normalized = prods.map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }))
+      const normalized = prods
+        .map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }))
+        .filter((p) => p.visible !== false)
       const settings = await getHomeSettings()
       setFeaturedProducts(normalized)
       setShowFeatured(settings.showFeaturedProducts ?? true)

@@ -25,6 +25,7 @@ export default function ManageHomePage() {
       description: "Modelo de entrada para trilhas",
       image: "/placeholder.svg?height=200&width=300",
       featured: true,
+      visible: true,
     },
     {
       id: 2,
@@ -34,6 +35,7 @@ export default function ManageHomePage() {
       description: "Bicicleta de alta performance em carbono",
       image: "/placeholder.svg?height=200&width=300",
       featured: true,
+      visible: true,
     },
     {
       id: 3,
@@ -43,12 +45,19 @@ export default function ManageHomePage() {
       description: "Perfeita para deslocamentos diários",
       image: "/placeholder.svg?height=200&width=300",
       featured: false,
+      visible: true,
     },
   ])
 
   const handleToggleFeatured = (id) => {
     setFeaturedProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, featured: !p.featured } : p))
+    )
+  }
+
+  const handleToggleVisible = (id) => {
+    setFeaturedProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, visible: !p.visible } : p))
     )
   }
 
@@ -64,7 +73,7 @@ export default function ManageHomePage() {
         : 1
     setFeaturedProducts((prev) => [
       ...prev,
-      { 
+      {
         id: newId,
         name,
         category,
@@ -72,6 +81,7 @@ export default function ManageHomePage() {
         description,
         image: "/placeholder.svg?height=200&width=300",
         featured: false,
+        visible: true,
       },
     ])
   }
@@ -191,10 +201,26 @@ export default function ManageHomePage() {
                       >
                         {product.featured ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
+                      <button
+                        onClick={() => handleToggleVisible(product.id)}
+                        className={`p-2 rounded-full transition-colors ml-2 ${
+                          product.visible
+                            ? "bg-emerald-500 text-white"
+                            : "bg-white/80 text-gray-600 hover:bg-emerald-500 hover:text-white"
+                        }`}
+                        title={product.visible ? "Ocultar" : "Exibir"}
+                      >
+                        {product.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
                     </div>
                     {product.featured && (
                       <div className="absolute top-4 left-4">
                         <span className="bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-medium">Destaque</span>
+                      </div>
+                    )}
+                    {product.visible === false && (
+                      <div className="absolute top-4 left-4 mt-6">
+                        <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">Oculto</span>
                       </div>
                     )}
                   </div>
