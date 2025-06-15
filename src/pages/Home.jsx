@@ -171,13 +171,24 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       const prods = await getFeaturedProducts()
-      const normalized = prods.map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }))
+      const normalized = prods
+        .map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }))
+        .filter((p) => p.visible !== false)
       const settings = await getHomeSettings()
       setFeaturedProducts(normalized)
       setShowFeatured(settings.showFeaturedProducts ?? true)
     }
     fetchData()
   }, [])
+
+  useEffect(() => {
+    featuredProducts.forEach((p) => {
+      if (p.image) {
+        const img = new Image()
+        img.src = p.image
+      }
+    })
+  }, [featuredProducts])
 
   // sync video playback state
   useEffect(() => {
@@ -201,10 +212,18 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-      setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)
+      if (featuredProducts.length > 0) {
+        setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)
+      }
     }, 5000)
     return () => clearInterval(interval)
   }, [testimonials.length, featuredProducts.length])
+
+  useEffect(() => {
+    if (featuredProducts.length > 0) {
+      setCurrentProduct(0)
+    }
+  }, [featuredProducts.length])
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -467,7 +486,12 @@ export default function Home() {
                           {featuredProducts[currentProduct].category}
                         </span>
                         <h3 className="text-2xl font-bold mt-4 mb-2">{featuredProducts[currentProduct].name}</h3>
-                        <p className="text-3xl font-bold mb-4">{featuredProducts[currentProduct].price}</p>
+                        <p className="text-3xl font-bold mb-2">{featuredProducts[currentProduct].price}</p>
+                        {featuredProducts[currentProduct].description && (
+                          <p className="mb-4 text-white/90 whitespace-pre-line">
+                            {featuredProducts[currentProduct].description}
+                          </p>
+                        )}
                         <button
                           onClick={() =>
                             handleWhatsApp(

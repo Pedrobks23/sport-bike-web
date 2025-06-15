@@ -15,7 +15,10 @@ import { uploadImage, deleteImageByUrl } from "./uploadImage";
 export const getFeaturedProducts = async () => {
   const ref = collection(db, "featuredProducts");
   const snap = await getDocs(ref);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return { id: d.id, ...data, visible: data.visible ?? true };
+  });
 };
 
 
