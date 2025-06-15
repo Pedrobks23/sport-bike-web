@@ -113,7 +113,7 @@ export default function Home() {
     {
       question: "Qual a garantia dos produtos?",
       answer:
-        "Bikes novas de alumínio tem 5 anos para quadro e 3 mesespara componentes. Peças e acessórios seguem garantia do fabricante. Oferecemos suporte técnico completo.",
+        "Bikes novas de alumínio tem 5 anos para quadro e 3 meses para componentes. Peças e acessórios seguem garantia do fabricante. Oferecemos suporte técnico completo.",
     },
     {
       question: "Fazem revisão de bikes?",
