@@ -6,7 +6,7 @@ import Admin from "../pages/Admin";
 import WorkshopDashboard from "../pages/WorkshopDashboard";
 import CustomerList from "../pages/CustomerList";
 import ServicesManagement from "../pages/ServicesManagement";
-import ReportsManagement from "../pages/ReportsManagement";
+import ReportsPage from "../pages/ReportsPage";
 import ReceiptsManagement from "../pages/ReceiptsManagement";
 import ManageHomePage from "../pages/ManageHomePage";
 import ServiceOrdersPage from "../pages/ServiceOrdersPage";
@@ -81,7 +81,7 @@ export const router = createBrowserRouter([
     path: "/admin/reports",
     element: (
       <PrivateRoute>
-        <ReportsManagement />
+        <ReportsPage />
       </PrivateRoute>
     ),
   },
