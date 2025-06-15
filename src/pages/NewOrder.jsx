@@ -17,6 +17,7 @@ import { db } from "../config/firebase";
 import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import generateWorkshopTagsPDF from "../utils/generateWorkshopTagsPDF";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
 const logo = new URL("/assets/Logo.png", import.meta.url).href;
@@ -318,10 +319,10 @@ function NewOrder() {
     try {
       const docPDF = new jsPDF();
       const pageWidth = docPDF.internal.pageSize.getWidth();
-      let yPos = 50;
+      let yPos = 35;
 
-      // Helper para centralizar texto
-      const centerText = (text, y) => {
+      const centerText = (text, y, fontSize = null) => {
+        if (fontSize) docPDF.setFontSize(fontSize);
         const textWidth =
           (docPDF.getStringUnitWidth(text) * docPDF.internal.getFontSize()) /
           docPDF.internal.scaleFactor;
@@ -329,101 +330,79 @@ function NewOrder() {
         docPDF.text(text, x, y);
       };
 
-      // Carrega a imagem dinamicamente
       const logoImg = new Image();
       logoImg.src = "/assets/Logo.png";
-
-      // Aguarda a imagem carregar
       await new Promise((resolve) => {
         logoImg.onload = resolve;
       });
 
-      // Adiciona logo
-      docPDF.addImage(logoImg, "PNG", 20, 10, 40, 40);
+      docPDF.addImage(logoImg, "PNG", 15, 5, 25, 25);
 
-      // Cabeçalho
-      docPDF.setFontSize(16);
+      docPDF.setFontSize(14);
       docPDF.setFont("helvetica", "bold");
-      centerText("ORDEM DE SERVIÇO", 20);
+      centerText("ORDEM DE SERVIÇO", 15);
+
+      docPDF.setFontSize(8);
+      docPDF.setFont("helvetica", "normal");
+      centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 22);
+      centerText("Tel: (85) 3267-7425 | WhatsApp: (85) 3267-7425", 26);
+      centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 30);
 
       docPDF.setFontSize(10);
-      docPDF.setFont("helvetica", "normal");
-      centerText("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30);
-      centerText(
-        "Tel: (85) 3267-7425 | (85) 3122-5874 | WhatsApp: (85) 3267-7425",
-        35
-      );
-      centerText("@sportbike_fortaleza | comercialsportbike@gmail.com", 40);
-
-      // Info da OS
-      docPDF.setFontSize(12);
       docPDF.setFont("helvetica", "bold");
-      docPDF.text(`OS: ${ordem.codigo}`, 20, yPos);
-      yPos += 10;
 
       const dataCriacao = new Date(ordem.dataCriacao);
       const dataAgendamento = new Date(ordem.dataAgendamento);
 
-      docPDF.text(
-        `Criada em: ${dataCriacao.toLocaleString("pt-BR")}`,
-        20,
-        yPos
-      );
-      yPos += 10;
+      docPDF.text(`OS: ${ordem.codigo}`, 15, yPos);
+      docPDF.text(`Criada: ${dataCriacao.toLocaleDateString("pt-BR")}`, 70, yPos);
+      docPDF.text(`Agendada: ${dataAgendamento.toLocaleDateString("pt-BR")}`, 130, yPos);
+      yPos += 8;
 
-      docPDF.text(
-        `Agendada para: ${dataAgendamento.toLocaleDateString("pt-BR")}`,
-        20,
-        yPos
-      );
-      yPos += 15;
-
-      docPDF.text("DADOS DO CLIENTE", 20, yPos);
-      yPos += 10;
+      docPDF.setFontSize(9);
+      docPDF.text("CLIENTE:", 15, yPos);
       docPDF.setFont("helvetica", "normal");
-      docPDF.text(`Nome: ${ordem.cliente?.nome || "-"}`, 20, yPos);
-      yPos += 7;
-      docPDF.text(`Telefone: ${ordem.cliente?.telefone || "-"}`, 20, yPos);
-      yPos += 7;
+      docPDF.text(`${ordem.cliente?.nome || "-"}`, 40, yPos);
+      docPDF.text(`Tel: ${ordem.cliente?.telefone || "-"}`, 130, yPos);
+      yPos += 8;
 
-      // Link simplificado + mini tutorial
-      yPos += 10;
+      docPDF.setFontSize(8);
       docPDF.setFont("helvetica", "bold");
-      docPDF.text("COMO CONSULTAR O ANDAMENTO DA SUA OS:", 20, yPos);
-      yPos += 7;
-
+      docPDF.text("COMO CONSULTAR O ANDAMENTO DA SUA OS:", 15, yPos);
+      yPos += 4;
       docPDF.setFont("helvetica", "normal");
-      const tutorialLinhas = [
+      const consultaLinhas = [
         "1. Acesse: https://sportbikece.vercel.app/consulta",
-        "2. Digite o número da OS (ex.: OS-202401001) ou seu telefone.",
-        "3. Clique no botão 'Consultar' para ver o status.",
+        "2. Digite o número da OS ou seu telefone.",
+        "3. Clique em 'Consultar' para ver o status.",
       ];
-      docPDF.text(tutorialLinhas, 20, yPos);
-      yPos += 20;
+      docPDF.text(consultaLinhas, 15, yPos);
+      yPos += consultaLinhas.length * 4 + 2;
 
       let totalGeral = 0;
 
+      docPDF.setFontSize(9);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text("BICICLETA / SERVIÇOS", 15, yPos);
+      docPDF.text("QTD", 120, yPos);
+      docPDF.text("VALOR", 140, yPos);
+      docPDF.text("SUBTOTAL", 165, yPos);
+      yPos += 6;
+
+      docPDF.line(15, yPos - 2, 195, yPos - 2);
+      yPos += 2;
+
       ordem.bicicletas?.forEach((bike, index) => {
         docPDF.setFont("helvetica", "bold");
-        docPDF.text(
-          `Bicicleta ${index + 1}: ${bike.marca} - ${bike.modelo} - ${
-            bike.cor
-          }`,
-          20,
-          yPos
-        );
-        yPos += 10;
-
-        // Cabeçalho da "tabela"
-        docPDF.setFont("helvetica", "bold");
-        docPDF.text("Serviço", 20, yPos);
-        docPDF.text("Qtd", 120, yPos);
-        docPDF.text("Valor", 150, yPos);
-        yPos += 8;
+        docPDF.setFontSize(8);
+        const bikeName = `${index + 1}. ${bike.marca} ${bike.modelo} ${bike.cor}`.trim();
+        docPDF.text(bikeName, 15, yPos);
+        yPos += 5;
 
         let totalBike = 0;
-
         docPDF.setFont("helvetica", "normal");
+        docPDF.setFontSize(8);
+
         if (bike.services) {
           Object.entries(bike.services).forEach(([serviceName, quantity]) => {
             if (quantity > 0) {
@@ -432,73 +411,62 @@ function NewOrder() {
                 bike.serviceValues?.[serviceName]?.valor ||
                 availableServices[serviceName] ||
                 0;
-
               const subtotal = serviceValue * quantity;
               totalBike += subtotal;
 
-              docPDF.text(`• ${serviceName}`, 20, yPos);
-              docPDF.text(`${quantity}`, 120, yPos);
-              docPDF.text(`R$ ${subtotal.toFixed(2)}`, 150, yPos);
-              yPos += 7;
+              docPDF.text(`  • ${serviceName}`, 15, yPos);
+              docPDF.text(`${quantity}`, 125, yPos);
+              docPDF.text(`${serviceValue.toFixed(2)}`, 145, yPos);
+              docPDF.text(`${subtotal.toFixed(2)}`, 170, yPos);
+              yPos += 4;
             }
           });
         }
 
-        // Se houver peças
         if (bike.pecas && bike.pecas.length > 0) {
-          yPos += 5;
-          docPDF.setFont("helvetica", "bold");
-          docPDF.text("PEÇAS:", 20, yPos);
-          yPos += 7;
-
-          docPDF.setFont("helvetica", "normal");
           bike.pecas.forEach((peca) => {
-            const valorPeca = parseFloat(peca.valor) || 0;
+            const valorPeca = Number.parseFloat(peca.valor) || 0;
             totalBike += valorPeca;
-            docPDF.text(`• ${peca.nome}`, 20, yPos);
-            docPDF.text(`R$ ${valorPeca.toFixed(2)}`, 150, yPos);
-            yPos += 7;
+            docPDF.text(`  • ${peca.nome}`, 15, yPos);
+            docPDF.text(`1`, 125, yPos);
+            docPDF.text(`${valorPeca.toFixed(2)}`, 145, yPos);
+            docPDF.text(`${valorPeca.toFixed(2)}`, 170, yPos);
+            yPos += 4;
           });
         }
 
         totalGeral += totalBike;
-        yPos += 5;
-        docPDF.setFont("helvetica", "bold");
-        docPDF.text(`Subtotal: R$ ${totalBike.toFixed(2)}`, 120, yPos);
-        yPos += 15;
 
-        // Verifica se precisa mudar de página
-        if (yPos > 250) {
-          docPDF.addPage();
-          yPos = 20;
-        }
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text(`Subtotal Bike ${index + 1}:`, 120, yPos);
+        docPDF.text(`R$ ${totalBike.toFixed(2)}`, 165, yPos);
+        yPos += 6;
+        docPDF.setFont("helvetica", "normal");
       });
 
-      // Total geral + Observações
+      docPDF.line(15, yPos - 2, 195, yPos - 2);
+      yPos += 2;
+
       docPDF.setFont("helvetica", "bold");
-      docPDF.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 20, yPos);
-      yPos += 10;
+      docPDF.setFontSize(11);
+      docPDF.text(`TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`, 120, yPos);
+      yPos += 8;
 
       if (ordem.observacoes) {
-        docPDF.text("OBSERVAÇÕES:", 20, yPos);
-        yPos += 7;
+        docPDF.setFontSize(8);
+        docPDF.text("OBS:", 15, yPos);
         docPDF.setFont("helvetica", "normal");
-        docPDF.text(ordem.observacoes, 20, yPos);
-        yPos += 15;
+        const obsLines = docPDF.splitTextToSize(ordem.observacoes, 160);
+        docPDF.text(obsLines, 35, yPos);
+        yPos += obsLines.length * 4 + 4;
       }
 
-      // Termos e condições
-      docPDF.setFontSize(9);
+      docPDF.setFontSize(7);
       docPDF.setFont("helvetica", "normal");
-      docPDF.text(
-        [
-          "• O prazo para conclusão do serviço pode ser estendido em até 2 dias após a data agendada.",
-          "• Caso a bicicleta ou peças não sejam retiradas no prazo de 180 dias após o término do serviço,",
-          "  serão vendidas para custear as despesas.",
-        ],
-        20,
-        (yPos += 10)
-      );
+      const termos = [
+        "• Prazo pode ser estendido em até 2 dias. • Bicicletas não retiradas em 180 dias serão vendidas para custear despesas.",
+      ];
+      docPDF.text(termos, 15, yPos);
 
       docPDF.save(`OS-Cliente-${ordem.codigo}.pdf`);
     } catch (err) {
@@ -1256,6 +1224,12 @@ function NewOrder() {
                   className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
                 >
                   Imprimir Versão Loja
+                </button>
+                <button
+                  onClick={() => generateWorkshopTagsPDF(createdOrder)}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                >
+                  Imprimir Etiquetas
                 </button>
               </div>
             )}
