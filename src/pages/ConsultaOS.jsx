@@ -31,8 +31,8 @@ const ConsultaOS = () => {
   const [showOldOSForm, setShowOldOSForm] = useState(false);
   const [oldOSData, setOldOSData] = useState({
     nome: "",
-    marca: "",
     modelo: "",
+    cor: "",
     osNumber: "",
     file: null,
   });
@@ -176,23 +176,21 @@ const ConsultaOS = () => {
   };
 
   const handleOldSubmit = () => {
-    const { nome, marca, modelo, osNumber, file } = oldOSData;
-    const message = `Olá, gostaria de saber o andamento da minha bike.%0A` +
-      `Nome: ${nome}%0A` +
-      `Bike: ${marca} ${modelo}%0A` +
+    const { nome, modelo, cor, osNumber } = oldOSData;
+    const text = `Olá, gostaria de saber o andamento da minha bike.\n` +
+      `Nome: ${nome}\n` +
+      `Modelo: ${modelo}\n` +
+      `Cor: ${cor}\n` +
       `OS: ${osNumber}`;
 
+    const encoded = encodeURIComponent(text);
     const url =
-      `https://api.whatsapp.com/send/?phone=558532677425&text=${message}&type=phone_number&app_absent=0`;
+      `https://api.whatsapp.com/send?phone=558532677425&text=${encoded}`;
 
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ text: decodeURIComponent(message), files: [file] });
-    } else {
-      window.open(url, "_blank");
-    }
+    window.open(url, "_blank");
 
     setShowOldOSForm(false);
-    setOldOSData({ nome: "", marca: "", modelo: "", osNumber: "", file: null });
+    setOldOSData({ nome: "", modelo: "", cor: "", osNumber: "", file: null });
     setOldPreview("");
   };
 
@@ -516,7 +514,7 @@ const ConsultaOS = () => {
               </form>
             </div>
 
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 space-y-2">
               <button
                 type="button"
                 onClick={() => setShowOldOSForm(true)}
@@ -524,6 +522,7 @@ const ConsultaOS = () => {
               >
                 Ordem Antiga
               </button>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Clique para consultar uma ordem anotada apenas no papel</p>
             </div>
 
           {ordens.length > 0 && (
@@ -661,19 +660,10 @@ const ConsultaOS = () => {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Nome do Cliente</label>
+                  <label className="block text-sm font-medium mb-1">Nome</label>
                   <input
                     name="nome"
                     value={oldOSData.nome}
-                    onChange={handleOldChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Marca</label>
-                  <input
-                    name="marca"
-                    value={oldOSData.marca}
                     onChange={handleOldChange}
                     className="w-full border rounded px-3 py-2"
                   />
@@ -688,6 +678,15 @@ const ConsultaOS = () => {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium mb-1">Cor</label>
+                  <input
+                    name="cor"
+                    value={oldOSData.cor}
+                    onChange={handleOldChange}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium mb-1">Número da OS</label>
                   <input
                     name="osNumber"
@@ -697,16 +696,21 @@ const ConsultaOS = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Foto do Papel</label>
+                  <label className="block text-sm font-medium mb-1">Foto do Papel (opcional)</label>
                   <input
                     type="file"
                     name="file"
                     accept="image/*"
-                    capture="environment"
                     onChange={handleOldChange}
                     className="w-full"
                   />
-                  {oldPreview && <img src={oldPreview} alt="Pré-visualização" className="mt-2 w-full h-40 object-cover rounded" />}
+                  {oldPreview && (
+                    <img
+                      src={oldPreview}
+                      alt="Pré-visualização"
+                      className="mt-2 w-full h-40 object-cover rounded"
+                    />
+                  )}
                 </div>
                 <div className="flex justify-end gap-4 pt-2">
                   <button type="button" onClick={() => setShowOldOSForm(false)} className="px-4 py-2 text-gray-600 dark:text-gray-300">
