@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
   History,
+  X,
   Phone,
   Calendar,
   User,
@@ -27,6 +28,13 @@ const ConsultaOS = () => {
   const [error, setError] = useState(null);
   const [ordens, setOrdens] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showOldOSForm, setShowOldOSForm] = useState(false);
+  const [oldOSData, setOldOSData] = useState({
+    nome: "",
+    modelo: "",
+    cor: "",
+    osNumber: "",
+  });
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -152,6 +160,31 @@ const ConsultaOS = () => {
   const formatarDinheiro = (valor) => {
     if (!valor) return "R$ 0,00";
     return `R$ ${valor.toFixed(2)}`;
+  };
+
+  const handleOldChange = (e) => {
+    const { name, value } = e.target;
+    setOldOSData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleOldSubmit = async () => {
+    const { nome, modelo, cor, osNumber } = oldOSData;
+    const text =
+      `Olá, gostaria de saber o andamento da minha bike.\n` +
+      `Nome: ${nome}\n` +
+      `Modelo: ${modelo}\n` +
+      `Cor: ${cor}\n` +
+      `OS: ${osNumber}\n` +
+      `Por favor, se possível, envie a foto do seu papel.`;
+
+    const encoded = encodeURIComponent(text);
+    const url =
+      `https://api.whatsapp.com/send?phone=558532677425&text=${encoded}`;
+
+    window.open(url, "_blank");
+
+    setShowOldOSForm(false);
+    setOldOSData({ nome: "", modelo: "", cor: "", osNumber: "" });
   };
 
   const detectarTipoBusca = (valor) => {
@@ -474,6 +507,17 @@ const ConsultaOS = () => {
               </form>
             </div>
 
+            <div className="text-center mb-8 space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowOldOSForm(true)}
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 text-gray-800 dark:text-white px-6 py-3 rounded-xl font-medium transition-all hover:shadow-lg"
+              >
+                Ordem de Serviço em Papel
+              </button>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Clique para consultar uma ordem de serviço registrada em papel</p>
+            </div>
+
           {ordens.length > 0 && (
             <div className="space-y-8">
               {ordens.map((ordem) => {
@@ -594,6 +638,72 @@ const ConsultaOS = () => {
             <History className="w-6 h-6" />
           </button>
         </div>
+
+        {showOldOSForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Ordem de Serviço em Papel</h3>
+                <button
+                  onClick={() => setShowOldOSForm(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nome</label>
+                  <input
+                    name="nome"
+                    value={oldOSData.nome}
+                    onChange={handleOldChange}
+                    placeholder="Ex: João da Silva"
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Modelo</label>
+                  <input
+                    name="modelo"
+                    value={oldOSData.modelo}
+                    onChange={handleOldChange}
+                    placeholder="Ex: Caloi Elite"
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Cor</label>
+                  <input
+                    name="cor"
+                    value={oldOSData.cor}
+                    onChange={handleOldChange}
+                    placeholder="Ex: Vermelha"
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Número da OS</label>
+                  <input
+                    name="osNumber"
+                    value={oldOSData.osNumber}
+                    onChange={handleOldChange}
+                    placeholder="Ex: 1234"
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div className="flex justify-end gap-4 pt-2">
+                  <button type="button" onClick={() => setShowOldOSForm(false)} className="px-4 py-2 text-gray-600 dark:text-gray-300">
+                    Cancelar
+                  </button>
+                  <button type="button" onClick={handleOldSubmit} className="px-6 py-2 rounded bg-green-600 hover:bg-green-700 text-white">
+                    Enviar para WhatsApp
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
