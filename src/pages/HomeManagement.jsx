@@ -316,7 +316,7 @@ export default function HomeManagement() {
                         <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
                         <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
                         {product.description && (
-                          <p className="text-gray-600 dark:text-gray-300 text-sm mt-2">
+                          <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 whitespace-pre-line">
                             {product.description}
                           </p>
                         )}
