@@ -175,9 +175,10 @@ const ConsultaOS = () => {
     }
   };
 
-  const handleOldSubmit = () => {
-    const { nome, modelo, cor, osNumber } = oldOSData;
-    const text = `Olá, gostaria de saber o andamento da minha bike.\n` +
+  const handleOldSubmit = async () => {
+    const { nome, modelo, cor, osNumber, file } = oldOSData;
+    const text =
+      `Olá, gostaria de saber o andamento da minha bike.\n` +
       `Nome: ${nome}\n` +
       `Modelo: ${modelo}\n` +
       `Cor: ${cor}\n` +
@@ -187,7 +188,16 @@ const ConsultaOS = () => {
     const url =
       `https://api.whatsapp.com/send?phone=558532677425&text=${encoded}`;
 
-    window.open(url, "_blank");
+    if (file && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ text, files: [file] });
+      } catch (err) {
+        console.error("Compartilhamento falhou:", err);
+        window.open(url, "_blank");
+      }
+    } else {
+      window.open(url, "_blank");
+    }
 
     setShowOldOSForm(false);
     setOldOSData({ nome: "", modelo: "", cor: "", osNumber: "", file: null });
@@ -665,6 +675,7 @@ const ConsultaOS = () => {
                     name="nome"
                     value={oldOSData.nome}
                     onChange={handleOldChange}
+                    placeholder="Ex: João da Silva"
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
@@ -674,6 +685,7 @@ const ConsultaOS = () => {
                     name="modelo"
                     value={oldOSData.modelo}
                     onChange={handleOldChange}
+                    placeholder="Ex: Caloi Elite"
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
@@ -683,6 +695,7 @@ const ConsultaOS = () => {
                     name="cor"
                     value={oldOSData.cor}
                     onChange={handleOldChange}
+                    placeholder="Ex: Vermelha"
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
@@ -692,6 +705,7 @@ const ConsultaOS = () => {
                     name="osNumber"
                     value={oldOSData.osNumber}
                     onChange={handleOldChange}
+                    placeholder="Ex: 1234"
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
