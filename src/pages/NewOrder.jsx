@@ -367,10 +367,16 @@ function NewOrder() {
 
       docPDF.setFontSize(8);
       docPDF.setFont("helvetica", "bold");
-      docPDF.text("CONSULTA:", 15, yPos);
+      docPDF.text("COMO CONSULTAR O ANDAMENTO DA SUA OS:", 15, yPos);
+      yPos += 4;
       docPDF.setFont("helvetica", "normal");
-      docPDF.text("https://sportbikece.vercel.app/consulta", 45, yPos);
-      yPos += 6;
+      const consultaLinhas = [
+        "1. Acesse: https://sportbikece.vercel.app/consulta",
+        "2. Digite o número da OS ou seu telefone.",
+        "3. Clique em 'Consultar' para ver o status.",
+      ];
+      docPDF.text(consultaLinhas, 15, yPos);
+      yPos += consultaLinhas.length * 4 + 2;
 
       let totalGeral = 0;
 
