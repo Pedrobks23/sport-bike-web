@@ -14,6 +14,7 @@ import ManageReceiptsPage from "../pages/ManageReceiptsPage";
 import NewOrder from "../pages/NewOrder"; // Adicione esta importação
 import HomeManagement from "../pages/HomeManagement";
 import NewCustomer from "../pages/NewCustomer";
+import BudgetPage from "../pages/BudgetPage";
 import PrivateRoute from "../components/PrivateRoute";
 
 export const router = createBrowserRouter([
@@ -114,6 +115,14 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <ServiceOrdersPage />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/budget",
+    element: (
+      <PrivateRoute>
+        <BudgetPage />
       </PrivateRoute>
     ),
   },
