@@ -19,7 +19,7 @@ import {
   Users,
   Edit,
 } from "lucide-react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -32,6 +32,8 @@ export default function BudgetPage() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [clientSearch, setClientSearch] = useState("");
   const [showClientModal, setShowClientModal] = useState(false);
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [newClient, setNewClient] = useState({ nome: "", telefone: "", email: "", endereco: "" });
   const [budgetItems, setBudgetItems] = useState([
     { id: 1, description: "", quantity: 1, unit: "un", price: 0, total: 0 },
   ]);
@@ -128,6 +130,25 @@ export default function BudgetPage() {
   const calculateDiscount = () => (budgetData.discountType === "percentage" ? (calculateSubtotal() * budgetData.discount) / 100 : budgetData.discount);
   const calculateTotal = () => calculateSubtotal() - calculateDiscount();
 
+  const handleCreateClient = async () => {
+    try {
+      const docRef = await addDoc(collection(db, "clientes"), {
+        nome: newClient.nome,
+        telefone: newClient.telefone,
+        email: newClient.email,
+        endereco: newClient.endereco,
+      });
+      const created = { id: docRef.id, ...newClient };
+      setClients([...clients, created]);
+      setSelectedClient(created);
+      setShowAddClientModal(false);
+      setNewClient({ nome: "", telefone: "", email: "", endereco: "" });
+    } catch (err) {
+      console.error("Erro ao adicionar cliente", err);
+      alert("Erro ao adicionar cliente");
+    }
+  };
+
   const handleSaveBudget = () => {
     if (!selectedClient) return alert("Selecione um cliente");
     if (budgetItems.some((i) => !i.description)) return alert("Preencha todos os itens");
@@ -144,12 +165,18 @@ export default function BudgetPage() {
 
   const handleGeneratePDF = () => {
     if (!selectedClient) return alert("Selecione um cliente primeiro");
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("ORÇAMENTO", 105, 20, { align: "center" });
-    doc.setFontSize(12);
-    doc.text(`Cliente: ${selectedClient.nome}`, 20, 40);
-    let y = 55;
+    const logo = new Image();
+    logo.src = "/assets/Logo.png";
+    logo.onload = () => {
+      const doc = new jsPDF();
+      doc.addImage(logo, "PNG", 20, 10, 30, 15);
+      doc.setTextColor(0);
+      doc.setDrawColor(0);
+      doc.setFontSize(18);
+      doc.text("ORÇAMENTO", 105, 30, { align: "center" });
+      doc.setFontSize(12);
+      doc.text(`Cliente: ${selectedClient.nome}`, 20, 50);
+      let y = 65;
     const tableData = budgetItems.map((i, idx) => [
       idx + 1,
       i.description,
@@ -158,7 +185,14 @@ export default function BudgetPage() {
       `R$ ${i.price.toFixed(2)}`,
       `R$ ${i.total.toFixed(2)}`,
     ]);
-    doc.autoTable({ startY: y, head: [["#", "Descrição", "Qtd", "Unid", "Valor", "Subtotal"]], body: tableData });
+    doc.autoTable({
+        startY: y,
+        head: [["#", "Descrição", "Qtd", "Unid", "Valor", "Subtotal"]],
+        body: tableData,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [200, 200, 200] },
+    });
     const fY = doc.lastAutoTable.finalY + 10;
     doc.text(`TOTAL: R$ ${calculateTotal().toFixed(2)}`, 140, fY);
     doc.save(`orcamento_${selectedClient.nome.replace(/\s+/g, "_")}.pdf`);
@@ -265,10 +299,22 @@ export default function BudgetPage() {
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center">
                   <User className="w-6 h-6 mr-2 text-blue-500" /> Cliente
                 </h2>
-                <button onClick={()=>setShowClientModal(true)} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 inline-flex items-center space-x-2">
-                  <Search className="w-4 h-4" />
-                  <span>Buscar Cliente</span>
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClientModal(true)}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 inline-flex items-center space-x-2"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span>Buscar Cliente</span>
+                  </button>
+                  <button
+                    onClick={() => setShowAddClientModal(true)}
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 inline-flex items-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Adicionar Cliente</span>
+                  </button>
+                </div>
               </div>
               {selectedClient ? (
                 <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
@@ -366,6 +412,58 @@ export default function BudgetPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showAddClientModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md space-y-4">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Novo Cliente</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Nome"
+                  value={newClient.nome}
+                  onChange={(e) => setNewClient({ ...newClient, nome: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                />
+                <input
+                  type="tel"
+                  placeholder="Telefone"
+                  value={newClient.telefone}
+                  onChange={(e) => setNewClient({ ...newClient, telefone: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="Endereço"
+                  value={newClient.endereco}
+                  onChange={(e) => setNewClient({ ...newClient, endereco: e.target.value })}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowAddClientModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateClient}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Salvar
+                </button>
               </div>
             </div>
           </div>
