@@ -14,7 +14,7 @@ import ManageReceiptsPage from "../pages/ManageReceiptsPage";
 import NewOrder from "../pages/NewOrder"; // Adicione esta importação
 import HomeManagement from "../pages/HomeManagement";
 import NewCustomer from "../pages/NewCustomer";
-import NewRental from "../pages/NewRental";
+import BudgetPage from "../pages/BudgetPage";
 import PrivateRoute from "../components/PrivateRoute";
 
 export const router = createBrowserRouter([
@@ -119,10 +119,10 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/admin/rental",
+    path: "/admin/budget",
     element: (
       <PrivateRoute>
-        <NewRental />
+        <BudgetPage />
       </PrivateRoute>
     ),
   },
