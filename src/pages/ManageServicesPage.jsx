@@ -2,10 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { ArrowLeft, Settings, Plus, Edit, Trash2, Clock, DollarSign } from "lucide-react"
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  deleteField,
+} from "firebase/firestore"
+import { db } from "../config/firebase"
 
 export default function ManageServicesPage() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [serviceType, setServiceType] = useState("manutencao")
+  const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme")
@@ -15,145 +26,100 @@ export default function ManageServicesPage() {
     }
   }, [])
 
-  const maintenanceServices = [
-    {
-      id: 1,
-      name: "Alinhamento de roda",
-      description: "Alinhamento de roda",
-      price: 20.0,
-      duration: 30,
-    },
-    {
-      id: 2,
-      name: "Câmara de ar 12 a 26",
-      description: "Câmara de ar 12 a 26",
-      price: 25.0,
-      duration: 30,
-    },
-    {
-      id: 3,
-      name: "Câmara de ar 29",
-      description: "Câmara de ar 29",
-      price: 35.0,
-      duration: 30,
-    },
-    {
-      id: 4,
-      name: "Câmara de ar 700",
-      description: "Câmara de ar 700",
-      price: 32.0,
-      duration: 30,
-    },
-    {
-      id: 5,
-      name: "Lavagem",
-      description: "Lavagem",
-      price: 30.0,
-      duration: 30,
-    },
-    {
-      id: 6,
-      name: "Montagem aro 12",
-      description: "Montagem aro 12",
-      price: 70.0,
-      duration: 30,
-    },
-    {
-      id: 7,
-      name: "Montagem aro 16 a 20",
-      description: "Montagem aro 16 a 20",
-      price: 70.0,
-      duration: 30,
-    },
-    {
-      id: 8,
-      name: "Montagem aro 24 a 29",
-      description: "Montagem aro 24 a 29",
-      price: 100.0,
-      duration: 30,
-    },
-    {
-      id: 9,
-      name: "Regulagem Freio",
-      description: "Regulagem Freio",
-      price: 15.0,
-      duration: 30,
-    },
-    {
-      id: 10,
-      name: "Regulagem Geral",
-      description: "Regulagem Geral",
-      price: 50.0,
-      duration: 30,
-    },
-    {
-      id: 11,
-      name: "Regulagem marcha",
-      description: "Regulagem marcha",
-      price: 20.0,
-      duration: 30,
-    },
-    {
-      id: 12,
-      name: "Revisão de Suspensão",
-      description: "Revisão de Suspensão",
-      price: 150.0,
-      duration: 30,
-    },
-  ]
-
-  const rentalServices = [
-    {
-      id: 1,
-      name: "Aluguel Bike Urbana",
-      description: "Bicicleta urbana para uso na cidade",
-      price: 25.0,
-      duration: "diária",
-    },
-    {
-      id: 2,
-      name: "Aluguel Bike Speed",
-      description: "Bicicleta speed para performance",
-      price: 40.0,
-      duration: "diária",
-    },
-    {
-      id: 3,
-      name: "Aluguel Bike MTB",
-      description: "Mountain bike para trilhas",
-      price: 35.0,
-      duration: "diária",
-    },
-    {
-      id: 4,
-      name: "Aluguel Bike Infantil",
-      description: "Bicicleta para crianças",
-      price: 20.0,
-      duration: "diária",
-    },
-    {
-      id: 5,
-      name: "Kit Segurança",
-      description: "Capacete + joelheiras",
-      price: 10.0,
-      duration: "diária",
-    },
-  ]
-
-  const currentServices = serviceType === "manutencao" ? maintenanceServices : rentalServices
-
-  const handleEditService = (serviceId) => {
-    alert(`Editando serviço ${serviceId}`)
-  }
-
-  const handleDeleteService = (serviceId) => {
-    if (confirm("Tem certeza que deseja excluir este serviço?")) {
-      alert(`Serviço ${serviceId} excluído`)
+  const loadServices = async (type = serviceType) => {
+    try {
+      const collectionName = type === "manutencao" ? "servicos" : "rentalServices"
+      const ref = collection(db, collectionName)
+      const snapshot = await getDocs(ref)
+      const data = []
+      snapshot.forEach((docSnap) => {
+        const docData = docSnap.data()
+        Object.entries(docData).forEach(([name, price]) => {
+          const numeric = parseFloat(String(price).replace(/['"]/g, ""))
+          data.push({ id: `${docSnap.id}_${name}`, name, description: name, price: numeric, duration: 30 })
+        })
+      })
+      data.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+      setServices(data)
+    } catch (err) {
+      console.error("Erro ao carregar serviços:", err)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleNewService = () => {
-    alert("Redirecionando para cadastro de novo serviço...")
+  useEffect(() => {
+    loadServices()
+  }, [serviceType])
+
+
+  const handleEditService = async (serviceId) => {
+    const service = services.find((s) => s.id === serviceId)
+    if (!service) return
+
+    const name = prompt("Nome do serviço:", service.name)
+    if (!name) return
+    const priceStr = prompt("Preço:", String(service.price))
+    if (priceStr === null) return
+    const price = parseFloat(priceStr)
+
+    try {
+      const collectionName = serviceType === "manutencao" ? "servicos" : "rentalServices"
+      const ref = collection(db, collectionName)
+      const snapshot = await getDocs(ref)
+      if (!snapshot.empty) {
+        const docRef = doc(db, collectionName, snapshot.docs[0].id)
+        await updateDoc(docRef, {
+          [service.name]: deleteField(),
+          [name]: price.toString(),
+        })
+        loadServices()
+      }
+    } catch (err) {
+      console.error("Erro ao editar serviço:", err)
+    }
+  }
+
+  const handleDeleteService = async (serviceId) => {
+    const service = services.find((s) => s.id === serviceId)
+    if (!service) return
+    if (confirm("Tem certeza que deseja excluir este serviço?")) {
+      try {
+        const collectionName = serviceType === "manutencao" ? "servicos" : "rentalServices"
+        const ref = collection(db, collectionName)
+        const snapshot = await getDocs(ref)
+        if (!snapshot.empty) {
+          const docRef = doc(db, collectionName, snapshot.docs[0].id)
+          await updateDoc(docRef, { [service.name]: deleteField() })
+          loadServices()
+        }
+      } catch (err) {
+        console.error("Erro ao excluir serviço:", err)
+      }
+    }
+  }
+
+  const handleNewService = async () => {
+    const name = prompt("Nome do serviço:")
+    if (!name) return
+    const priceStr = prompt("Preço:", "0")
+    if (priceStr === null) return
+    const price = parseFloat(priceStr)
+
+    try {
+      const collectionName = serviceType === "manutencao" ? "servicos" : "rentalServices"
+      const ref = collection(db, collectionName)
+      const snapshot = await getDocs(ref)
+      if (snapshot.empty) {
+        await addDoc(ref, { [name]: price.toString() })
+      } else {
+        const docRef = doc(db, collectionName, snapshot.docs[0].id)
+        await updateDoc(docRef, { [name]: price.toString() })
+      }
+      loadServices()
+    } catch (err) {
+      console.error("Erro ao adicionar serviço:", err)
+    }
   }
 
   const getServiceColor = (index) => {
@@ -238,7 +204,7 @@ export default function ManageServicesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Total de Serviços</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{currentServices.length}</p>
+                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{services.length}</p>
                 </div>
                 <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
                   <Settings className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -251,7 +217,10 @@ export default function ManageServicesPage() {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Preço Médio</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                    R$ {(currentServices.reduce((sum, s) => sum + s.price, 0) / currentServices.length).toFixed(0)}
+                    R$
+                    {services.length > 0
+                      ? (services.reduce((sum, s) => sum + s.price, 0) / services.length).toFixed(0)
+                      : 0}
                   </p>
                 </div>
                 <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
@@ -265,7 +234,8 @@ export default function ManageServicesPage() {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Mais Caro</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                    R$ {Math.max(...currentServices.map((s) => s.price))}
+                    R$
+                    {services.length > 0 ? Math.max(...services.map((s) => s.price)) : 0}
                   </p>
                 </div>
                 <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full">
@@ -279,7 +249,7 @@ export default function ManageServicesPage() {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Tempo Médio</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">
-                    {currentServices[0]?.duration || 30} min
+                    {services[0]?.duration || 30} min
                   </p>
                 </div>
                 <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
@@ -290,7 +260,7 @@ export default function ManageServicesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentServices.map((service, index) => (
+            {services.map((service, index) => (
               <div
                 key={service.id}
                 className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
