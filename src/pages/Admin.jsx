@@ -111,6 +111,14 @@ export default function Admin() {
       path: "/admin/services",
     },
     {
+      icon: <Settings className="w-8 h-8" />,
+      title: "Gerenciar Serviços",
+      description: "Visualizar catálogo de serviços",
+      color: "from-teal-400 to-teal-600",
+      hoverColor: "hover:from-teal-500 hover:to-teal-700",
+      path: "/admin/manage-services",
+    },
+    {
       icon: <HomeIcon className="w-8 h-8" />,
       title: "Home",
       description: "Gerenciar destaques da página inicial",
@@ -125,6 +133,22 @@ export default function Admin() {
       color: "from-indigo-400 to-indigo-600",
       hoverColor: "hover:from-indigo-500 hover:to-indigo-700",
       path: "/admin/reports",
+    },
+    {
+      icon: <Bike className="w-8 h-8" />,
+      title: "Aluguel de Bikes",
+      description: "Controle de locações de bicicletas",
+      color: "from-blue-400 to-blue-600",
+      hoverColor: "hover:from-blue-500 hover:to-blue-700",
+      path: "/admin/bike-rental",
+    },
+    {
+      icon: <Calculator className="w-8 h-8" />,
+      title: "Orçamentos",
+      description: "Emitir orçamentos personalizados",
+      color: "from-green-400 to-green-600",
+      hoverColor: "hover:from-green-500 hover:to-green-700",
+      path: "/admin/budget",
     },
   ];
 

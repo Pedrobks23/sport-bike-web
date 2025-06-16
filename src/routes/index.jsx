@@ -6,6 +6,9 @@ import Admin from "../pages/Admin";
 import WorkshopDashboard from "../pages/WorkshopDashboard";
 import CustomerList from "../pages/CustomerList";
 import ServicesManagement from "../pages/ServicesManagement";
+import ManageServicesPage from "../pages/ManageServicesPage";
+import BikeRentalPage from "../pages/BikeRentalPage";
+import BudgetPage from "../pages/BudgetPage";
 import ReportsManagement from "../pages/ReportsManagement";
 import ReceiptsManagement from "../pages/ReceiptsManagement";
 import ManageHomePage from "../pages/ManageHomePage";
@@ -122,6 +125,30 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <ManageReceiptsPage />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/manage-services",
+    element: (
+      <PrivateRoute>
+        <ManageServicesPage />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/bike-rental",
+    element: (
+      <PrivateRoute>
+        <BikeRentalPage />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/budget",
+    element: (
+      <PrivateRoute>
+        <BudgetPage />
       </PrivateRoute>
     ),
   },
