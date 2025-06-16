@@ -95,6 +95,14 @@ export default function Admin() {
       path: "/admin/orders",
     },
     {
+      icon: <Bike className="w-8 h-8" />,
+      title: "Aluguéis",
+      description: "Registrar aluguel de bikes",
+      color: "from-green-400 to-green-700",
+      hoverColor: "hover:from-green-500 hover:to-green-800",
+      path: "/admin/rental",
+    },
+    {
       icon: <Users className="w-8 h-8" />,
       title: "Clientes",
       description: "Gerenciar cadastro de clientes",
