@@ -197,6 +197,8 @@ export default function BudgetPage() {
     doc.text(`TOTAL: R$ ${calculateTotal().toFixed(2)}`, 140, fY);
     doc.save(`orcamento_${selectedClient.nome.replace(/\s+/g, "_")}.pdf`);
   };
+  // close handleGeneratePDF
+};
 
   const filteredClients = clients.filter(
     (c) => c.nome.toLowerCase().includes(clientSearch.toLowerCase()) || c.telefone.includes(clientSearch)
