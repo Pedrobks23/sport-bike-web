@@ -19,8 +19,6 @@ import {
   Users,
   Edit,
 } from "lucide-react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
-import { db } from "../config/firebase";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
@@ -28,12 +26,66 @@ export default function BudgetPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [clientType, setClientType] = useState("pf");
   const [serviceType, setServiceType] = useState("manutencao");
-  const [clients, setClients] = useState([]);
+  const initialClients = {
+    pf: [
+      {
+        id: 1,
+        tipo: "pf",
+        nome: "João Silva",
+        cpf: "123.456.789-00",
+        telefone: "(85) 99999-9999",
+        email: "joao@email.com",
+        endereco: "Rua das Flores, 123, Centro, Fortaleza-CE",
+      },
+      {
+        id: 2,
+        tipo: "pf",
+        nome: "Maria Santos",
+        cpf: "987.654.321-00",
+        telefone: "(85) 88888-8888",
+        email: "maria@email.com",
+        endereco: "Av. Principal, 456, Aldeota, Fortaleza-CE",
+      },
+    ],
+    pj: [
+      {
+        id: 1,
+        tipo: "pj",
+        razaoSocial: "Empresa ABC Ltda",
+        cnpj: "12.345.678/0001-90",
+        telefone: "(85) 3333-4444",
+        email: "contato@empresaabc.com",
+        endereco: "Av. Empresarial, 789, Meireles, Fortaleza-CE",
+        contato: "Carlos Gerente",
+      },
+      {
+        id: 2,
+        tipo: "pj",
+        razaoSocial: "Hotel Beira Mar",
+        cnpj: "98.765.432/0001-10",
+        telefone: "(85) 3222-1111",
+        email: "eventos@hotelbeirmar.com",
+        endereco: "Av. Beira Mar, 1000, Meireles, Fortaleza-CE",
+        contato: "Ana Coordenadora",
+      },
+    ],
+  };
+  const [clients, setClients] = useState(initialClients);
   const [selectedClient, setSelectedClient] = useState(null);
   const [clientSearch, setClientSearch] = useState("");
   const [showClientModal, setShowClientModal] = useState(false);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
-  const [newClient, setNewClient] = useState({ nome: "", telefone: "", email: "", endereco: "" });
+  const [newClient, setNewClient] = useState({
+    tipo: "pf",
+    nome: "",
+    razaoSocial: "",
+    cpf: "",
+    cnpj: "",
+    telefone: "",
+    email: "",
+    endereco: "",
+    contato: "",
+  });
   const [budgetItems, setBudgetItems] = useState([
     { id: 1, description: "", quantity: 1, unit: "un", price: 0, total: 0 },
   ]);
@@ -60,14 +112,6 @@ export default function BudgetPage() {
     }
   }, []);
 
-  useEffect(() => {
-    async function loadClients() {
-      const snap = await getDocs(collection(db, "clientes"));
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setClients(list);
-    }
-    loadClients();
-  }, []);
 
   const maintenanceServices = [
     { id: 1, name: "Regulagem Geral", price: 50, unit: "un" },
@@ -130,23 +174,25 @@ export default function BudgetPage() {
   const calculateDiscount = () => (budgetData.discountType === "percentage" ? (calculateSubtotal() * budgetData.discount) / 100 : budgetData.discount);
   const calculateTotal = () => calculateSubtotal() - calculateDiscount();
 
-  const handleCreateClient = async () => {
-    try {
-      const docRef = await addDoc(collection(db, "clientes"), {
-        nome: newClient.nome,
-        telefone: newClient.telefone,
-        email: newClient.email,
-        endereco: newClient.endereco,
-      });
-      const created = { id: docRef.id, ...newClient };
-      setClients([...clients, created]);
-      setSelectedClient(created);
-      setShowAddClientModal(false);
-      setNewClient({ nome: "", telefone: "", email: "", endereco: "" });
-    } catch (err) {
-      console.error("Erro ao adicionar cliente", err);
-      alert("Erro ao adicionar cliente");
-    }
+  const handleCreateClient = () => {
+    const created = { id: Date.now(), ...newClient, tipo: clientType };
+    setClients((prev) => ({
+      ...prev,
+      [clientType]: [...prev[clientType], created],
+    }));
+    setSelectedClient(created);
+    setShowAddClientModal(false);
+    setNewClient({
+      tipo: "pf",
+      nome: "",
+      razaoSocial: "",
+      cpf: "",
+      cnpj: "",
+      telefone: "",
+      email: "",
+      endereco: "",
+      contato: "",
+    });
   };
 
   const handleSaveBudget = () => {
@@ -165,44 +211,138 @@ export default function BudgetPage() {
 
   const handleGeneratePDF = () => {
     if (!selectedClient) return alert("Selecione um cliente primeiro");
+    const doc = new jsPDF();
     const logo = new Image();
     logo.src = "/assets/Logo.png";
-    logo.onload = () => {
-      const doc = new jsPDF();
-      doc.addImage(logo, "PNG", 20, 10, 30, 15);
-      doc.setTextColor(0);
-      doc.setDrawColor(0);
-      doc.setFontSize(18);
-      doc.text("ORÇAMENTO", 105, 30, { align: "center" });
-      doc.setFontSize(12);
-      doc.text(`Cliente: ${selectedClient.nome}`, 20, 50);
-      let y = 65;
-    const tableData = budgetItems.map((i, idx) => [
-      idx + 1,
-      i.description,
-      i.quantity,
-      i.unit,
-      `R$ ${i.price.toFixed(2)}`,
-      `R$ ${i.total.toFixed(2)}`,
-    ]);
-    doc.autoTable({
-        startY: y,
-        head: [["#", "Descrição", "Qtd", "Unid", "Valor", "Subtotal"]],
-        body: tableData,
-        theme: "grid",
-        styles: { fontSize: 10, cellPadding: 3 },
-        headStyles: { fillColor: [200, 200, 200] },
-    });
-    const fY = doc.lastAutoTable.finalY + 10;
-    doc.text(`TOTAL: R$ ${calculateTotal().toFixed(2)}`, 140, fY);
-    doc.save(`orcamento_${selectedClient.nome.replace(/\s+/g, "_")}.pdf`);
-  };
-  // close handleGeneratePDF
-};
+    doc.addImage(logo, "PNG", 20, 10, 25, 12);
 
-  const filteredClients = clients.filter(
-    (c) => c.nome.toLowerCase().includes(clientSearch.toLowerCase()) || c.telefone.includes(clientSearch)
-  );
+    doc.setFontSize(16);
+    doc.text("SPORT & BIKE", 105, 20, { align: "center" });
+    doc.setFontSize(10);
+    doc.text("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 105, 26, { align: "center" });
+    doc.text("Tel: (85) 3267-7425 | WhatsApp: (85) 3267-7425", 105, 31, { align: "center" });
+    doc.text("@sportbike_fortaleza | comercialsportbike@gmail.com", 105, 36, { align: "center" });
+
+    doc.setFontSize(14);
+    doc.text("ORÇAMENTO", 105, 46, { align: "center" });
+
+    const budgetNumber = `ORC-${Date.now().toString().slice(-6)}`;
+    const currentDate = new Date().toLocaleDateString("pt-BR");
+
+    doc.setFontSize(10);
+    doc.text(`Orçamento: ${budgetNumber}`, 20, 55);
+    doc.text(`Data: ${currentDate}`, 150, 55);
+    if (budgetData.validUntil) {
+      doc.text(`Válido até: ${new Date(budgetData.validUntil).toLocaleDateString("pt-BR")}`, 20, 61);
+    }
+    doc.text(`Serviço: ${serviceType === "manutencao" ? "Manutenção" : "Eventos"}`, 20, 67);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("CLIENTE:", 20, 77);
+    doc.setFont("helvetica", "normal");
+    if (clientType === "pf") {
+      doc.text(`Nome: ${selectedClient.nome}`, 20, 83);
+      doc.text(`CPF: ${selectedClient.cpf}`, 20, 89);
+      doc.text(`Telefone: ${selectedClient.telefone}`, 20, 95);
+      if (selectedClient.email) doc.text(`Email: ${selectedClient.email}`, 20, 101);
+      doc.text(`Endereço: ${selectedClient.endereco}`, 20, 107);
+      var posY = 113;
+    } else {
+      doc.text(`Razão Social: ${selectedClient.razaoSocial}`, 20, 83);
+      doc.text(`CNPJ: ${selectedClient.cnpj}`, 20, 89);
+      if (selectedClient.contato) doc.text(`Contato: ${selectedClient.contato}`, 20, 95);
+      doc.text(`Telefone: ${selectedClient.telefone}`, 20, 101);
+      if (selectedClient.email) doc.text(`Email: ${selectedClient.email}`, 20, 107);
+      doc.text(`Endereço: ${selectedClient.endereco}`, 20, 113);
+      var posY = 119;
+    }
+
+    if (serviceType === "eventos") {
+      doc.setFont("helvetica", "bold");
+      doc.text("DETALHES DO EVENTO:", 20, posY);
+      posY += 6;
+      doc.setFont("helvetica", "normal");
+      if (budgetData.eventDate) {
+        doc.text(`Data: ${new Date(budgetData.eventDate).toLocaleDateString("pt-BR")}`, 20, posY);
+        posY += 6;
+      }
+      if (budgetData.eventDuration) {
+        doc.text(`Duração: ${budgetData.eventDuration} dia(s)`, 20, posY);
+        posY += 6;
+      }
+      if (budgetData.participants) {
+        doc.text(`Participantes: ${budgetData.participants}`, 20, posY);
+        posY += 6;
+      }
+      if (budgetData.eventLocation) {
+        doc.text(`Local: ${budgetData.eventLocation}`, 20, posY);
+        posY += 6;
+      }
+      if (budgetData.eventType) {
+        doc.text(`Tipo: ${budgetData.eventType}`, 20, posY);
+        posY += 6;
+      }
+      if (budgetData.eventObservations) {
+        doc.text(`Obs: ${budgetData.eventObservations}`, 20, posY);
+        posY += 6;
+      }
+    }
+
+    const tableData = budgetItems.map((item, index) => [
+      (index + 1).toString(),
+      item.description,
+      item.quantity.toString(),
+      item.unit,
+      `R$ ${item.price.toFixed(2)}`,
+      `R$ ${item.total.toFixed(2)}`,
+    ]);
+
+    doc.autoTable({
+      startY: posY + 4,
+      head: [["#", "DESCRIÇÃO", "QTD", "UNID", "VALOR UNIT.", "SUBTOTAL"]],
+      body: tableData,
+      theme: "striped",
+      styles: { fontSize: 10, cellPadding: 2 },
+      headStyles: { fillColor: [200, 200, 200] },
+      alternateRowStyles: { fillColor: [240, 240, 240] },
+    });
+
+    let y = doc.lastAutoTable.finalY + 8;
+    doc.text(`Subtotal: R$ ${calculateSubtotal().toFixed(2)}`, 140, y);
+    y += 6;
+    if (calculateDiscount() > 0) {
+      doc.text(`Desconto: R$ ${calculateDiscount().toFixed(2)}`, 140, y);
+      y += 6;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.text(`TOTAL: R$ ${calculateTotal().toFixed(2)}`, 140, y);
+    doc.setFont("helvetica", "normal");
+    y += 8;
+    if (budgetData.paymentTerms) {
+      doc.text(`Condições de Pagamento: ${budgetData.paymentTerms}`, 20, y);
+      y += 6;
+    }
+    if (budgetData.deliveryTime) {
+      doc.text(`Prazo de Entrega: ${budgetData.deliveryTime}`, 20, y);
+      y += 6;
+    }
+    if (budgetData.observations) {
+      const obs = doc.splitTextToSize(`Observações: ${budgetData.observations}`, 170);
+      doc.text(obs, 20, y);
+    }
+
+    const fileName = clientType === "pf" ? selectedClient.nome : selectedClient.razaoSocial;
+    doc.save(`Orcamento_${budgetNumber}_${fileName.replace(/\s+/g, "_")}.pdf`);
+  };
+
+  const filteredClients = clients[clientType].filter((client) => {
+    const name = client.tipo === "pf" ? client.nome : client.razaoSocial;
+    return (
+      name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+      (client.tipo === "pf" ? client.cpf : client.cnpj).includes(clientSearch) ||
+      client.telefone.includes(clientSearch)
+    );
+  });
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}> 
@@ -237,6 +377,61 @@ export default function BudgetPage() {
 
         <main className="container mx-auto px-4 py-8">
           <div className="space-y-8">
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                  <User className="w-6 h-6 mr-2 text-blue-500" /> Cliente {clientType === "pf" ? "(Pessoa Física)" : "(Pessoa Jurídica)"}
+                </h2>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClientModal(true)}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 inline-flex items-center space-x-2"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span>Buscar Cliente</span>
+                  </button>
+                  <button
+                    onClick={() => setShowAddClientModal(true)}
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 inline-flex items-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Adicionar Cliente</span>
+                  </button>
+                </div>
+              </div>
+              {selectedClient ? (
+                <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 dark:text-white text-lg">
+                        {clientType === "pf" ? selectedClient.nome : selectedClient.razaoSocial}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                        {clientType === "pf" ? (
+                          <p>{selectedClient.cpf}</p>
+                        ) : (
+                          <>
+                            <p>{selectedClient.cnpj}</p>
+                            {selectedClient.contato && <p>Contato: {selectedClient.contato}</p>}
+                          </>
+                        )}
+                        <p>{selectedClient.telefone}</p>
+                        {selectedClient.email && <p>{selectedClient.email}</p>}
+                        <p className="md:col-span-2">{selectedClient.endereco}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedClient(null)} className="text-red-500 hover:text-red-600 p-2">
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <User className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum cliente selecionado</p>
+                </div>
+              )}
+            </div>
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
               <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Tipo de Orçamento</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -296,49 +491,6 @@ export default function BudgetPage() {
               </div>
             )}
 
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center">
-                  <User className="w-6 h-6 mr-2 text-blue-500" /> Cliente
-                </h2>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowClientModal(true)}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 inline-flex items-center space-x-2"
-                  >
-                    <Search className="w-4 h-4" />
-                    <span>Buscar Cliente</span>
-                  </button>
-                  <button
-                    onClick={() => setShowAddClientModal(true)}
-                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 inline-flex items-center space-x-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Adicionar Cliente</span>
-                  </button>
-                </div>
-              </div>
-              {selectedClient ? (
-                <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-white text-lg">{selectedClient.nome}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3 text-sm text-gray-600 dark:text-gray-400">
-                        <p>{selectedClient.telefone}</p>
-                        {selectedClient.email && <p>{selectedClient.email}</p>}
-                        {selectedClient.endereco && <p className="md:col-span-2">{selectedClient.endereco}</p>}
-                      </div>
-                    </div>
-                    <button onClick={()=>setSelectedClient(null)} className="text-red-500 hover:text-red-600 p-2"><Trash2 className="w-5 h-5" /></button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <User className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>Nenhum cliente selecionado</p>
-                </div>
-              )}
-            </div>
 
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
               <div className="flex items-center justify-between mb-6">
@@ -407,9 +559,19 @@ export default function BudgetPage() {
                   <input type="text" placeholder="Buscar por nome ou telefone..." value={clientSearch} onChange={(e)=>setClientSearch(e.target.value)} className="pl-10 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg" />
                 </div>
                 <div className="space-y-3">
-                  {filteredClients.map(c => (
-                    <div key={c.id} onClick={()=>{setSelectedClient(c);setShowClientModal(false);}} className="p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg cursor-pointer border border-gray-200 dark:border-gray-600">
-                      <h4 className="font-semibold text-gray-800 dark:text-white">{c.nome}</h4>
+                  {filteredClients.map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedClient(c);
+                        setClientType(c.tipo);
+                        setShowClientModal(false);
+                      }}
+                      className="p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg cursor-pointer border border-gray-200 dark:border-gray-600"
+                    >
+                      <h4 className="font-semibold text-gray-800 dark:text-white">
+                        {c.tipo === "pf" ? c.nome : c.razaoSocial}
+                      </h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{c.telefone}</p>
                     </div>
                   ))}
@@ -426,11 +588,43 @@ export default function BudgetPage() {
               <div className="space-y-3">
                 <input
                   type="text"
-                  placeholder="Nome"
-                  value={newClient.nome}
-                  onChange={(e) => setNewClient({ ...newClient, nome: e.target.value })}
+                  placeholder={clientType === 'pf' ? 'Nome' : 'Razão Social'}
+                  value={clientType === 'pf' ? newClient.nome : newClient.razaoSocial}
+                  onChange={(e) =>
+                    setNewClient(
+                      clientType === 'pf'
+                        ? { ...newClient, nome: e.target.value }
+                        : { ...newClient, razaoSocial: e.target.value }
+                    )
+                  }
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 />
+                {clientType === 'pf' ? (
+                  <input
+                    type="text"
+                    placeholder="CPF"
+                    value={newClient.cpf}
+                    onChange={(e) => setNewClient({ ...newClient, cpf: e.target.value })}
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                  />
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="CNPJ"
+                      value={newClient.cnpj}
+                      onChange={(e) => setNewClient({ ...newClient, cnpj: e.target.value })}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Nome do Contato"
+                      value={newClient.contato}
+                      onChange={(e) => setNewClient({ ...newClient, contato: e.target.value })}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                    />
+                  </>
+                )}
                 <input
                   type="tel"
                   placeholder="Telefone"
