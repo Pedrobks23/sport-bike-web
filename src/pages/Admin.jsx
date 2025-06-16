@@ -9,6 +9,7 @@ import {
   Settings,
   Home as HomeIcon,
   BarChart3,
+  Calculator,
   LogOut,
   Menu,
   X,
