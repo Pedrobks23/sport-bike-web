@@ -9,6 +9,7 @@ import {
   Settings,
   Home as HomeIcon,
   BarChart3,
+  Calculator,
   LogOut,
   Menu,
   X,
@@ -93,6 +94,14 @@ export default function Admin() {
       color: "from-amber-400 to-amber-600",
       hoverColor: "hover:from-amber-500 hover:to-amber-700",
       path: "/admin/orders",
+    },
+    {
+      icon: <Calculator className="w-8 h-8" />,
+      title: "Orçamentos",
+      description: "Gerar orçamentos",
+      color: "from-green-400 to-green-700",
+      hoverColor: "hover:from-green-500 hover:to-green-800",
+      path: "/admin/budget",
     },
     {
       icon: <Users className="w-8 h-8" />,
