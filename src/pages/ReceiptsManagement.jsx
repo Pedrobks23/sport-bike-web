@@ -147,7 +147,7 @@ const ReceiptsManagement = () => {
             bike.pecas.forEach((peca) => {
               items.push({
                 descricao: peca.nome || peca.descricao || "Peça",
-                qtd: 1,
+                qtd: parseInt(peca.quantidade) || 1,
                 unit: parseFloat(peca.valor || 0),
               });
             });

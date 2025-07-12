@@ -399,11 +399,13 @@ const WorkshopDashboard = () => {
               docPDF.addPage();
               yPos = 10;
             }
+            const qty = parseInt(peca.quantidade) || 1;
             const valorPeca = parseFloat(peca.valor || 0);
-            totalBike += valorPeca;
+            const subtotal = valorPeca * qty;
+            totalBike += subtotal;
 
             docPDF.text(
-              `- ${peca.nome} = R$ ${valorPeca.toFixed(2)}`,
+              `- ${peca.nome} (${qty}x) = R$ ${subtotal.toFixed(2)}`,
               10,
               yPos
             );
@@ -443,7 +445,8 @@ const WorkshopDashboard = () => {
         // Soma peças
         if (bike.pecas) {
           bike.pecas.forEach((peca) => {
-            subtotal += parseFloat(peca.valor || 0);
+            const qty = parseInt(peca.quantidade) || 1;
+            subtotal += (parseFloat(peca.valor || 0)) * qty;
           });
         }
         totalGeral += subtotal;
@@ -575,12 +578,14 @@ const WorkshopDashboard = () => {
 
         if (bike.pecas && bike.pecas.length > 0) {
           bike.pecas.forEach((peca) => {
+            const qty = parseInt(peca.quantidade) || 1;
             const valorPeca = Number.parseFloat(peca.valor) || 0;
-            totalBike += valorPeca;
+            const subtotal = valorPeca * qty;
+            totalBike += subtotal;
             docPDF.text(`  • ${peca.nome}`, 15, yPos);
-            docPDF.text(`1`, 125, yPos);
+            docPDF.text(`${qty}`, 125, yPos);
             docPDF.text(`${valorPeca.toFixed(2)}`, 145, yPos);
-            docPDF.text(`${valorPeca.toFixed(2)}`, 170, yPos);
+            docPDF.text(`${subtotal.toFixed(2)}`, 170, yPos);
             yPos += 4;
           });
         }
@@ -649,10 +654,10 @@ const WorkshopDashboard = () => {
     // Calcula o total das peças
     const calculatePartsTotal = (bike) => {
       if (!bike.pecas) return 0;
-      return bike.pecas.reduce(
-        (total, peca) => total + (parseFloat(peca.valor) || 0),
-        0
-      );
+      return bike.pecas.reduce((total, peca) => {
+        const qty = parseInt(peca.quantidade) || 1;
+        return total + (parseFloat(peca.valor) || 0) * qty;
+      }, 0);
     };
 
     // Calcula o total geral da ordem
@@ -1105,10 +1110,10 @@ const WorkshopDashboard = () => {
 
       // Soma peças
       if (bike.pecas) {
-        total += bike.pecas.reduce(
-          (sum, peca) => sum + parseFloat(peca.valor || 0),
-          0
-        );
+        total += bike.pecas.reduce((sum, peca) => {
+          const qty = parseInt(peca.quantidade) || 1;
+          return sum + (parseFloat(peca.valor || 0) * qty);
+        }, 0);
       }
 
       return total;
@@ -1249,14 +1254,14 @@ const WorkshopDashboard = () => {
                   {/* Lista de Peças */}
                   <div className="mt-3">
                     <p className="font-bold mb-1">Peças:</p>
-                    <ul className="list-disc list-inside">
+                    <ul className="space-y-2">
                       {bike.pecas?.map((peca, pecaIndex) => (
                         <li
                           key={pecaIndex}
-                          className="flex items-center justify-between py-1"
+                          className="flex items-center justify-between border rounded p-2"
                         >
                           <span>
-                            {peca.nome} - {formatCurrency(peca.valor)}
+                            {peca.nome} - {formatCurrency(peca.valor)} ({peca.quantidade || 1}x)
                           </span>
                           <div className="flex gap-2">
                             <button
@@ -1288,10 +1293,10 @@ const WorkshopDashboard = () => {
                     <div className="mt-2 text-right text-sm text-gray-600">
                       Subtotal Peças:{" "}
                       {formatCurrency(
-                        bike.pecas.reduce(
-                          (total, peca) => total + parseFloat(peca.valor || 0),
-                          0
-                        )
+                        bike.pecas.reduce((total, peca) => {
+                          const qty = parseInt(peca.quantidade) || 1;
+                          return total + (parseFloat(peca.valor || 0) * qty);
+                        }, 0)
                       )}
                     </div>
                   )}
@@ -1603,6 +1608,7 @@ const WorkshopDashboard = () => {
                     const updatedPart = {
                       nome: formData.get("nome"),
                       valor: parseFloat(formData.get("valor")),
+                      quantidade: parseInt(formData.get("quantidade")) || 1,
                     };
                     handleEditPart(
                       selectedBikeIndex,
@@ -1636,6 +1642,18 @@ const WorkshopDashboard = () => {
                       step="0.01"
                       className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                       required
+                    />
+                  </div>
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Quantidade
+                    </label>
+                    <input
+                      type="number"
+                      name="quantidade"
+                      defaultValue={selectedPeca.quantidade || 1}
+                      min="1"
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
 
@@ -1676,6 +1694,7 @@ const WorkshopDashboard = () => {
                     const partData = {
                       nome: formData.get("nome"),
                       valor: parseFloat(formData.get("valor")),
+                      quantidade: parseInt(formData.get("quantidade")) || 1,
                     };
                     handleAddPart(selectedBikeIndex, partData);
                   }}
@@ -1703,6 +1722,17 @@ const WorkshopDashboard = () => {
                       step="0.01"
                       className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                       required
+                    />
+                  </div>
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Quantidade
+                    </label>
+                    <input
+                      type="number"
+                      name="quantidade"
+                      min="1"
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
 

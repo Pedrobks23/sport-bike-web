@@ -147,8 +147,9 @@ const ConsultaOS = () => {
       // Somar peças
       if (bike.pecas && bike.pecas.length > 0) {
         bike.pecas.forEach((peca) => {
+          const qty = parseInt(peca.quantidade) || 1;
           const valorPeca = parseFloat(peca.valor) || 0;
-          totalBike += valorPeca;
+          totalBike += valorPeca * qty;
         });
       }
 
@@ -380,10 +381,12 @@ const ConsultaOS = () => {
 
           doc.setFont("helvetica", "normal");
           bike.pecas.forEach((peca) => {
+            const qty = parseInt(peca.quantidade) || 1;
             const valorPeca = parseFloat(peca.valor) || 0;
-            totalBike += valorPeca;
-            doc.text(`• ${peca.nome}`, 20, yPos);
-            doc.text(`R$ ${valorPeca.toFixed(2)}`, 150, yPos);
+            const subtotal = valorPeca * qty;
+            totalBike += subtotal;
+            doc.text(`• ${peca.nome} (${qty}x)`, 20, yPos);
+            doc.text(`R$ ${subtotal.toFixed(2)}`, 150, yPos);
             yPos += 7;
           });
         }
