@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo } from "react"
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, orderBy, onSnapshot } from "firebase/firestore"
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, orderBy, onSnapshot, limit } from "firebase/firestore"
 import { db } from "../config/firebase"
-import { orderService } from "../services/orderService"
 import {
   FileText,
   Plus,
@@ -742,19 +741,45 @@ const BudgetDetails = ({ budgetId, onBack, onUpdate }) => {
 
     try {
       // Cria ordem de serviço
+      // Gera código sequencial da ordem de serviço
+      const generateOSCode = async () => {
+        const now = new Date()
+        const ano = now.getFullYear()
+        const mes = String(now.getMonth() + 1).padStart(2, "0")
+        const ordensRef = collection(db, "ordens")
+        const q = query(
+          ordensRef,
+          where("codigo", ">=", `OS-${ano}${mes}`),
+          where("codigo", "<=", `OS-${ano}${mes}\uf8ff`),
+          orderBy("codigo", "desc"),
+          limit(1)
+        )
+        const snap = await getDocs(q)
+        const last = snap.docs[0]?.data()
+        const sequencial = (last?.sequencial || 0) + 1
+        const codigoOS = `OS-${ano}${mes}${String(sequencial).padStart(3, "0")}`
+        const urlOS = `${window.location.origin}/consulta?os=${codigoOS}`
+        return { codigoOS, sequencial, urlOS }
+      }
+
+      const { codigoOS, sequencial, urlOS } = await generateOSCode()
+
       const osData = {
-        clienteId: orcamento.cliente.id,
-        clienteNome: orcamento.cliente.nome,
+        codigo: codigoOS,
+        urlOS,
+        sequencial,
+        cliente: orcamento.cliente,
         bicicletas: orcamento.bicicletas,
         servicos: orcamento.servicos,
         valorTotal: orcamento.valorTotal,
-        status: "Em Andamento",
         observacoes: orcamento.observacoes,
-        dataCriacao: new Date(),
+        status: "Pendente",
+        dataCriacao: new Date().toISOString(),
+        dataAtualizacao: new Date().toISOString(),
         orcamentoId: orcamento.id,
       }
 
-      await orderService.addOrder(osData)
+      await addDoc(collection(db, "ordens"), osData)
 
       // Atualiza status do orçamento
       await updateDoc(doc(db, "orcamentos", orcamento.id), {
