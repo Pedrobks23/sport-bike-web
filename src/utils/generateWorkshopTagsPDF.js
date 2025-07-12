@@ -42,7 +42,8 @@ async function generateWorkshopTagsPDF(ordem) {
       }
       if (bike.pecas) {
         bike.pecas.forEach((peca) => {
-          subtotal += Number.parseFloat(peca.valor) || 0
+          const qty = parseInt(peca.quantidade) || 1
+          subtotal += (Number.parseFloat(peca.valor) || 0) * qty
         })
       }
       return subtotal
@@ -132,8 +133,10 @@ async function generateWorkshopTagsPDF(ordem) {
       docPDF.setFont("helvetica", "bold")
       if (bike.pecas && bike.pecas.length > 0) {
         bike.pecas.forEach((peca) => {
+          const qty = parseInt(peca.quantidade) || 1
           const valorPeca = Number.parseFloat(peca.valor) || 0
-          docPDF.text(`• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`, x + 5, yPos)
+          const subtotal = valorPeca * qty
+          docPDF.text(`• ${peca.nome} (${qty}x) = R$ ${subtotal.toFixed(2)}`, x + 5, yPos)
           yPos += 3
         })
       } else {

@@ -83,12 +83,15 @@ export const updateOrderPart = async (orderId, bikeIndex, partIndex, updatedPart
 
     // Calcula a diferença de valor
     const pecaAntiga = bikes[bikeIndex].pecas[partIndex];
-    const diferencaValor = parseFloat(updatedPart.valor) - parseFloat(pecaAntiga.valor);
+    const oldSubtotal = (parseFloat(pecaAntiga.valor) || 0) * (parseInt(pecaAntiga.quantidade) || 1);
+    const newSubtotal = (parseFloat(updatedPart.valor) || 0) * (parseInt(updatedPart.quantidade) || 1);
+    const diferencaValor = newSubtotal - oldSubtotal;
     
     // Atualiza a peça
     bikes[bikeIndex].pecas[partIndex] = {
       ...updatedPart,
-      valor: parseFloat(updatedPart.valor)
+      valor: parseFloat(updatedPart.valor),
+      quantidade: parseInt(updatedPart.quantidade) || 1,
     };
     
     // Atualiza o valor total da ordem
@@ -339,11 +342,12 @@ export const addPartToBike = async (orderId, bikeIndex, newPart) => {
     // Adiciona a nova peça
     bikes[bikeIndex].pecas.push({
       ...newPart,
-      valor: parseFloat(newPart.valor)
+      valor: parseFloat(newPart.valor),
+      quantidade: parseInt(newPart.quantidade) || 1,
     });
-    
-    // Recalcula o total da ordem
-    const novoTotal = parseFloat(order.valorTotal || 0) + parseFloat(newPart.valor);
+
+    const subtotal = (parseFloat(newPart.valor) || 0) * (parseInt(newPart.quantidade) || 1);
+    const novoTotal = parseFloat(order.valorTotal || 0) + subtotal;
 
     await updateDoc(orderRef, { 
       bicicletas: bikes,
@@ -380,7 +384,8 @@ export const removeOrderPart = async (orderId, bikeIndex, partIndex) => {
 
     // Remove a peça e calcula o novo total
     const pecaRemovida = bikes[bikeIndex].pecas[partIndex];
-    const novoTotal = parseFloat(order.valorTotal || 0) - parseFloat(pecaRemovida.valor || 0);
+    const subtotal = (parseFloat(pecaRemovida.valor || 0)) * (parseInt(pecaRemovida.quantidade) || 1);
+    const novoTotal = parseFloat(order.valorTotal || 0) - subtotal;
     
     bikes[bikeIndex].pecas = bikes[bikeIndex].pecas.filter((_, idx) => idx !== partIndex);
 

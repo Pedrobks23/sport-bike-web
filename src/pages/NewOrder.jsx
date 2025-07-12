@@ -108,7 +108,8 @@ function NewOrder() {
     // Soma de peças
     Object.entries(selectedParts).forEach(([bikeId, partsArray]) => {
       partsArray.forEach((part) => {
-        total += parseFloat(part.valor) || 0;
+        const qty = parseInt(part.quantidade) || 1;
+        total += (parseFloat(part.valor) || 0) * qty;
       });
     });
 
@@ -283,13 +284,15 @@ function NewOrder() {
     setError(null);
 
     // Adiciona a peça no selectedParts
+    const quantidade = parseInt(partData.quantidade) || 1;
+
     setSelectedParts((prev) => {
       const currentBikeParts = prev[bikeId] || [];
       return {
         ...prev,
         [bikeId]: [
           ...currentBikeParts,
-          { nome: partData.nome, valor: partData.valor },
+          { nome: partData.nome, valor: partData.valor, quantidade },
         ],
       };
     });
@@ -297,7 +300,7 @@ function NewOrder() {
     // Limpa o formulário
     setNewPart((prev) => ({
       ...prev,
-      [bikeId]: { nome: "", valor: "" },
+      [bikeId]: { nome: "", valor: "", quantidade: "" },
     }));
   }
 
@@ -425,12 +428,14 @@ function NewOrder() {
 
         if (bike.pecas && bike.pecas.length > 0) {
           bike.pecas.forEach((peca) => {
+            const qty = parseInt(peca.quantidade) || 1;
             const valorPeca = Number.parseFloat(peca.valor) || 0;
-            totalBike += valorPeca;
+            const subtotal = valorPeca * qty;
+            totalBike += subtotal;
             docPDF.text(`  • ${peca.nome}`, 15, yPos);
-            docPDF.text(`1`, 125, yPos);
+            docPDF.text(`${qty}`, 125, yPos);
             docPDF.text(`${valorPeca.toFixed(2)}`, 145, yPos);
-            docPDF.text(`${valorPeca.toFixed(2)}`, 170, yPos);
+            docPDF.text(`${subtotal.toFixed(2)}`, 170, yPos);
             yPos += 4;
           });
         }
@@ -629,10 +634,12 @@ function NewOrder() {
               docPDF.addPage();
               yPos = 10;
             }
+            const qty = parseInt(peca.quantidade) || 1;
             const valorPeca = parseFloat(peca.valor || 0);
-            totalBike += valorPeca;
+            const subtotal = valorPeca * qty;
+            totalBike += subtotal;
             docPDF.text(
-              `• ${peca.nome} = R$ ${valorPeca.toFixed(2)}`,
+              `• ${peca.nome} (${qty}x) = R$ ${subtotal.toFixed(2)}`,
               10,
               yPos
             );
@@ -739,7 +746,8 @@ function NewOrder() {
           // Soma peças (do selectedParts)
           const bikeParts = selectedParts[bike.id] || [];
           const pecasTotal = bikeParts.reduce((acc, part) => {
-            return acc + (parseFloat(part.valor) || 0);
+            const qty = parseInt(part.quantidade) || 1;
+            return acc + (parseFloat(part.valor) || 0) * qty;
           }, 0);
 
           return {
@@ -1105,12 +1113,15 @@ function NewOrder() {
                     {bikeParts.length > 0 && (
                       <div className="mb-4">
                         <p className="font-bold">Peças já adicionadas:</p>
-                        <ul className="list-disc list-inside">
+                        <ul className="space-y-2">
                           {bikeParts.map((part, idx) => (
-                            <li key={idx} className="flex justify-between">
+                            <li
+                              key={idx}
+                              className="flex justify-between items-center border rounded p-2"
+                            >
                               <div>
-                                {part.nome} - R${" "}
-                                {parseFloat(part.valor).toFixed(2)}
+                                {part.nome} - {parseFloat(part.valor).toFixed(2)}
+                                {" "}({part.quantidade || 1}x)
                               </div>
                               <button
                                 onClick={() => handleRemovePart(bikeId, idx)}
@@ -1144,6 +1155,16 @@ function NewOrder() {
                         value={partForm.valor || ""}
                         onChange={(e) =>
                           handleNewPartChange(bikeId, "valor", e.target.value)
+                        }
+                      />
+                      <input
+                        type="number"
+                        placeholder="Quantidade"
+                        className="w-full px-3 py-2 border rounded"
+                        min="1"
+                        value={partForm.quantidade || ""}
+                        onChange={(e) =>
+                          handleNewPartChange(bikeId, "quantidade", e.target.value)
                         }
                       />
                       <button
