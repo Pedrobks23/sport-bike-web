@@ -515,14 +515,19 @@ const BudgetForm = ({ onBack }) => {
     setLoading(true)
 
     try {
+      const clienteData = {
+        id: formData.cliente.id,
+        nome: formData.cliente.nome,
+        telefone: formData.cliente.telefone,
+      }
+
+      if (formData.cliente.email) {
+        clienteData.email = formData.cliente.email
+      }
+
       const orcamentoData = {
         codigo: generateCodigo(),
-        cliente: {
-          id: formData.cliente.id,
-          nome: formData.cliente.nome,
-          telefone: formData.cliente.telefone,
-          email: formData.cliente.email,
-        },
+        cliente: clienteData,
         bicicletas: bicicletasSelecionadas.map((bike) => ({
           id: bike.id,
           marca: bike.marca,
