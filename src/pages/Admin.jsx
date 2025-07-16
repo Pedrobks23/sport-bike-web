@@ -9,6 +9,7 @@ import {
   Settings,
   Home as HomeIcon,
   BarChart3,
+  DollarSign,
   LogOut,
   Menu,
   X,
@@ -117,6 +118,14 @@ export default function Admin() {
       color: "from-red-400 to-red-600",
       hoverColor: "hover:from-red-500 hover:to-red-700",
       path: "/admin/home",
+    },
+    {
+      icon: <DollarSign className="w-8 h-8" />,
+      title: "Orçamentos",
+      description: "Gerenciar orçamentos",
+      color: "from-teal-400 to-teal-600",
+      hoverColor: "hover:from-teal-500 hover:to-teal-700",
+      path: "/admin/budgets",
     },
     {
       icon: <BarChart3 className="w-8 h-8" />,
