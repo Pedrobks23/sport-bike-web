@@ -353,9 +353,9 @@ const BudgetForm = ({ onBack }) => {
       if (!formData.cliente) return
 
       try {
-        const bicicletasSnapshot = await getDocs(
-          query(collection(db, "bicicletas"), where("clienteId", "==", formData.cliente.id)),
-        )
+        // Bicicletas ficam armazenadas como subcoleção de cada cliente
+        const bikesRef = collection(db, `clientes/${formData.cliente.id}/bikes`)
+        const bicicletasSnapshot = await getDocs(bikesRef)
         const bicicletasData = bicicletasSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
