@@ -20,7 +20,9 @@ import {
   DollarSign,
 } from "lucide-react"
 import jsPDF from "jspdf"
-import html2canvas from "html2canvas"
+
+// Logo utilizado no PDF
+const logo = "/assets/Logo.png"
 
 // Componente principal do sistema de orçamentos
 const BudgetScreen = ({ initialView = "list" }) => {
@@ -806,7 +808,14 @@ const BudgetForm = ({ onBack }) => {
                         >
                           -
                         </button>
-                        <span className="w-8 text-center">{servico.quantidade}</span>
+                        <input
+                          type="number"
+                          className="w-12 text-center border border-gray-300 rounded"
+                          value={servico.quantidade}
+                          onChange={(e) =>
+                            handleUpdateQuantidade(servico.id, parseInt(e.target.value) || 0)
+                          }
+                        />
                         <button
                           onClick={() => handleUpdateQuantidade(servico.id, servico.quantidade + 1)}
                           className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full hover:bg-gray-300"
@@ -980,29 +989,80 @@ const BudgetDetails = ({ budgetId, onBack, onUpdate }) => {
     if (!orcamento) return
 
     try {
-      const element = document.getElementById("orcamento-content")
-      const canvas = await html2canvas(element)
-      const imgData = canvas.toDataURL("image/png")
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.getWidth()
+      let y = 50
 
-      const pdf = new jsPDF()
-      const imgWidth = 210
-      const pageHeight = 295
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let heightLeft = imgHeight
-
-      let position = 0
-
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight
-        pdf.addPage()
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
+      const center = (text, yPos, size = 10, bold = false) => {
+        doc.setFont("helvetica", bold ? "bold" : "normal")
+        doc.setFontSize(size)
+        const textWidth = (doc.getStringUnitWidth(text) * doc.internal.getFontSize()) / doc.internal.scaleFactor
+        const x = (pageWidth - textWidth) / 2
+        doc.text(text, x, yPos)
       }
 
-      pdf.save(`${orcamento.codigo}.pdf`)
+      const logoImg = new Image()
+      logoImg.src = new URL(logo, import.meta.url).href
+      await new Promise((resolve) => (logoImg.onload = resolve))
+      doc.addImage(logoImg, "PNG", 20, 10, 40, 40)
+
+      center("ORÇAMENTO", 20, 16, true)
+      center("Rua Ana Bilhar, 1680 - Varjota, Fortaleza - CE", 30)
+      center("Tel: (85) 3267-7425 | WhatsApp: (85) 3267-7425", 35)
+      center("@sportbike_fortaleza | comercialsportbike@gmail.com", 40)
+
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.text(`ORC: ${orcamento.codigo}`, 20, y)
+      y += 10
+
+      const dataCriacao = orcamento.dataCriacao?.toDate ? orcamento.dataCriacao.toDate() : new Date(orcamento.dataCriacao)
+      doc.text(`Criado em: ${dataCriacao.toLocaleDateString("pt-BR")}`, 20, y)
+      y += 15
+
+      doc.text("DADOS DO CLIENTE", 20, y)
+      y += 10
+      doc.setFont("helvetica", "normal")
+      doc.text(`Nome: ${orcamento.cliente.nome}`, 20, y)
+      y += 7
+      doc.text(`Telefone: ${orcamento.cliente.telefone}`, 20, y)
+      y += 7
+      if (orcamento.cliente.email) {
+        doc.text(`Email: ${orcamento.cliente.email}`, 20, y)
+        y += 7
+      }
+      doc.text(`Tipo de Pessoa: ${orcamento.tipoPessoa || "Física"}`, 20, y)
+      y += 7
+      doc.text(`Evento: ${orcamento.evento ? "Sim" : "Não"}`, 20, y)
+      y += 15
+
+      doc.setFont("helvetica", "bold")
+      doc.text("SERVIÇOS", 20, y)
+      y += 8
+      doc.setFont("helvetica", "normal")
+      let total = 0
+      orcamento.servicos.forEach((s) => {
+        const subtotal = s.preco * s.quantidade
+        total += subtotal
+        doc.text(`• ${s.nome} (${s.quantidade}x)`, 20, y)
+        doc.text(`R$ ${subtotal.toFixed(2)}`, 150, y)
+        y += 7
+      })
+
+      y += 5
+      doc.setFont("helvetica", "bold")
+      doc.text(`TOTAL: R$ ${total.toFixed(2)}`, 20, y)
+
+      if (orcamento.observacoes) {
+        y += 15
+        doc.text("OBSERVAÇÕES:", 20, y)
+        y += 7
+        doc.setFont("helvetica", "normal")
+        const lines = doc.splitTextToSize(orcamento.observacoes, pageWidth - 40)
+        doc.text(lines, 20, y)
+      }
+
+      doc.save(`${orcamento.codigo}.pdf`)
     } catch (error) {
       console.error("Erro ao gerar PDF:", error)
       alert("Erro ao gerar PDF")
