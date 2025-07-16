@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from "react"
+import { useNavigate } from "react-router-dom"
 import { collection, addDoc, getDocs, doc, updateDoc, query, where, orderBy, onSnapshot, limit } from "firebase/firestore"
 import { db } from "../config/firebase"
 import {
@@ -66,6 +67,8 @@ const BudgetScreen = ({ initialView = "list" }) => {
   }, [orcamentos, searchTerm, statusFilter])
 
   // Renderização condicional baseada no modo atual
+  const navigate = useNavigate()
+
   const renderContent = () => {
     switch (view.mode) {
       case "create":
@@ -92,6 +95,7 @@ const BudgetScreen = ({ initialView = "list" }) => {
             setStatusFilter={setStatusFilter}
             onCreateNew={() => setView({ mode: "create" })}
             onViewDetails={(id) => setView({ mode: "details", id })}
+            onBackToAdmin={() => navigate("/admin")}
           />
         )
     }
@@ -110,6 +114,7 @@ const BudgetList = ({
   setStatusFilter,
   onCreateNew,
   onViewDetails,
+  onBackToAdmin,
 }) => {
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm)
 
@@ -137,10 +142,18 @@ const BudgetList = ({
   return (
     <div className="p-6">
       {/* Header com título e botão de novo orçamento */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Orçamentos</h1>
-          <p className="text-gray-600">Gerencie todos os orçamentos do sistema</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBackToAdmin}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={24} />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Orçamentos</h1>
+            <p className="text-gray-600">Gerencie todos os orçamentos do sistema</p>
+          </div>
         </div>
         <button
           onClick={onCreateNew}
@@ -295,22 +308,33 @@ const BudgetForm = ({ onBack }) => {
     bicicletas: [],
     servicos: [],
     observacoes: "",
+    pessoaJuridica: false,
+    evento: false,
   })
   const [clientes, setClientes] = useState([])
   const [servicosDisponiveis, setServicosDisponiveis] = useState([])
   const [clienteSearch, setClienteSearch] = useState("")
   const [loading, setLoading] = useState(false)
   const [showClienteDropdown, setShowClienteDropdown] = useState(false)
+  const [showAddBike, setShowAddBike] = useState(false)
+  const [newBike, setNewBike] = useState({ marca: "", modelo: "", cor: "" })
+  const [showManualService, setShowManualService] = useState(false)
+  const [manualService, setManualService] = useState({ nome: "", preco: "0" })
 
   // Carrega serviços disponíveis
   useEffect(() => {
     const loadServicos = async () => {
       try {
         const servicosSnapshot = await getDocs(collection(db, "servicos"))
-        const servicosData = servicosSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
+        const servicosData = []
+        servicosSnapshot.forEach((docSnap) => {
+          const data = docSnap.data()
+          Object.entries(data).forEach(([nome, preco]) => {
+            const valorNum = parseFloat(String(preco).replace(/['"]/g, ""))
+            servicosData.push({ id: `${docSnap.id}_${nome}`, nome, preco: valorNum })
+          })
+        })
+        servicosData.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
         setServicosDisponiveis(servicosData)
       } catch (error) {
         console.error("Erro ao carregar serviços:", error)
@@ -394,6 +418,22 @@ const BudgetForm = ({ onBack }) => {
     }))
   }
 
+  // Adiciona bicicleta manualmente
+  const handleAddBikeManual = () => {
+    if (!newBike.marca.trim() && !newBike.modelo.trim()) return
+    const bike = {
+      id: `manual-${Date.now()}`,
+      marca: newBike.marca,
+      modelo: newBike.modelo,
+      cor: newBike.cor,
+      selected: true,
+      manual: true,
+    }
+    setFormData((prev) => ({ ...prev, bicicletas: [...prev.bicicletas, bike] }))
+    setNewBike({ marca: "", modelo: "", cor: "" })
+    setShowAddBike(false)
+  }
+
   // Adiciona serviço
   const handleAddServico = (servico) => {
     const servicoExistente = formData.servicos.find((s) => s.id === servico.id)
@@ -409,6 +449,19 @@ const BudgetForm = ({ onBack }) => {
         servicos: [...prev.servicos, { ...servico, quantidade: 1 }],
       }))
     }
+  }
+
+  const handleAddServicoManual = () => {
+    if (!manualService.nome.trim()) return
+    const servico = {
+      id: `manual-${Date.now()}`,
+      nome: manualService.nome,
+      preco: parseFloat(manualService.preco) || 0,
+      quantidade: 1,
+    }
+    setFormData((prev) => ({ ...prev, servicos: [...prev.servicos, servico] }))
+    setManualService({ nome: "", preco: "0" })
+    setShowManualService(false)
   }
 
   // Remove serviço
@@ -451,10 +504,6 @@ const BudgetForm = ({ onBack }) => {
     }
 
     const bicicletasSelecionadas = formData.bicicletas.filter((bike) => bike.selected)
-    if (bicicletasSelecionadas.length === 0) {
-      alert("Selecione pelo menos uma bicicleta")
-      return
-    }
 
     if (formData.servicos.length === 0) {
       alert("Adicione pelo menos um serviço")
@@ -481,6 +530,8 @@ const BudgetForm = ({ onBack }) => {
         servicos: formData.servicos,
         valorTotal,
         observacoes: formData.observacoes,
+        tipoPessoa: formData.pessoaJuridica ? "Jurídica" : "Física",
+        evento: formData.evento,
         status: "Aberto",
         dataCriacao: new Date(),
         dataAtualizacao: new Date(),
@@ -563,6 +614,28 @@ const BudgetForm = ({ onBack }) => {
                   <div className="font-medium">{formData.cliente.telefone}</div>
                 </div>
               </div>
+              <div className="flex items-center gap-6 mt-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.pessoaJuridica}
+                    onChange={(e) =>
+                      setFormData((p) => ({ ...p, pessoaJuridica: e.target.checked }))
+                    }
+                    className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <span>Pessoa Jurídica</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.evento}
+                    onChange={(e) => setFormData((p) => ({ ...p, evento: e.target.checked }))}
+                    className="w-4 h-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <span>Evento</span>
+                </label>
+              </div>
             </div>
           )}
         </div>
@@ -601,6 +674,54 @@ const BudgetForm = ({ onBack }) => {
                 ))}
               </div>
             )}
+            <div className="mt-4">
+              {showAddBike ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Marca"
+                    value={newBike.marca}
+                    onChange={(e) => setNewBike((p) => ({ ...p, marca: e.target.value }))}
+                    className="p-2 border border-gray-300 rounded"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Modelo"
+                    value={newBike.modelo}
+                    onChange={(e) => setNewBike((p) => ({ ...p, modelo: e.target.value }))}
+                    className="p-2 border border-gray-300 rounded"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cor"
+                    value={newBike.cor}
+                    onChange={(e) => setNewBike((p) => ({ ...p, cor: e.target.value }))}
+                    className="p-2 border border-gray-300 rounded"
+                  />
+                  <div className="col-span-full flex gap-3 mt-2">
+                    <button
+                      onClick={handleAddBikeManual}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
+                    >
+                      Adicionar
+                    </button>
+                    <button
+                      onClick={() => setShowAddBike(false)}
+                      className="px-4 py-2 border border-gray-300 rounded"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAddBike(true)}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
+                >
+                  Adicionar Bicicleta
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -622,6 +743,47 @@ const BudgetForm = ({ onBack }) => {
                   <div className="text-sm text-gray-600">{formatCurrency(servico.preco)}</div>
                 </button>
               ))}
+            </div>
+            <div className="mt-4">
+              {showManualService ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Serviço"
+                    value={manualService.nome}
+                    onChange={(e) => setManualService((p) => ({ ...p, nome: e.target.value }))}
+                    className="p-2 border border-gray-300 rounded"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Valor"
+                    value={manualService.preco}
+                    onChange={(e) => setManualService((p) => ({ ...p, preco: e.target.value }))}
+                    className="p-2 border border-gray-300 rounded"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleAddServicoManual}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
+                    >
+                      Adicionar
+                    </button>
+                    <button
+                      onClick={() => setShowManualService(false)}
+                      className="px-4 py-2 border border-gray-300 rounded"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowManualService(true)}
+                  className="mt-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
+                >
+                  Serviço Manual
+                </button>
+              )}
             </div>
           </div>
 
@@ -966,6 +1128,12 @@ const BudgetDetails = ({ budgetId, onBack, onUpdate }) => {
                   <span className="font-medium">Email:</span> {orcamento.cliente.email}
                 </div>
               )}
+              <div>
+                <span className="font-medium">Tipo de Pessoa:</span> {orcamento.tipoPessoa || "Física"}
+              </div>
+              <div>
+                <span className="font-medium">Evento:</span> {orcamento.evento ? "Sim" : "Não"}
+              </div>
             </div>
           </div>
         </div>
