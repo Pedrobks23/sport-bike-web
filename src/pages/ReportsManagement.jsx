@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
 import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
+import { listMechanics } from "../services/mechanicService";
 import {
   LineChart,
   Line,
@@ -21,6 +22,9 @@ const ReportsManagement = () => {
   const [reportType, setReportType] = useState("monthly");
   const [selectedService, setSelectedService] = useState("all");
   const [services, setServices] = useState([]);
+  const [mechanics, setMechanics] = useState([]);
+  const [selectedMechanic, setSelectedMechanic] = useState("all");
+  const [selectedOrigin, setSelectedOrigin] = useState("all");
   const getDefaultDateRange = () => {
     const end = new Date();
     const start = new Date();
@@ -65,6 +69,14 @@ const ReportsManagement = () => {
       setServices(servicosData);
     } catch (error) {
       console.error("Erro ao carregar serviços:", error);
+    }
+  };
+  const loadMechanics = async () => {
+    try {
+      const data = await listMechanics();
+      setMechanics(data);
+    } catch (error) {
+      console.error("Erro ao carregar mecânicos:", error);
     }
   };
   const processOrders = (orders, type) => {
@@ -136,11 +148,13 @@ const ReportsManagement = () => {
   const loadReportData = async () => {
     setLoading(true);
     try {
-      const ordensRef = collection(db, "ordens");
-      let ordersQuery = query(ordensRef, orderBy("dataCriacao", "desc"));
-      const querySnapshot = await getDocs(ordersQuery);
-      
-      const orders = querySnapshot.docs
+      let orders = [];
+      if (selectedOrigin !== "avulso") {
+        const ordensRef = collection(db, "ordens");
+        const ordersQuery = query(ordensRef, orderBy("dataCriacao", "desc"));
+        const querySnapshot = await getDocs(ordersQuery);
+
+        orders = querySnapshot.docs
         .map((doc) => {
           const data = doc.data();
           let totalValor = 0;
@@ -225,9 +239,46 @@ const ReportsManagement = () => {
             order.data <= endDate
           );
         });
-  
-      const processedData = processOrders(orders, reportType);
-      console.log("Dados processados:", processedData);
+        if (selectedMechanic !== "all") {
+          orders = []; // ordens não possuem mecânico, então retornamos vazio
+        }
+      }
+
+      let avulsos = [];
+      if (selectedOrigin !== "os") {
+        const avulsoRef = collection(db, "servicosAvulsos");
+        const avulsoQuery = query(avulsoRef, orderBy("dataCriacao", "desc"));
+        const avulsoSnap = await getDocs(avulsoQuery);
+        avulsos = avulsoSnap.docs
+          .map((doc) => {
+            const data = doc.data();
+            const dataCriacao = data.dataCriacao?.toDate ? data.dataCriacao.toDate() : new Date();
+            return {
+              id: doc.id,
+              data: dataCriacao,
+              valor: (parseFloat(data.valor) || 0) * (parseInt(data.quantidade) || 1),
+              quantidade: parseInt(data.quantidade) || 1,
+              mecanicoId: data.mecanicoId,
+              servico: data.servico,
+            };
+          })
+          .filter((item) => {
+            const startDate = new Date(dateRange.start);
+            startDate.setHours(0, 0, 0, 0);
+            const endDate = new Date(dateRange.end);
+            endDate.setHours(23, 59, 59, 999);
+            return (
+              item.data >= startDate &&
+              item.data <= endDate &&
+              (selectedService === "all" || item.servico === selectedService) &&
+              (selectedMechanic === "all" || item.mecanicoId === selectedMechanic)
+            );
+          });
+      }
+
+      const combined = [...orders, ...avulsos];
+
+      const processedData = processOrders(combined, reportType);
       setReportData(processedData);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
@@ -262,10 +313,11 @@ const ReportsManagement = () => {
   };
   useEffect(() => {
     loadServices();
+    loadMechanics();
   }, []);
   useEffect(() => {
     loadReportData();
-  }, [reportType, selectedService, dateRange]);
+  }, [reportType, selectedService, selectedMechanic, selectedOrigin, dateRange]);
   useEffect(() => {
     const now = new Date();
     let start = new Date(now);
@@ -320,7 +372,7 @@ const ReportsManagement = () => {
         <main className="container mx-auto px-4 py-8">
           <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
             <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Filtros do Relatório</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Tipo de Relatório
@@ -349,6 +401,33 @@ const ReportsManagement = () => {
                       {service.nome}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mecânico</label>
+                <select
+                  value={selectedMechanic}
+                  onChange={(e) => setSelectedMechanic(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="all">Todos</option>
+                  {mechanics.map((m) => (
+                    <option key={m.id} value={m.id}>{m.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Origem</label>
+                <select
+                  value={selectedOrigin}
+                  onChange={(e) => setSelectedOrigin(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="all">Todas</option>
+                  <option value="os">OS</option>
+                  <option value="avulso">Avulso</option>
                 </select>
               </div>
 

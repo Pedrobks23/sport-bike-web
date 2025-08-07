@@ -14,6 +14,9 @@ import ManageReceiptsPage from "../pages/ManageReceiptsPage";
 import NewOrder from "../pages/NewOrder"; // Adicione esta importação
 import HomeManagement from "../pages/HomeManagement";
 import NewCustomer from "../pages/NewCustomer";
+import QuickService from "../pages/QuickService";
+import MechanicsManagement from "../pages/MechanicsManagement";
+import MechanicHistory from "../pages/MechanicHistory";
 import PrivateRoute from "../components/PrivateRoute";
 
 export const router = createBrowserRouter([
@@ -74,6 +77,30 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <ServicesManagement />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/servico-rapido",
+    element: (
+      <PrivateRoute>
+        <QuickService />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/mecanicos",
+    element: (
+      <PrivateRoute>
+        <MechanicsManagement />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/mecanicos/:id",
+    element: (
+      <PrivateRoute>
+        <MechanicHistory />
       </PrivateRoute>
     ),
   },
