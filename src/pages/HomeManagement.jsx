@@ -1,6 +1,19 @@
 /**
- * Configurar as variáveis de ambiente VITE_CLOUDINARY_CLOUD_NAME e VITE_CLOUDINARY_UPLOAD_PRESET
- * no .env local e nas Environment Variables da Vercel antes de usar.
+ * Variáveis de ambiente necessárias:
+ *
+ * Front (.env)
+ * VITE_CLOUDINARY_CLOUD_NAME
+ * VITE_CLOUDINARY_UPLOAD_PRESET
+ * VITE_ADMIN_API_TOKEN (mesmo valor de ADMIN_API_TOKEN)
+ *
+ * Serverless (Vercel)
+ * CLOUDINARY_CLOUD_NAME
+ * CLOUDINARY_API_KEY
+ * CLOUDINARY_API_SECRET
+ * ADMIN_API_TOKEN
+ *
+ * Defina os valores em Production e Preview e faça o redeploy.
+ * A deleção de imagens usa uma rota serverless que requer o ADMIN_API_TOKEN.
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -20,6 +33,8 @@ import { db } from '../config/firebase'
 import {
   uploadImageToCloudinary,
   optimizeCloudinaryUrl,
+  isCloudinaryUrl,
+  extractPublicIdFromUrl,
 } from '../services/cloudinary'
 
 const emptyItem = {
@@ -28,6 +43,7 @@ const emptyItem = {
   price: '',
   visible: true,
   imageUrl: '',
+  publicId: null,
 }
 
 export default function HomeManagement() {
@@ -39,6 +55,23 @@ export default function HomeManagement() {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState('')
   const [editing, setEditing] = useState(null)
+  const adminToken = import.meta.env.VITE_ADMIN_API_TOKEN
+
+  const deleteFromCloudinary = async (publicId) => {
+    if (!publicId || !adminToken) return
+    try {
+      await fetch('/api/cloudinary-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ publicId }),
+      })
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
@@ -51,7 +84,16 @@ export default function HomeManagement() {
   useEffect(() => {
     const q = query(collection(db, 'featured'), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, (snap) => {
-      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      setItems(docs)
+      docs.forEach((it) => {
+        if (!it.publicId && isCloudinaryUrl(it.imageUrl)) {
+          const pid = extractPublicIdFromUrl(it.imageUrl)
+          if (pid) {
+            updateDoc(doc(db, 'featured', it.id), { publicId: pid })
+          }
+        }
+      })
     })
     return unsub
   }, [])
@@ -84,30 +126,71 @@ export default function HomeManagement() {
 
   const handleUrl = (e) => {
     const value = e.target.value
-    setForm((prev) => ({ ...prev, imageUrl: value }))
+    setForm((prev) => ({ ...prev, imageUrl: value, publicId: null }))
     setPreview(value)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     let imageUrl = form.imageUrl.trim()
-    if (file) {
-      imageUrl = await uploadImageToCloudinary(file)
-    }
-    const payload = {
-      title: form.title,
-      description: form.description,
-      price: parseFloat((form.price || '0').replace(',', '.')),
-      visible: form.visible,
-      imageUrl,
-      imageUrlCard: optimizeCloudinaryUrl(imageUrl),
-    }
+    let publicId = null
+
     if (editing) {
+      const imageChanged = file || imageUrl !== (editing.imageUrl || '')
+      publicId = editing.publicId || null
+      if (imageChanged) {
+        if (editing.publicId) {
+          await deleteFromCloudinary(editing.publicId)
+        }
+        if (file) {
+          const uploaded = await uploadImageToCloudinary(file)
+          imageUrl = uploaded.secureUrl
+          publicId = uploaded.publicId
+        } else {
+          if (isCloudinaryUrl(imageUrl)) {
+            publicId = extractPublicIdFromUrl(imageUrl)
+          } else {
+            publicId = null
+          }
+        }
+      } else {
+        imageUrl = editing.imageUrl
+      }
+
+      const payload = {
+        title: form.title,
+        description: form.description,
+        price: parseFloat((form.price || '0').replace(',', '.')),
+        visible: form.visible,
+        imageUrl,
+        imageUrlCard: isCloudinaryUrl(imageUrl)
+          ? optimizeCloudinaryUrl(imageUrl)
+          : '',
+        publicId,
+      }
       await updateDoc(doc(db, 'featured', editing.id), {
         ...payload,
         updatedAt: serverTimestamp(),
       })
     } else {
+      if (file) {
+        const uploaded = await uploadImageToCloudinary(file)
+        imageUrl = uploaded.secureUrl
+        publicId = uploaded.publicId
+      } else if (isCloudinaryUrl(imageUrl)) {
+        publicId = extractPublicIdFromUrl(imageUrl)
+      }
+      const payload = {
+        title: form.title,
+        description: form.description,
+        price: parseFloat((form.price || '0').replace(',', '.')),
+        visible: form.visible,
+        imageUrl,
+        imageUrlCard: isCloudinaryUrl(imageUrl)
+          ? optimizeCloudinaryUrl(imageUrl)
+          : '',
+        publicId,
+      }
       await addDoc(collection(db, 'featured'), {
         ...payload,
         createdAt: serverTimestamp(),
@@ -125,16 +208,18 @@ export default function HomeManagement() {
       price: item.price?.toString() || '',
       visible: item.visible !== false,
       imageUrl: item.imageUrl || '',
+      publicId: item.publicId || null,
     })
     setPreview(item.imageUrlCard || item.imageUrl || '')
     setShowModal(true)
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (item) => {
     if (window.confirm('Excluir destaque?')) {
-      await deleteDoc(doc(db, 'featured', id))
-      // Para remover o arquivo do Cloudinary é necessário uma rota serverless
-      // utilizando a Admin API com a API Secret. Não implementado neste escopo.
+      if (item.publicId) {
+        await deleteFromCloudinary(item.publicId)
+      }
+      await deleteDoc(doc(db, 'featured', item.id))
     }
   }
 
@@ -212,7 +297,7 @@ export default function HomeManagement() {
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(it.id)}
+                    onClick={() => handleDelete(it)}
                     className="p-2 rounded bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300"
                     title="Excluir"
                   >
