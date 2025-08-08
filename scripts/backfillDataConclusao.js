@@ -26,10 +26,15 @@ async function backfill() {
   const updates = [];
   snap.forEach((d) => {
     const data = d.data();
-    if (!data.dataConclusao && data.status === "Pronto") {
+    const status = (data.status || "").toLowerCase();
+    if (!data.dataConclusao && (status === "pronto" || status === "entregue")) {
+      const conclusao =
+        data.dataAtualizacao ||
+        data.dataCriacao ||
+        serverTimestamp();
       updates.push(
         updateDoc(doc(db, "ordens", d.id), {
-          dataConclusao: data.dataAtualizacao || serverTimestamp(),
+          dataConclusao: conclusao,
         })
       );
     }

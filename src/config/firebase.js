@@ -5,6 +5,7 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
   orderBy,
   onSnapshot,
   doc,
@@ -37,9 +38,14 @@ export const updateOrderStatus = async (orderId, newStatus) => {
       dataAtualizacao: serverTimestamp(),
     };
 
-    // Registra a data de conclusão quando a ordem é marcada como pronta
+    // Registra a data de conclusão ao finalizar a ordem
     if (newStatus === "Pronto") {
       updateData.dataConclusao = serverTimestamp();
+    } else if (newStatus === "Entregue") {
+      const snap = await getDoc(orderRef);
+      if (!snap.data()?.dataConclusao) {
+        updateData.dataConclusao = serverTimestamp();
+      }
     }
 
     await updateDoc(orderRef, updateData);

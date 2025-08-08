@@ -184,6 +184,11 @@ export const updateOrderStatus = async (orderId, newStatus) => {
     };
     if (newStatus === 'Pronto') {
       updateData.dataConclusao = serverTimestamp();
+    } else if (newStatus === 'Entregue') {
+      const snap = await getDoc(orderRef);
+      if (!snap.data()?.dataConclusao) {
+        updateData.dataConclusao = serverTimestamp();
+      }
     }
     await updateDoc(orderRef, updateData);
     return true;
