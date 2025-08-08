@@ -5,7 +5,7 @@ import {
   Receipt,
   FileText,
   Wrench,
-  Tool,
+  Hammer,
   Users,
   UserCog,
   Settings,
@@ -113,7 +113,7 @@ export default function Admin() {
       path: "/admin/services",
     },
     {
-      icon: <Tool className="w-8 h-8" />,
+      icon: <Hammer className="w-8 h-8" />,
       title: "Serviço Rápido",
       description: "Registrar serviço avulso",
       color: "from-teal-400 to-teal-600",
