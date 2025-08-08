@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ordens",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dataConclusao", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
-import { collection, query, getDocs, orderBy, where } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, where, Timestamp } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { listMechanics } from "../services/mechanicService";
 import {
@@ -165,6 +165,8 @@ const ReportsManagement = () => {
       startDate.setHours(0, 0, 0, 0);
       const endDate = new Date(dateRange.end);
       endDate.setHours(23, 59, 59, 999);
+      const startTs = Timestamp.fromDate(startDate);
+      const endTs = Timestamp.fromDate(endDate);
       if (selectedOrigin !== "avulso") {
         const ordensRef = collection(db, "ordens");
         let querySnapshot;
@@ -172,9 +174,9 @@ const ReportsManagement = () => {
         try {
           const ordersQuery = query(
             ordensRef,
-            where("dataConclusao", ">=", startDate),
-            where("dataConclusao", "<=", endDate),
-            orderBy("dataConclusao", "desc")
+            where("dataConclusao", ">=", startTs),
+            where("dataConclusao", "<=", endTs),
+            orderBy("dataConclusao")
           );
           querySnapshot = await getDocs(ordersQuery);
         } catch (err) {
@@ -182,8 +184,7 @@ const ReportsManagement = () => {
             "Consulta por dataConclusao falhou, carregando todas as ordens:",
             err
           );
-          const ordersQuery = query(ordensRef, orderBy("dataConclusao", "desc"));
-          querySnapshot = await getDocs(ordersQuery);
+          querySnapshot = await getDocs(ordensRef);
         }
 
         orders = querySnapshot.docs
