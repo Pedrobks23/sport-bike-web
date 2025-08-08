@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
-import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
+import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { listMechanics } from "../services/mechanicService";
 import {
@@ -167,12 +167,7 @@ const ReportsManagement = () => {
       endDate.setHours(23, 59, 59, 999);
       if (selectedOrigin !== "avulso") {
         const ordensRef = collection(db, "ordens");
-        const ordersQuery = query(
-          ordensRef,
-          where("dataConclusao", ">=", startDate),
-          where("dataConclusao", "<=", endDate),
-          orderBy("dataConclusao", "desc")
-        );
+        const ordersQuery = query(ordensRef, orderBy("dataAtualizacao", "desc"));
         const querySnapshot = await getDocs(ordersQuery);
 
         orders = querySnapshot.docs
@@ -183,7 +178,10 @@ const ReportsManagement = () => {
 
           const getDate = (field) =>
             field ? (typeof field === 'string' ? new Date(field) : field.toDate()) : null;
-          const orderDate = getDate(data.dataConclusao);
+          const orderDate =
+            getDate(data.dataConclusao) ||
+            getDate(data.dataAtualizacao) ||
+            getDate(data.dataCriacao);
 
           if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike) => {
@@ -267,11 +265,17 @@ const ReportsManagement = () => {
             quantidade: totalServicos,
           };
         })
-        .filter(
-          (order) =>
+        .filter((order) => {
+          const inStatus =
             order.status?.toLowerCase() === 'pronto' ||
-            order.status?.toLowerCase() === 'entregue'
-        );
+            order.status?.toLowerCase() === 'entregue';
+          return (
+            inStatus &&
+            order.data &&
+            order.data >= startDate &&
+            order.data <= endDate
+          );
+        });
         if (selectedMechanic !== "all") {
           orders = []; // ordens não possuem mecânico, então retornamos vazio
         }
@@ -280,12 +284,7 @@ const ReportsManagement = () => {
       let avulsos = [];
       if (selectedOrigin !== "os") {
         const avulsoRef = collection(db, "servicosAvulsos");
-        const avulsoQuery = query(
-          avulsoRef,
-          where("dataCriacao", ">=", startDate),
-          where("dataCriacao", "<=", endDate),
-          orderBy("dataCriacao", "desc")
-        );
+        const avulsoQuery = query(avulsoRef, orderBy("dataCriacao", "desc"));
         const avulsoSnap = await getDocs(avulsoQuery);
         avulsos = avulsoSnap.docs
           .map((doc) => {
@@ -311,11 +310,16 @@ const ReportsManagement = () => {
               servico: data.servico,
             };
           })
-          .filter(
-            (item) =>
+          .filter((item) => {
+            const inRange =
+              item.data >= startDate &&
+              item.data <= endDate;
+            return (
+              inRange &&
               (selectedService === "all" || item.servico === selectedService) &&
               (selectedMechanic === "all" || item.mecanicoId === selectedMechanic)
-          );
+            );
+          });
       }
 
       const combined = [...orders, ...avulsos];
