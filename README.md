@@ -1,3 +1,4 @@
+<!-- Atualização: inclui instrução de deploy de índices -->
 # Sport & Bike Web
 
 A management system for the Sport & Bike bicycle store built with React, Vite and Firebase. It provides tools for creating workshop orders, managing customers and services and issuing receipts with PDF generation.
@@ -39,3 +40,11 @@ npm run build
 ```
 
 The app uses TailwindCSS for styling and jsPDF for generating PDFs.
+
+## Firestore Indexes
+
+After pulling changes run:
+
+```bash
+firebase deploy --only firestore:indexes
+```

@@ -4,8 +4,15 @@
       "collectionGroup": "ordens",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "statusKey", "order": "ASCENDING" },
         { "fieldPath": "dataIndex", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "clientes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "telefoneNormalizado", "order": "ASCENDING" }
       ]
     },
     {

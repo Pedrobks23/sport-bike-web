@@ -1,3 +1,4 @@
+// Serviços relacionados às ordens; inclui normalização de status e datas
 import {
   collection,
   query,
@@ -181,13 +182,20 @@ export async function updateOrderStatus(orderId, newStatus) {
     const snap = await getDoc(ref);
     if (!snap.exists()) throw new Error('Ordem não encontrada');
     const data = snap.data();
-    const lower = String(newStatus || '').toLowerCase();
+    const statusKey = String(newStatus || '').toLowerCase().trim();
 
-    const patch = { status: newStatus, dataAtualizacao: serverTimestamp() };
+    const patch = {
+      status: newStatus,
+      statusKey,
+      dataAtualizacao: serverTimestamp()
+    };
 
-    if (lower === 'pronto' || lower === 'entregue') {
+    if (statusKey === 'pronto' || statusKey === 'entregue') {
       if (!data.dataConclusao) patch.dataConclusao = serverTimestamp();
-      patch.dataIndex = patch.dataConclusao ?? data.dataConclusao ?? serverTimestamp();
+      const concl = patch.dataConclusao || data.dataConclusao;
+      patch.dataIndex = concl || data.dataAtualizacao || data.dataCriacao || serverTimestamp();
+    } else if (!data.dataIndex) {
+      patch.dataIndex = data.dataAtualizacao || data.dataCriacao || serverTimestamp();
     }
 
     await updateDoc(ref, patch);

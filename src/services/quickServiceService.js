@@ -1,3 +1,4 @@
+// Serviços avulsos garantem dataIndex para relatórios
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "../config/firebase";
 

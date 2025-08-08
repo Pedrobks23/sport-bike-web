@@ -1,3 +1,4 @@
+// Relatórios: usa statusKey + dataIndex para incluir ordens antigas e novas
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
 import { collection, query, getDocs, orderBy, where, Timestamp } from "firebase/firestore";
@@ -169,15 +170,35 @@ const ReportsManagement = () => {
       const endTs = Timestamp.fromDate(endDate);
 
       if (selectedOrigin !== "avulso") {
-        const qOS = query(
-          collection(db, "ordens"),
-          where("status", "in", ["Pronto", "Entregue"]),
-          where("dataIndex", ">=", startTs),
-          where("dataIndex", "<=", endTs),
-          orderBy("dataIndex", "desc")
-        );
-        const snap = await getDocs(qOS);
-        orders = snap.docs.map((doc) => {
+        let docs = [];
+        try {
+          const qOS = query(
+            collection(db, "ordens"),
+            where("statusKey", "in", ["pronto", "entregue"]),
+            where("dataIndex", ">=", startTs),
+            where("dataIndex", "<=", endTs),
+            orderBy("dataIndex", "desc")
+          );
+          const snap = await getDocs(qOS);
+          docs = snap.docs;
+          if (docs.length === 0) {
+            const fallbackQ = query(
+              collection(db, "ordens"),
+              where("dataIndex", ">=", startTs),
+              where("dataIndex", "<=", endTs),
+              orderBy("dataIndex", "desc")
+            );
+            const fbSnap = await getDocs(fallbackQ);
+            docs = fbSnap.docs.filter((d) => {
+              const sk = (d.data().statusKey || "").toLowerCase();
+              return sk === "pronto" || sk === "entregue";
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        }
+
+        orders = docs.map((doc) => {
           const data = doc.data();
           const orderDate = data.dataIndex?.toDate
             ? data.dataIndex.toDate()
