@@ -240,16 +240,13 @@ const ConsultaOS = () => {
 
       if (tipo === "telefone") {
         const telefoneNumerico = searchValue.replace(/\D/g, "");
-        if (telefoneNumerico.length < 10) {
+        if (telefoneNumerico.length < 9) {
           throw new Error("Telefone inválido");
         }
         sessionStorage.setItem("telefoneConsulta", telefoneNumerico);
       }
 
       if (tipo === "os") {
-        if (!sessionStorage.getItem("telefoneConsulta")) {
-          throw new Error("Por favor, faça primeiro uma busca por telefone");
-        }
         navigate(`/consulta?os=${searchValue}`);
       }
 
@@ -491,7 +488,7 @@ const ConsultaOS = () => {
                       id="search"
                       value={searchValue}
                       onChange={handleInputChange}
-                      placeholder="OS-20241204B ou (85) 99999-9999"
+                      placeholder="OS-20241204B ou 99999-9999"
                       className="pl-12 w-full px-6 py-4 text-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                       maxLength={20}
                     />

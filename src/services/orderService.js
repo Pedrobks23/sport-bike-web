@@ -178,13 +178,27 @@ export const updateOrderService = async (orderId, bikeIndex, oldServiceName, upd
 export const updateOrderStatus = async (orderId, newStatus) => {
   try {
     const orderRef = doc(db, 'ordens', orderId);
-    await updateDoc(orderRef, { 
+    await updateDoc(orderRef, {
       status: newStatus,
       dataAtualizacao: serverTimestamp()
     });
     return true;
   } catch (error) {
     console.error('Erro ao atualizar status:', error);
+    throw error;
+  }
+};
+
+export const updateOrderMechanic = async (orderId, mechanicId) => {
+  try {
+    const orderRef = doc(db, 'ordens', orderId);
+    await updateDoc(orderRef, {
+      mecanicoId: mechanicId,
+      dataAtualizacao: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error('Erro ao atualizar mecânico:', error);
     throw error;
   }
 };

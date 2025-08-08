@@ -92,12 +92,18 @@ export const consultarOS = async (tipo, valor) => {
       const telefoneNumerico = valor.replace(/\D/g, "");
       console.log("Buscando pelo telefone:", telefoneNumerico);
 
-      // Filtra por telefone
-      q = query(
-        osRef,
-        where("cliente.telefone", "==", telefoneNumerico),
-        orderBy("dataCriacao", "desc"),
-      );
+      // Filtra por telefone completo ou sem DDD
+      q = telefoneNumerico.length === 9
+        ? query(
+            osRef,
+            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          )
+        : query(
+            osRef,
+            where("cliente.telefone", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          );
 
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
@@ -115,11 +121,17 @@ export const consultarOS = async (tipo, valor) => {
       }
 
       const telefoneNumerico = valor.replace(/\D/g, "");
-      q = query(
-        osRef,
-        where("cliente.telefone", "==", telefoneNumerico),
-        orderBy("dataCriacao", "desc"),
-      );
+      q = telefoneNumerico.length === 9
+        ? query(
+            osRef,
+            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          )
+        : query(
+            osRef,
+            where("cliente.telefone", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          );
 
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {

@@ -191,7 +191,7 @@ const ReportsManagement = () => {
                     totalServicos += quantidade;
                     detailRows.push({
                       data: orderDate,
-                      os: doc.id,
+                      os: data.codigo || doc.id,
                       servico: serviceName,
                       quantidade,
                       valor: servicoTotal,
@@ -212,7 +212,7 @@ const ReportsManagement = () => {
                     totalServicos += quantidade;
                     detailRows.push({
                       data: orderDate,
-                      os: doc.id,
+                      os: data.codigo || doc.id,
                       servico: serviceName,
                       quantidade,
                       valor: servicoTotal,

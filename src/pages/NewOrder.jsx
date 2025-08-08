@@ -18,6 +18,7 @@ import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import generateWorkshopTagsPDF from "../utils/generateWorkshopTagsPDF";
+import { listMechanics } from "../services/mechanicService";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
 const logo = new URL("/assets/Logo.png", import.meta.url).href;
@@ -77,12 +78,19 @@ function NewOrder() {
   // Armazena a ordem criada para imprimir depois
   const [createdOrder, setCreatedOrder] = useState(null);
 
+  const [mechanics, setMechanics] = useState([]);
+  const [selectedMechanic, setSelectedMechanic] = useState("");
+
   // -----------------------------
   // EFFECTS
   // -----------------------------
   // Carrega serviços ao montar
   useEffect(() => {
     loadServices();
+  }, []);
+
+  useEffect(() => {
+    listMechanics().then(setMechanics).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -172,7 +180,11 @@ function NewOrder() {
       const clientDoc = await getDoc(clientRef);
 
       if (clientDoc.exists()) {
-        setClientData(clientDoc.data());
+        const data = clientDoc.data();
+        setClientData({
+          ...data,
+          telefoneSemDDD: data.telefoneSemDDD || telefone.slice(-9)
+        });
         await loadClientBikes(telefone);
       } else {
         setClientData(null);
@@ -199,10 +211,11 @@ function NewOrder() {
       const clientRef = doc(db, "clientes", newClient.telefone);
       await setDoc(clientRef, {
         ...newClient,
+        telefoneSemDDD: newClient.telefone.slice(-9),
         dataCriacao: serverTimestamp(),
       });
 
-      setClientData(newClient);
+      setClientData({ ...newClient, telefoneSemDDD: newClient.telefone.slice(-9) });
       setShowClientForm(false);
       await loadClientBikes(newClient.telefone);
       setTelefone(newClient.telefone);
@@ -786,12 +799,14 @@ function NewOrder() {
         cliente: {
           nome: clientData.nome,
           telefone: clientData.telefone,
+          telefoneSemDDD: clientData.telefoneSemDDD || clientData.telefone.slice(-9),
           endereco: clientData.endereco,
         },
         bicicletas: bicicletasOrdem,
         valorTotal: valorTotal,
         observacoes,
         status: "Pendente",
+        mecanicoId: selectedMechanic,
         dataCriacao: new Date().toISOString(),
         dataAgendamento: new Date(scheduledDate + "T12:00:00").toISOString(),
         dataAtualizacao: new Date().toISOString(),
@@ -1200,6 +1215,25 @@ function NewOrder() {
                 min={new Date().toISOString().split("T")[0]}
                 className="px-4 py-2 border rounded-lg w-full"
               />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="mechanic" className="font-semibold block mb-2">
+                Mecânico
+              </label>
+              <select
+                id="mechanic"
+                value={selectedMechanic}
+                onChange={(e) => setSelectedMechanic(e.target.value)}
+                className="px-4 py-2 border rounded-lg w-full"
+              >
+                <option value="">Selecione um mecânico</option>
+                {mechanics.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="mb-4">
