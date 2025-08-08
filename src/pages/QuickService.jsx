@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Save } from "lucide-react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../config/firebase";
+import { ArrowLeft, Save, Pencil, Trash } from "lucide-react";
+import { serverTimestamp } from "firebase/firestore";
 import { listMechanics } from "../services/mechanicService";
+import {
+  listQuickServices,
+  addQuickService,
+  updateQuickService,
+  deleteQuickService,
+} from "../services/quickServiceService";
 
 const QuickService = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mechanics, setMechanics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [services, setServices] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     mecanicoId: "",
     servico: "",
@@ -24,7 +31,17 @@ const QuickService = () => {
       document.documentElement.classList.add("dark");
     }
     listMechanics().then(setMechanics).catch(console.error);
+    loadServices();
   }, []);
+
+  const loadServices = () => {
+    listQuickServices().then(setServices).catch(console.error);
+  };
+
+  const getMechanicName = (id) => {
+    const mech = mechanics.find((m) => m.id === id);
+    return mech ? mech.nome : "";
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,21 +55,46 @@ const QuickService = () => {
     }
     try {
       setLoading(true);
-      await addDoc(collection(db, "servicosAvulsos"), {
+      const payload = {
         mecanicoId: form.mecanicoId,
         servico: form.servico,
         valor: parseFloat(form.valor),
         quantidade: parseInt(form.quantidade) || 1,
         observacoes: form.observacoes,
-        dataCriacao: serverTimestamp(),
-      });
-      setMessage("Serviço salvo com sucesso");
+      };
+      if (editingId) {
+        await updateQuickService(editingId, payload);
+        setMessage("Serviço atualizado com sucesso");
+      } else {
+        await addQuickService({ ...payload, dataCriacao: serverTimestamp() });
+        setMessage("Serviço salvo com sucesso");
+      }
       setForm({ mecanicoId: "", servico: "", valor: "", quantidade: 1, observacoes: "" });
+      setEditingId(null);
+      loadServices();
     } catch (err) {
       console.error(err);
       setMessage("Erro ao salvar serviço");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setForm({
+      mecanicoId: item.mecanicoId || "",
+      servico: item.servico,
+      valor: item.valor,
+      quantidade: item.quantidade,
+      observacoes: item.observacoes || "",
+    });
+    setEditingId(item.id);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Excluir serviço?")) {
+      await deleteQuickService(id);
+      loadServices();
     }
   };
 
@@ -129,15 +171,60 @@ const QuickService = () => {
                 className="w-full px-4 py-2 rounded-lg border bg-white dark:bg-gray-700 dark:border-gray-600"
               />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Save className="w-4 h-4" />
-              <span>{loading ? "Salvando..." : "Salvar"}</span>
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Save className="w-4 h-4" />
+                <span>{loading ? "Salvando..." : editingId ? "Atualizar" : "Salvar"}</span>
+              </button>
+            </form>
+            <div className="mt-8">
+              <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100">Serviços Registrados</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-600">
+                      <th className="py-2 px-2 text-left">Data</th>
+                      <th className="py-2 px-2 text-left">Mecânico</th>
+                      <th className="py-2 px-2 text-left">Serviço</th>
+                      <th className="py-2 px-2 text-center">Qtd</th>
+                      <th className="py-2 px-2 text-right">Valor</th>
+                      <th className="py-2 px-2 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {services.map((s) => (
+                      <tr
+                        key={s.id}
+                        className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <td className="py-2 px-2">
+                          {s.dataCriacao ? new Date(s.dataCriacao).toLocaleDateString("pt-BR") : ""}
+                        </td>
+                        <td className="py-2 px-2">{getMechanicName(s.mecanicoId)}</td>
+                        <td className="py-2 px-2">{s.servico}</td>
+                        <td className="py-2 px-2 text-center">{s.quantidade}</td>
+                        <td className="py-2 px-2 text-right">
+                          R$ {Number(s.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <div className="flex items-center justify-center space-x-2">
+                            <button onClick={() => handleEdit(s)} className="p-1 text-blue-600">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(s.id)} className="p-1 text-red-600">
+                              <Trash className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
         </main>
       </div>
     </div>

@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import GenericDataTable from "../components/GenericDataTable";
 
 const ReportsManagement = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -36,10 +37,19 @@ const ReportsManagement = () => {
   };
   const [dateRange, setDateRange] = useState(getDefaultDateRange());
   const [reportData, setReportData] = useState([]);
+  const [detailedServices, setDetailedServices] = useState([]);
 
   const totalRevenue = reportData.reduce((sum, item) => sum + item.total, 0);
   const totalServices = reportData.reduce((sum, item) => sum + item.quantity, 0);
   const averageTicket = totalServices ? totalRevenue / totalServices : 0;
+  const tableColumns = [
+    { name: "data", label: "Data" },
+    { name: "servico", label: "Serviço" },
+    { name: "mecanico", label: "Mecânico" },
+    { name: "origem", label: "Origem" },
+    { name: "quantidade", label: "Qtd" },
+    { name: "valor", label: "Valor" },
+  ];
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -148,6 +158,7 @@ const ReportsManagement = () => {
   const loadReportData = async () => {
     setLoading(true);
     try {
+      const detailRows = [];
       let orders = [];
       if (selectedOrigin !== "avulso") {
         const ordensRef = collection(db, "ordens");
@@ -159,14 +170,17 @@ const ReportsManagement = () => {
           const data = doc.data();
           let totalValor = 0;
           let totalServicos = 0;
-          
-          console.log("Processando ordem:", doc.id, data);
-  
+
+          const orderDate = data.dataAtualizacao
+            ? (typeof data.dataAtualizacao === 'string'
+                ? new Date(data.dataAtualizacao)
+                : data.dataAtualizacao.toDate())
+            : (typeof data.dataCriacao === 'string'
+                ? new Date(data.dataCriacao)
+                : data.dataCriacao.toDate());
+
           if (data.bicicletas?.length > 0) {
-            data.bicicletas.forEach((bike, index) => {
-              console.log(`Processando bicicleta ${index}:`, bike);
-              
-              // Processa valorServicos (formato antigo)
+            data.bicicletas.forEach((bike) => {
               if (bike.valorServicos) {
                 Object.entries(bike.valorServicos).forEach(([serviceName, valor]) => {
                   if (selectedService === "all" || serviceName === selectedService) {
@@ -174,18 +188,18 @@ const ReportsManagement = () => {
                     const servicoTotal = parseFloat(valor) * quantidade;
                     totalValor += servicoTotal;
                     totalServicos += quantidade;
-                    
-                    console.log(`Processando serviço (valorServicos) ${serviceName}:`, {
-                      valor,
+                    detailRows.push({
+                      data: orderDate,
+                      servico: serviceName,
                       quantidade,
-                      servicoTotal,
-                      totalAcumulado: totalValor
+                      valor: servicoTotal,
+                      mecanico: "",
+                      origem: "OS",
                     });
                   }
                 });
               }
-  
-              // Processa serviceValues (formato novo)
+
               if (bike.serviceValues) {
                 Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
                   if (selectedService === "all" || serviceName === selectedService) {
@@ -194,36 +208,24 @@ const ReportsManagement = () => {
                     const servicoTotal = valor * quantidade;
                     totalValor += servicoTotal;
                     totalServicos += quantidade;
-                    
-                    console.log(`Processando serviço (serviceValues) ${serviceName}:`, {
-                      valor,
+                    detailRows.push({
+                      data: orderDate,
+                      servico: serviceName,
                       quantidade,
-                      servicoTotal,
-                      totalAcumulado: totalValor
+                      valor: servicoTotal,
+                      mecanico: "",
+                      origem: "OS",
                     });
                   }
                 });
               }
             });
           }
-  
-          console.log("Totais finais para ordem:", doc.id, {
-            valor: totalValor,
-            servicos: totalServicos
-          });
-  
-          const dataFinalizacao = data.dataAtualizacao
-            ? (typeof data.dataAtualizacao === 'string'
-                ? new Date(data.dataAtualizacao)
-                : data.dataAtualizacao.toDate())
-            : (typeof data.dataCriacao === 'string'
-                ? new Date(data.dataCriacao)
-                : data.dataCriacao.toDate());
 
           return {
             id: doc.id,
             status: data.status,
-            data: dataFinalizacao,
+            data: orderDate,
             valor: totalValor,
             quantidade: totalServicos,
           };
@@ -253,11 +255,21 @@ const ReportsManagement = () => {
           .map((doc) => {
             const data = doc.data();
             const dataCriacao = data.dataCriacao?.toDate ? data.dataCriacao.toDate() : new Date();
+            const quantidade = parseInt(data.quantidade) || 1;
+            const valorTotal = (parseFloat(data.valor) || 0) * quantidade;
+            detailRows.push({
+              data: dataCriacao,
+              servico: data.servico,
+              quantidade,
+              valor: valorTotal,
+              mecanico: mechanics.find((m) => m.id === data.mecanicoId)?.nome || "",
+              origem: "Avulso",
+            });
             return {
               id: doc.id,
               data: dataCriacao,
-              valor: (parseFloat(data.valor) || 0) * (parseInt(data.quantidade) || 1),
-              quantidade: parseInt(data.quantidade) || 1,
+              valor: valorTotal,
+              quantidade,
               mecanicoId: data.mecanicoId,
               servico: data.servico,
             };
@@ -280,6 +292,13 @@ const ReportsManagement = () => {
 
       const processedData = processOrders(combined, reportType);
       setReportData(processedData);
+      setDetailedServices(
+        detailRows.map((d) => ({
+          ...d,
+          data: d.data.toLocaleDateString("pt-BR"),
+          valor: d.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+        }))
+      );
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     } finally {
@@ -317,7 +336,7 @@ const ReportsManagement = () => {
   }, []);
   useEffect(() => {
     loadReportData();
-  }, [reportType, selectedService, selectedMechanic, selectedOrigin, dateRange]);
+  }, [reportType, selectedService, selectedMechanic, selectedOrigin, dateRange, mechanics]);
   useEffect(() => {
     const now = new Date();
     let start = new Date(now);
@@ -563,6 +582,10 @@ const ReportsManagement = () => {
                 </tfoot>
               </table>
             </div>
+          </div>
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mt-8">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Serviços Individuais</h2>
+            <GenericDataTable columns={tableColumns} data={detailedServices} />
           </div>
         </main>
       </div>
