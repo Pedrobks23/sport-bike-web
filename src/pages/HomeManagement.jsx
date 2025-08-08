@@ -1,434 +1,262 @@
-"use client"
+/*
+  HomeManagement - manage featured items with Cloudinary.
+  Env vars required in .env and Vercel:
+  VITE_CLOUDINARY_CLOUD_NAME=SEU_CLOUD_NAME
+  VITE_CLOUDINARY_UPLOAD_PRESET=SEU_PRESET_UNSIGNED
+  VITE_ADMIN_API_TOKEN=TOKEN (matches server ADMIN_API_TOKEN)
+  Serverless (.vercel): CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, ADMIN_API_TOKEN
+*/
 
-import React, { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import {
-  ArrowLeft,
-  Bike,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  EyeOff,
-  Search,
-} from "lucide-react"
-import {
-  getFeaturedProducts,
-  createFeaturedProduct,
-  updateFeaturedProduct,
-  deleteFeaturedProduct,
-  getHomeSettings,
-  updateHomeSettings,
-} from "../services/homeService"
-import { uploadImage } from "../services/uploadImage"
+import React, { useEffect, useState } from 'react';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { uploadImageToCloudinary, optimizeCloudinaryUrl, isCloudinaryUrl, extractPublicIdFromUrl } from '../services/cloudinary';
+import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 
-const normalizeDriveUrl = (url) => {
-  if (!url) return url
-  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
-  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`
-  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
-  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`
-  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/)
-  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`
-  return url
-}
+const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_API_TOKEN;
 
-const emptyProduct = {
-  name: "",
-  price: "",
-  image: "",
-  category: "",
-  description: "",
+const emptyForm = {
+  title: '',
+  description: '',
+  price: '',
+  imageUrlInput: '',
   visible: true,
-}
+};
 
-const ProductModal = ({ isEdit, onClose, onSave, product }) => {
-  const [formData, setFormData] = useState({
-    ...emptyProduct,
-    ...product,
-    visible: product?.visible ?? true,
-  })
-  const [imageFile, setImageFile] = useState(null)
-  const [preview, setPreview] = useState(product?.image || "")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+const parsePrice = (str) => {
+  const normalized = String(str).replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(normalized);
+  return isNaN(num) ? 0 : num;
+};
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+const formatPrice = (num) =>
+  Number(num).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+async function deleteImageFromCloudinary(publicId) {
+  if (!publicId || !ADMIN_TOKEN) return;
+  try {
+    await fetch('/api/cloudinary-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${ADMIN_TOKEN}`,
+      },
+      body: JSON.stringify({ publicId }),
+    });
+  } catch (err) {
+    console.error('Erro ao deletar imagem do Cloudinary', err);
   }
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setImageFile(file)
-      setPreview(URL.createObjectURL(file))
-    }
-  }
-
-  const handleUrlChange = (e) => {
-    const value = e.target.value
-    setFormData((prev) => ({ ...prev, image: value }))
-    setPreview(normalizeDriveUrl(value))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (isSubmitting) return
-    setIsSubmitting(true)
-    try {
-      await onSave({ ...formData, imageFile })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6">
-        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-          {isEdit ? "Editar" : "Novo"} Produto
-        </h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nome</label>
-            <input
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Preço</label>
-            <input
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Categoria</label>
-            <input
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Descrição</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              rows="3"
-            />
-          </div>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="visible"
-              checked={formData.visible}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, visible: e.target.checked }))
-              }
-              className="w-4 h-4"
-            />
-            <span className="text-sm">Exibir produto</span>
-          </label>
-          <div>
-            <label className="block text-sm font-medium mb-1">Link da Imagem (Google Drive)</label>
-            <input
-              name="image"
-              value={formData.image}
-              onChange={handleUrlChange}
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="https://drive.google.com/..."
-            />
-            <label className="block text-sm font-medium mb-1">Upload da Imagem</label>
-            <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
-            {preview && (
-              <img
-                src={preview}
-                alt="Pré-visualização"
-                className="mt-2 w-full h-60 object-cover rounded"
-              />
-            )}
-          </div>
-          <div className="flex justify-end gap-4 mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`px-6 py-2 rounded text-white ${
-                isSubmitting
-                  ? "bg-blue-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
-              }`}
-            >
-              {isSubmitting ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
 }
 
 export default function HomeManagement() {
-  const navigate = useNavigate()
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [products, setProducts] = useState([])
-  const [showFeatured, setShowFeatured] = useState(true)
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [editProduct, setEditProduct] = useState(null)
-  const [searchTerm, setSearchTerm] = useState("")
-
-  const loadData = async () => {
-    const [prods, settings] = await Promise.all([getFeaturedProducts(), getHomeSettings()])
-    setProducts(prods)
-    setShowFeatured(settings.showFeaturedProducts ?? true)
-    setLoading(false)
-  }
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [imageFile, setImageFile] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadData()
-  }, [])
+    const q = query(collection(db, 'featured'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
 
+  // Optional backfill of publicId for existing Cloudinary URLs
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme")
-    if (savedTheme === "dark") {
-      setIsDarkMode(true)
-      document.documentElement.classList.add("dark")
+    items.forEach((it) => {
+      if (!it.publicId && isCloudinaryUrl(it.imageUrl)) {
+        const pid = extractPublicIdFromUrl(it.imageUrl);
+        if (pid) {
+          updateDoc(doc(db, 'featured', it.id), { publicId: pid }).catch(() => {});
+        }
+      }
+    });
+  }, [items]);
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setImageFile(null);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    try {
+      let imageUrl = form.imageUrlInput;
+      let imageUrlCard = form.imageUrlInput;
+      let publicId = null;
+
+      if (imageFile) {
+        const { secureUrl, publicId: pid } = await uploadImageToCloudinary(imageFile);
+        imageUrl = secureUrl;
+        imageUrlCard = optimizeCloudinaryUrl(secureUrl);
+        publicId = pid;
+      } else if (form.imageUrlInput) {
+        imageUrl = form.imageUrlInput;
+        if (isCloudinaryUrl(imageUrl)) {
+          imageUrlCard = optimizeCloudinaryUrl(imageUrl);
+          publicId = extractPublicIdFromUrl(imageUrl);
+        }
+      }
+
+      const baseData = {
+        title: form.title,
+        description: form.description,
+        price: parsePrice(form.price),
+        visible: form.visible,
+        imageUrl,
+        imageUrlCard: imageUrlCard || imageUrl,
+        publicId: publicId || null,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (editingId) {
+        const original = items.find((i) => i.id === editingId);
+        if (original) {
+          const imageChanged =
+            imageFile || form.imageUrlInput !== original.imageUrl;
+          if (imageChanged && original.publicId) {
+            await deleteImageFromCloudinary(original.publicId);
+          }
+          // If switched to external URL, ensure publicId null
+          if (imageChanged && !imageFile && form.imageUrlInput && !isCloudinaryUrl(form.imageUrlInput)) {
+            baseData.publicId = null;
+            baseData.imageUrlCard = form.imageUrlInput;
+          }
+        }
+        await updateDoc(doc(db, 'featured', editingId), baseData);
+      } else {
+        await addDoc(collection(db, 'featured'), {
+          ...baseData,
+          createdAt: serverTimestamp(),
+        });
+      }
+      resetForm();
+    } finally {
+      setLoading(false);
     }
-  }, [])
+  };
 
-  const handleAdd = async (data) => {
-    let imageUrl = data.image ? normalizeDriveUrl(data.image) : ""
-    if (data.imageFile) {
-      imageUrl = await uploadImage(data.imageFile)
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setForm({
+      title: item.title || '',
+      description: item.description || '',
+      price: String(item.price).replace('.', ','),
+      imageUrlInput: item.imageUrl || '',
+      visible: item.visible ?? true,
+    });
+    setImageFile(null);
+  };
+
+  const handleDelete = async (item) => {
+    if (!window.confirm('Remover este item?')) return;
+    if (item.publicId) {
+      await deleteImageFromCloudinary(item.publicId);
     }
-    await createFeaturedProduct({ ...data, image: imageUrl })
-    setShowModal(false)
-    loadData()
-  }
+    await deleteDoc(doc(db, 'featured', item.id));
+  };
 
-  const handleUpdate = async (data) => {
-    let imageUrl = editProduct.image
-    if (data.imageFile) {
-      imageUrl = await uploadImage(data.imageFile)
-    } else if (data.image) {
-      imageUrl = normalizeDriveUrl(data.image)
-    }
-    await updateFeaturedProduct(editProduct.id, { ...data, image: imageUrl })
-    setEditProduct(null)
-    setShowModal(false)
-    loadData()
-  }
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Excluir produto?")) {
-      await deleteFeaturedProduct(id)
-      loadData()
-    }
-  }
-
-  const handleToggleProductVisibility = async (id, current) => {
-    const newValue = !current
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, visible: newValue } : p))
-    )
-    await updateFeaturedProduct(id, { visible: newValue })
-  }
-
-  const toggleVisibility = async () => {
-    const newValue = !showFeatured
-    setShowFeatured(newValue)
-    await updateHomeSettings({ showFeaturedProducts: newValue })
-  }
-
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const toggleVisible = async (item) => {
+    await updateDoc(doc(db, 'featured', item.id), {
+      visible: !item.visible,
+      updatedAt: serverTimestamp(),
+    });
+  };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
-        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => navigate("/admin")}
-                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div className="flex items-center space-x-3">
-                  <div className="bg-gradient-to-r from-amber-400 to-amber-600 p-2 rounded-full">
-                    <Bike className="w-6 h-6 text-white" />
-                  </div>
-                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Home</h1>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Novo Produto</span>
-              </button>
-            </div>
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-8">
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showFeatured}
-                    onChange={toggleVisibility}
-                    className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
-                  />
-                  <span className="text-gray-800 dark:text-white font-medium">Exibir seção de produtos em destaque</span>
-                </label>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar produtos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          {loading ? (
-            <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-                  >
-                    <div className="relative">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-60 object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-4 right-4">
-                        <button
-                          onClick={() =>
-                            handleToggleProductVisibility(
-                              product.id,
-                              product.visible !== false
-                            )
-                          }
-                          className={`p-2 rounded-full transition-colors ${
-                            product.visible !== false
-                              ? "bg-amber-500 text-white"
-                              : "bg-white/80 text-gray-600 hover:bg-amber-500 hover:text-white"
-                          }`}
-                          title={
-                            product.visible !== false
-                              ? "Ocultar produto"
-                              : "Exibir produto"
-                          }
-                        >
-                          {product.visible !== false ? (
-                            <Eye className="w-4 h-4" />
-                          ) : (
-                            <EyeOff className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                      {product.visible === false && (
-                        <div className="absolute top-4 left-4">
-                          <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Oculto
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{product.category}</span>
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
-                        <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
-                        {product.description && (
-                          <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 whitespace-pre-line">
-                            {product.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => {
-                              setEditProduct(product)
-                              setShowModal(true)
-                            }}
-                            className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                            title="Editar produto"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(product.id)}
-                            className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                            title="Excluir produto"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">ID: {product.id}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-12">
-                  <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum produto encontrado</h3>
-                  <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos produtos</p>
-                </div>
-              )}
-            </>
-          )}
-        </main>
-      </div>
-      {showModal && (
-        <ProductModal
-          isEdit={!!editProduct}
-          product={editProduct || emptyProduct}
-          onClose={() => {
-            setShowModal(false)
-            setEditProduct(null)
-          }}
-          onSave={editProduct ? handleUpdate : handleAdd}
+    <div className="p-4 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Destaques da Home</h1>
+      <form onSubmit={handleSubmit} className="space-y-2 mb-8">
+        <input
+          className="w-full border px-3 py-2"
+          placeholder="Título"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          required
         />
-      )}
+        <textarea
+          className="w-full border px-3 py-2"
+          placeholder="Descrição"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+        <input
+          className="w-full border px-3 py-2"
+          placeholder="Preço"
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          required
+        />
+        <input
+          className="w-full border px-3 py-2"
+          placeholder="URL da imagem"
+          value={form.imageUrlInput}
+          onChange={(e) => setForm({ ...form, imageUrlInput: e.target.value })}
+        />
+        <input
+          type="file"
+          onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+        />
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={form.visible}
+            onChange={(e) => setForm({ ...form, visible: e.target.checked })}
+          />
+          <span>Visível</span>
+        </label>
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-amber-600 text-white px-4 py-2 rounded flex items-center gap-2"
+        >
+          {editingId ? <Edit className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {editingId ? 'Atualizar' : 'Adicionar'}
+        </button>
+        {editingId && (
+          <button
+            type="button"
+            onClick={resetForm}
+            className="ml-2 px-4 py-2 border rounded"
+          >
+            Cancelar
+          </button>
+        )}
+      </form>
+
+      <ul className="space-y-4">
+        {items.map((item) => (
+          <li key={item.id} className="border p-4 rounded flex items-center space-x-4">
+            <img
+              src={item.imageUrlCard || item.imageUrl}
+              alt={item.title}
+              className="w-24 h-24 object-cover rounded"
+            />
+            <div className="flex-1">
+              <h3 className="font-bold">{item.title}</h3>
+              <p className="text-sm text-gray-600">{item.description}</p>
+              <p className="font-semibold">{formatPrice(item.price)}</p>
+            </div>
+            <button
+              onClick={() => toggleVisible(item)}
+              className="p-2"
+            >
+              {item.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            </button>
+            <button onClick={() => startEdit(item)} className="p-2">
+              <Edit className="w-4 h-4" />
+            </button>
+            <button onClick={() => handleDelete(item)} className="p-2 text-red-600">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
-  )
+  );
 }
