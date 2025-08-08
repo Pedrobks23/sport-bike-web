@@ -31,6 +31,7 @@ import { auth } from "../config/firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
+import SilkBackground from "../components/SilkBackground"
 
 const normalizeDriveUrl = (url) => {
   if (!url) return url
@@ -270,7 +271,8 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+    <div className={`relative min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+      <SilkBackground />
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
