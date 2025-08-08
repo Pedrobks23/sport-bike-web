@@ -172,17 +172,17 @@ const ReportsManagement = () => {
         try {
           const ordersQuery = query(
             ordensRef,
-            where("dataAtualizacao", ">=", startDate),
-            where("dataAtualizacao", "<=", endDate),
-            orderBy("dataAtualizacao", "desc")
+            where("dataConclusao", ">=", startDate),
+            where("dataConclusao", "<=", endDate),
+            orderBy("dataConclusao", "desc")
           );
           querySnapshot = await getDocs(ordersQuery);
         } catch (err) {
           console.warn(
-            "Consulta por dataAtualizacao falhou, carregando todas as ordens:",
+            "Consulta por dataConclusao falhou, carregando todas as ordens:",
             err
           );
-          const ordersQuery = query(ordensRef, orderBy("dataAtualizacao", "desc"));
+          const ordersQuery = query(ordensRef, orderBy("dataConclusao", "desc"));
           querySnapshot = await getDocs(ordersQuery);
         }
 
