@@ -430,9 +430,10 @@ export const getLatestCompletedOrderByPhone = async (phone) => {
     snap.forEach((docSnap) => {
       const data = docSnap.data();
       if (data.status === 'Pronto') {
-        if (!latest ||
-            (data.dataAtualizacao?.toMillis() || 0) >
-              (latest.dataAtualizacao?.toMillis() || 0)) {
+        const conclMillis = data.dataConclusao?.toMillis
+          ? data.dataConclusao.toMillis()
+          : 0;
+        if (!latest || conclMillis > (latest.dataConclusao?.toMillis() || 0)) {
           latest = { id: docSnap.id, ...data };
         }
       }

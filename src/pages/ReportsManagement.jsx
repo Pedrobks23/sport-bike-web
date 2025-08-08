@@ -161,9 +161,18 @@ const ReportsManagement = () => {
     try {
       const detailRows = [];
       let orders = [];
+      const startDate = new Date(dateRange.start);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999);
       if (selectedOrigin !== "avulso") {
         const ordensRef = collection(db, "ordens");
-        const ordersQuery = query(ordensRef, orderBy("dataCriacao", "desc"));
+        const ordersQuery = query(
+          ordensRef,
+          where("dataConclusao", ">=", startDate),
+          where("dataConclusao", "<=", endDate),
+          orderBy("dataConclusao", "desc")
+        );
         const querySnapshot = await getDocs(ordersQuery);
 
         orders = querySnapshot.docs
@@ -174,29 +183,30 @@ const ReportsManagement = () => {
 
           const getDate = (field) =>
             field ? (typeof field === 'string' ? new Date(field) : field.toDate()) : null;
-          const orderDate =
-            getDate(data.dataConclusao) ||
-            getDate(data.dataAtualizacao) ||
-            getDate(data.dataCriacao);
+          const orderDate = getDate(data.dataConclusao);
 
           if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike) => {
               if (bike.valorServicos) {
                 Object.entries(bike.valorServicos).forEach(([serviceName, valor]) => {
                   if (selectedService === "all" || serviceName === selectedService) {
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = parseFloat(valor) * quantidade;
-                    totalValor += servicoTotal;
-                    totalServicos += quantidade;
-                    detailRows.push({
-                      data: orderDate,
-                      os: data.codigo || doc.id,
-                      servico: serviceName,
-                      quantidade,
-                      valor: servicoTotal,
-                      mecanico: "",
-                      origem: "OS",
-                    });
+                    const info = bike.serviceValues?.[serviceName];
+                    const isCompleted = info?.concluido !== false;
+                    if (isCompleted) {
+                      const quantidade = bike.services?.[serviceName] || 1;
+                      const servicoTotal = parseFloat(valor) * quantidade;
+                      totalValor += servicoTotal;
+                      totalServicos += quantidade;
+                      detailRows.push({
+                        data: orderDate,
+                        os: data.codigo || doc.id,
+                        servico: serviceName,
+                        quantidade,
+                        valor: servicoTotal,
+                        mecanico: "",
+                        origem: "OS",
+                      });
+                    }
                   }
                 });
               }
@@ -204,17 +214,42 @@ const ReportsManagement = () => {
               if (bike.serviceValues) {
                 Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
                   if (selectedService === "all" || serviceName === selectedService) {
-                    const valor = serviceData.valorFinal || serviceData.valor || 0;
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = valor * quantidade;
-                    totalValor += servicoTotal;
+                    const isCompleted = serviceData.concluido !== false;
+                    if (isCompleted) {
+                      const valor = serviceData.valorFinal || serviceData.valor || 0;
+                      const quantidade = bike.services?.[serviceName] || 1;
+                      const servicoTotal = valor * quantidade;
+                      totalValor += servicoTotal;
+                      totalServicos += quantidade;
+                      detailRows.push({
+                        data: orderDate,
+                        os: data.codigo || doc.id,
+                        servico: serviceName,
+                        quantidade,
+                        valor: servicoTotal,
+                        mecanico: "",
+                        origem: "OS",
+                      });
+                    }
+                  }
+                });
+              }
+
+              if (Array.isArray(bike.pecas)) {
+                bike.pecas.forEach((peca) => {
+                  const isCompleted = peca.concluido !== false;
+                  if (isCompleted && selectedService === "all") {
+                    const quantidade = parseInt(peca.quantidade) || 1;
+                    const valorPeca = parseFloat(peca.valor) || 0;
+                    const pecaTotal = valorPeca * quantidade;
+                    totalValor += pecaTotal;
                     totalServicos += quantidade;
                     detailRows.push({
                       data: orderDate,
                       os: data.codigo || doc.id,
-                      servico: serviceName,
+                      servico: peca.nome || peca.descricao || "Peça",
                       quantidade,
-                      valor: servicoTotal,
+                      valor: pecaTotal,
                       mecanico: "",
                       origem: "OS",
                     });
@@ -232,18 +267,11 @@ const ReportsManagement = () => {
             quantidade: totalServicos,
           };
         })
-        .filter((order) => {
-          const startDate = new Date(dateRange.start);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(dateRange.end);
-          endDate.setHours(23, 59, 59, 999);
-          return (
-            (order.status?.toLowerCase() === 'pronto' ||
-              order.status?.toLowerCase() === 'entregue') &&
-            order.data >= startDate &&
-            order.data <= endDate
-          );
-        });
+        .filter(
+          (order) =>
+            order.status?.toLowerCase() === 'pronto' ||
+            order.status?.toLowerCase() === 'entregue'
+        );
         if (selectedMechanic !== "all") {
           orders = []; // ordens não possuem mecânico, então retornamos vazio
         }
@@ -252,7 +280,12 @@ const ReportsManagement = () => {
       let avulsos = [];
       if (selectedOrigin !== "os") {
         const avulsoRef = collection(db, "servicosAvulsos");
-        const avulsoQuery = query(avulsoRef, orderBy("dataCriacao", "desc"));
+        const avulsoQuery = query(
+          avulsoRef,
+          where("dataCriacao", ">=", startDate),
+          where("dataCriacao", "<=", endDate),
+          orderBy("dataCriacao", "desc")
+        );
         const avulsoSnap = await getDocs(avulsoQuery);
         avulsos = avulsoSnap.docs
           .map((doc) => {
@@ -278,18 +311,11 @@ const ReportsManagement = () => {
               servico: data.servico,
             };
           })
-          .filter((item) => {
-            const startDate = new Date(dateRange.start);
-            startDate.setHours(0, 0, 0, 0);
-            const endDate = new Date(dateRange.end);
-            endDate.setHours(23, 59, 59, 999);
-            return (
-              item.data >= startDate &&
-              item.data <= endDate &&
+          .filter(
+            (item) =>
               (selectedService === "all" || item.servico === selectedService) &&
               (selectedMechanic === "all" || item.mecanicoId === selectedMechanic)
-            );
-          });
+          );
       }
 
       const combined = [...orders, ...avulsos];
