@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
-import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, where } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { listMechanics } from "../services/mechanicService";
 import {
@@ -167,8 +167,25 @@ const ReportsManagement = () => {
       endDate.setHours(23, 59, 59, 999);
       if (selectedOrigin !== "avulso") {
         const ordensRef = collection(db, "ordens");
-        const ordersQuery = query(ordensRef, orderBy("dataAtualizacao", "desc"));
-        const querySnapshot = await getDocs(ordersQuery);
+        let querySnapshot;
+
+        try {
+          const rangeQuery = query(
+            ordensRef,
+            where("dataConclusao", ">=", startDate),
+            where("dataConclusao", "<=", endDate)
+          );
+          querySnapshot = await getDocs(rangeQuery);
+
+          if (querySnapshot.empty) {
+            const ordersQuery = query(ordensRef, orderBy("dataAtualizacao", "desc"));
+            querySnapshot = await getDocs(ordersQuery);
+          }
+        } catch (err) {
+          console.warn("Consulta por dataConclusao falhou, usando dataAtualizacao:", err);
+          const ordersQuery = query(ordensRef, orderBy("dataAtualizacao", "desc"));
+          querySnapshot = await getDocs(ordersQuery);
+        }
 
         orders = querySnapshot.docs
         .map((doc) => {
