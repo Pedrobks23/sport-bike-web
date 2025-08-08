@@ -4,7 +4,15 @@
       "collectionGroup": "ordens",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "dataConclusao", "order": "ASCENDING" }
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "dataIndex", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "servicosAvulsos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dataIndex", "order": "DESCENDING" }
       ]
     }
   ],

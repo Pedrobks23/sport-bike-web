@@ -175,28 +175,28 @@ export const updateOrderService = async (orderId, bikeIndex, oldServiceName, upd
   }
 };
 
-export const updateOrderStatus = async (orderId, newStatus) => {
+export async function updateOrderStatus(orderId, newStatus) {
   try {
-    const orderRef = doc(db, 'ordens', orderId);
-    const updateData = {
-      status: newStatus,
-      dataAtualizacao: serverTimestamp()
-    };
-    if (newStatus === 'Pronto') {
-      updateData.dataConclusao = serverTimestamp();
-    } else if (newStatus === 'Entregue') {
-      const snap = await getDoc(orderRef);
-      if (!snap.data()?.dataConclusao) {
-        updateData.dataConclusao = serverTimestamp();
-      }
+    const ref = doc(db, 'ordens', orderId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Ordem não encontrada');
+    const data = snap.data();
+    const lower = String(newStatus || '').toLowerCase();
+
+    const patch = { status: newStatus, dataAtualizacao: serverTimestamp() };
+
+    if (lower === 'pronto' || lower === 'entregue') {
+      if (!data.dataConclusao) patch.dataConclusao = serverTimestamp();
+      patch.dataIndex = patch.dataConclusao ?? data.dataConclusao ?? serverTimestamp();
     }
-    await updateDoc(orderRef, updateData);
+
+    await updateDoc(ref, patch);
     return true;
   } catch (error) {
     console.error('Erro ao atualizar status:', error);
     throw error;
   }
-};
+}
 
 export const updateOrderMechanic = async (orderId, mechanicId) => {
   try {

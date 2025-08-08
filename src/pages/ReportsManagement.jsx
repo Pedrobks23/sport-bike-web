@@ -167,38 +167,23 @@ const ReportsManagement = () => {
       endDate.setHours(23, 59, 59, 999);
       const startTs = Timestamp.fromDate(startDate);
       const endTs = Timestamp.fromDate(endDate);
+
       if (selectedOrigin !== "avulso") {
-        const ordensRef = collection(db, "ordens");
-        let querySnapshot;
-
-        try {
-          const ordersQuery = query(
-            ordensRef,
-            where("dataConclusao", ">=", startTs),
-            where("dataConclusao", "<=", endTs),
-            orderBy("dataConclusao")
-          );
-          querySnapshot = await getDocs(ordersQuery);
-        } catch (err) {
-          console.warn(
-            "Consulta por dataConclusao falhou, carregando todas as ordens:",
-            err
-          );
-          querySnapshot = await getDocs(ordensRef);
-        }
-
-        orders = querySnapshot.docs
-        .map((doc) => {
+        const qOS = query(
+          collection(db, "ordens"),
+          where("status", "in", ["Pronto", "Entregue"]),
+          where("dataIndex", ">=", startTs),
+          where("dataIndex", "<=", endTs),
+          orderBy("dataIndex", "desc")
+        );
+        const snap = await getDocs(qOS);
+        orders = snap.docs.map((doc) => {
           const data = doc.data();
+          const orderDate = data.dataIndex?.toDate
+            ? data.dataIndex.toDate()
+            : new Date();
           let totalValor = 0;
           let totalServicos = 0;
-
-          const getDate = (field) =>
-            field ? (typeof field === 'string' ? new Date(field) : field.toDate()) : null;
-          const orderDate =
-            getDate(data.dataConclusao) ||
-            getDate(data.dataAtualizacao) ||
-            getDate(data.dataCriacao);
 
           if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike) => {
@@ -276,37 +261,31 @@ const ReportsManagement = () => {
 
           return {
             id: doc.id,
-            status: data.status,
             data: orderDate,
             valor: totalValor,
             quantidade: totalServicos,
           };
-        })
-        .filter((order) => {
-          const inStatus =
-            order.status?.toLowerCase() === 'pronto' ||
-            order.status?.toLowerCase() === 'entregue';
-          return (
-            inStatus &&
-            order.data &&
-            order.data >= startDate &&
-            order.data <= endDate
-          );
         });
         if (selectedMechanic !== "all") {
-          orders = []; // ordens não possuem mecânico, então retornamos vazio
+          orders = [];
         }
       }
 
       let avulsos = [];
       if (selectedOrigin !== "os") {
-        const avulsoRef = collection(db, "servicosAvulsos");
-        const avulsoQuery = query(avulsoRef, orderBy("dataCriacao", "desc"));
-        const avulsoSnap = await getDocs(avulsoQuery);
-        avulsos = avulsoSnap.docs
+        const qAv = query(
+          collection(db, "servicosAvulsos"),
+          where("dataIndex", ">=", startTs),
+          where("dataIndex", "<=", endTs),
+          orderBy("dataIndex", "desc")
+        );
+        const avSnap = await getDocs(qAv);
+        avulsos = avSnap.docs
           .map((doc) => {
             const data = doc.data();
-            const dataCriacao = data.dataCriacao?.toDate ? data.dataCriacao.toDate() : new Date();
+            const dataCriacao = data.dataIndex?.toDate
+              ? data.dataIndex.toDate()
+              : new Date();
             const quantidade = parseInt(data.quantidade) || 1;
             const valorTotal = (parseFloat(data.valor) || 0) * quantidade;
             detailRows.push({
@@ -327,20 +306,14 @@ const ReportsManagement = () => {
               servico: data.servico,
             };
           })
-          .filter((item) => {
-            const inRange =
-              item.data >= startDate &&
-              item.data <= endDate;
-            return (
-              inRange &&
+          .filter(
+            (item) =>
               (selectedService === "all" || item.servico === selectedService) &&
               (selectedMechanic === "all" || item.mecanicoId === selectedMechanic)
-            );
-          });
+          );
       }
 
       const combined = [...orders, ...avulsos];
-
       const processedData = processOrders(combined, reportType);
       setReportData(processedData);
       setDetailedServices(
