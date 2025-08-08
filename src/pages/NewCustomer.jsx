@@ -1,8 +1,10 @@
+// Atualiza criação de cliente para usar telefone normalizado e timestamps
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { ArrowLeft } from "lucide-react";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 const NewCustomer = () => {
   const navigate = useNavigate();
@@ -23,8 +25,13 @@ const NewCustomer = () => {
     setLoading(true);
     try {
       await addDoc(collection(db, "clientes"), {
-        ...customer,
-        dataCriacao: new Date(),
+        nome: customer.nome,
+        telefone: customer.telefone,
+        telefoneNormalizado: normalizePhone(customer.telefone),
+        email: customer.email,
+        endereco: customer.endereco,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
       navigate("/admin/customers");
     } catch (error) {

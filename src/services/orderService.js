@@ -1,3 +1,4 @@
+// Serviços relacionados às ordens; inclui normalização de status e datas
 import {
   collection,
   query,
@@ -175,23 +176,35 @@ export const updateOrderService = async (orderId, bikeIndex, oldServiceName, upd
   }
 };
 
-export const updateOrderStatus = async (orderId, newStatus) => {
+export async function updateOrderStatus(orderId, newStatus) {
   try {
-    const orderRef = doc(db, 'ordens', orderId);
-    const updateData = {
+    const ref = doc(db, 'ordens', orderId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Ordem não encontrada');
+    const data = snap.data();
+    const statusKey = String(newStatus || '').toLowerCase().trim();
+
+    const patch = {
       status: newStatus,
+      statusKey,
       dataAtualizacao: serverTimestamp()
     };
-    if (newStatus === 'Pronto') {
-      updateData.dataConclusao = serverTimestamp();
+
+    if (statusKey === 'pronto' || statusKey === 'entregue') {
+      if (!data.dataConclusao) patch.dataConclusao = serverTimestamp();
+      const concl = patch.dataConclusao || data.dataConclusao;
+      patch.dataIndex = concl || data.dataAtualizacao || data.dataCriacao || serverTimestamp();
+    } else if (!data.dataIndex) {
+      patch.dataIndex = data.dataAtualizacao || data.dataCriacao || serverTimestamp();
     }
-    await updateDoc(orderRef, updateData);
+
+    await updateDoc(ref, patch);
     return true;
   } catch (error) {
     console.error('Erro ao atualizar status:', error);
     throw error;
   }
-};
+}
 
 export const updateOrderMechanic = async (orderId, mechanicId) => {
   try {
@@ -430,9 +443,10 @@ export const getLatestCompletedOrderByPhone = async (phone) => {
     snap.forEach((docSnap) => {
       const data = docSnap.data();
       if (data.status === 'Pronto') {
-        if (!latest ||
-            (data.dataAtualizacao?.toMillis() || 0) >
-              (latest.dataAtualizacao?.toMillis() || 0)) {
+        const conclMillis = data.dataConclusao?.toMillis
+          ? data.dataConclusao.toMillis()
+          : 0;
+        if (!latest || conclMillis > (latest.dataConclusao?.toMillis() || 0)) {
           latest = { id: docSnap.id, ...data };
         }
       }

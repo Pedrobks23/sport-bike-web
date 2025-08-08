@@ -1,3 +1,4 @@
+// Configura Firebase e centraliza consultas por clienteId e statusKey
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
@@ -5,6 +6,7 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
   orderBy,
   onSnapshot,
   doc,
@@ -13,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -31,18 +34,27 @@ const storage = getStorage(app);
 
 export const updateOrderStatus = async (orderId, newStatus) => {
   try {
-    const orderRef = doc(db, "ordens", orderId);
-    const updateData = {
+    const ref = doc(db, "ordens", orderId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error("Ordem não encontrada");
+    const data = snap.data();
+    const statusKey = String(newStatus || "").toLowerCase().trim();
+
+    const patch = {
       status: newStatus,
+      statusKey,
       dataAtualizacao: serverTimestamp(),
     };
 
-    // Registra a data de conclusão quando a ordem é marcada como pronta
-    if (newStatus === "Pronto") {
-      updateData.dataConclusao = serverTimestamp();
+    if (statusKey === "pronto" || statusKey === "entregue") {
+      if (!data.dataConclusao) patch.dataConclusao = serverTimestamp();
+      const concl = patch.dataConclusao || data.dataConclusao;
+      patch.dataIndex = concl || data.dataAtualizacao || data.dataCriacao || serverTimestamp();
+    } else if (!data.dataIndex) {
+      patch.dataIndex = data.dataAtualizacao || data.dataCriacao || serverTimestamp();
     }
 
-    await updateDoc(orderRef, updateData);
+    await updateDoc(ref, patch);
     return true;
   } catch (error) {
     console.error("Erro ao atualizar status:", error);
@@ -92,66 +104,31 @@ export const consultarOS = async (tipo, valor) => {
     const ordens = [];
 
     if (tipo === "telefone") {
-      if (!valor) {
-        return [];
-      }
-
-      const telefoneNumerico = valor.replace(/\D/g, "");
-      console.log("Buscando pelo telefone:", telefoneNumerico);
-
-      // Filtra por telefone completo ou sem DDD
-      q = telefoneNumerico.length === 9
-        ? query(
-            osRef,
-            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          )
-        : query(
-            osRef,
-            where("cliente.telefone", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          );
-
+      if (!valor) return [];
+      const telefoneNumerico = normalizePhone(valor);
+      const clientesRef = collection(db, "clientes");
+      const cSnap = await getDocs(
+        query(clientesRef, where("telefoneNormalizado", "==", telefoneNumerico))
+      );
+      if (cSnap.empty) return [];
+      const clienteId = cSnap.docs[0].id;
+      q = query(osRef, where("clienteId", "==", clienteId), orderBy("dataCriacao", "desc"));
       const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        ordens.push({
-          id: doc.id,
-          ...doc.data(),
-        });
-      });
-
-      // Limita a 3 para consulta normal
+      querySnapshot.forEach((doc) => ordens.push({ id: doc.id, ...doc.data() }));
       return ordens.slice(0, 3);
     } else if (tipo === "historico") {
-      if (!valor) {
-        return [];
-      }
-
-      const telefoneNumerico = valor.replace(/\D/g, "");
-      q = telefoneNumerico.length === 9
-        ? query(
-            osRef,
-            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          )
-        : query(
-            osRef,
-            where("cliente.telefone", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          );
-
+      if (!valor) return [];
+      const telefoneNumerico = normalizePhone(valor);
+      const clientesRef = collection(db, "clientes");
+      const cSnap = await getDocs(
+        query(clientesRef, where("telefoneNormalizado", "==", telefoneNumerico))
+      );
+      if (cSnap.empty) return [];
+      const clienteId = cSnap.docs[0].id;
+      q = query(osRef, where("clienteId", "==", clienteId), orderBy("dataCriacao", "desc"));
       const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        ordens.push({
-          id: doc.id,
-          ...doc.data(),
-        });
-      });
-
-      if (ordens.length === 0) {
-        return [];
-      }
-
+      querySnapshot.forEach((doc) => ordens.push({ id: doc.id, ...doc.data() }));
+      if (ordens.length === 0) return [];
       return ordens;
     } else {
       if (!valor) {

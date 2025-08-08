@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backfill": "node scripts/backfillDataIndex.js",
+    "migrate": "node scripts/migrateClientsAndOrders.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -17,6 +19,7 @@
     "@tanstack/react-query": "^5.62.3",
     "date-fns": "^4.1.0",
     "firebase": "^11.0.2",
+    "firebase-admin": "^12.6.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

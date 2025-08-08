@@ -1,0 +1,27 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ordens",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "statusKey", "order": "ASCENDING" },
+        { "fieldPath": "dataIndex", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "clientes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "telefoneNormalizado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "servicosAvulsos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dataIndex", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

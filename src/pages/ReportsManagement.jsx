@@ -1,6 +1,7 @@
+// Relatórios: usa statusKey + dataIndex para incluir ordens antigas e novas
 import { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
-import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, where, Timestamp } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { listMechanics } from "../services/mechanicService";
 import {
@@ -161,42 +162,72 @@ const ReportsManagement = () => {
     try {
       const detailRows = [];
       let orders = [];
-      if (selectedOrigin !== "avulso") {
-        const ordensRef = collection(db, "ordens");
-        const ordersQuery = query(ordensRef, orderBy("dataCriacao", "desc"));
-        const querySnapshot = await getDocs(ordersQuery);
+      const startDate = new Date(dateRange.start);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999);
+      const startTs = Timestamp.fromDate(startDate);
+      const endTs = Timestamp.fromDate(endDate);
 
-        orders = querySnapshot.docs
-        .map((doc) => {
+      if (selectedOrigin !== "avulso") {
+        let docs = [];
+        try {
+          const qOS = query(
+            collection(db, "ordens"),
+            where("statusKey", "in", ["pronto", "entregue"]),
+            where("dataIndex", ">=", startTs),
+            where("dataIndex", "<=", endTs),
+            orderBy("dataIndex", "desc")
+          );
+          const snap = await getDocs(qOS);
+          docs = snap.docs;
+          if (docs.length === 0) {
+            const fallbackQ = query(
+              collection(db, "ordens"),
+              where("dataIndex", ">=", startTs),
+              where("dataIndex", "<=", endTs),
+              orderBy("dataIndex", "desc")
+            );
+            const fbSnap = await getDocs(fallbackQ);
+            docs = fbSnap.docs.filter((d) => {
+              const sk = (d.data().statusKey || "").toLowerCase();
+              return sk === "pronto" || sk === "entregue";
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        }
+
+        orders = docs.map((doc) => {
           const data = doc.data();
+          const orderDate = data.dataIndex?.toDate
+            ? data.dataIndex.toDate()
+            : new Date();
           let totalValor = 0;
           let totalServicos = 0;
-
-          const getDate = (field) =>
-            field ? (typeof field === 'string' ? new Date(field) : field.toDate()) : null;
-          const orderDate =
-            getDate(data.dataConclusao) ||
-            getDate(data.dataAtualizacao) ||
-            getDate(data.dataCriacao);
 
           if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike) => {
               if (bike.valorServicos) {
                 Object.entries(bike.valorServicos).forEach(([serviceName, valor]) => {
                   if (selectedService === "all" || serviceName === selectedService) {
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = parseFloat(valor) * quantidade;
-                    totalValor += servicoTotal;
-                    totalServicos += quantidade;
-                    detailRows.push({
-                      data: orderDate,
-                      os: data.codigo || doc.id,
-                      servico: serviceName,
-                      quantidade,
-                      valor: servicoTotal,
-                      mecanico: "",
-                      origem: "OS",
-                    });
+                    const info = bike.serviceValues?.[serviceName];
+                    const isCompleted = info?.concluido !== false;
+                    if (isCompleted) {
+                      const quantidade = bike.services?.[serviceName] || 1;
+                      const servicoTotal = parseFloat(valor) * quantidade;
+                      totalValor += servicoTotal;
+                      totalServicos += quantidade;
+                      detailRows.push({
+                        data: orderDate,
+                        os: data.codigo || doc.id,
+                        servico: serviceName,
+                        quantidade,
+                        valor: servicoTotal,
+                        mecanico: "",
+                        origem: "OS",
+                      });
+                    }
                   }
                 });
               }
@@ -204,17 +235,42 @@ const ReportsManagement = () => {
               if (bike.serviceValues) {
                 Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
                   if (selectedService === "all" || serviceName === selectedService) {
-                    const valor = serviceData.valorFinal || serviceData.valor || 0;
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = valor * quantidade;
-                    totalValor += servicoTotal;
+                    const isCompleted = serviceData.concluido !== false;
+                    if (isCompleted) {
+                      const valor = serviceData.valorFinal || serviceData.valor || 0;
+                      const quantidade = bike.services?.[serviceName] || 1;
+                      const servicoTotal = valor * quantidade;
+                      totalValor += servicoTotal;
+                      totalServicos += quantidade;
+                      detailRows.push({
+                        data: orderDate,
+                        os: data.codigo || doc.id,
+                        servico: serviceName,
+                        quantidade,
+                        valor: servicoTotal,
+                        mecanico: "",
+                        origem: "OS",
+                      });
+                    }
+                  }
+                });
+              }
+
+              if (Array.isArray(bike.pecas)) {
+                bike.pecas.forEach((peca) => {
+                  const isCompleted = peca.concluido !== false;
+                  if (isCompleted && selectedService === "all") {
+                    const quantidade = parseInt(peca.quantidade) || 1;
+                    const valorPeca = parseFloat(peca.valor) || 0;
+                    const pecaTotal = valorPeca * quantidade;
+                    totalValor += pecaTotal;
                     totalServicos += quantidade;
                     detailRows.push({
                       data: orderDate,
                       os: data.codigo || doc.id,
-                      servico: serviceName,
+                      servico: peca.nome || peca.descricao || "Peça",
                       quantidade,
-                      valor: servicoTotal,
+                      valor: pecaTotal,
                       mecanico: "",
                       origem: "OS",
                     });
@@ -226,38 +282,31 @@ const ReportsManagement = () => {
 
           return {
             id: doc.id,
-            status: data.status,
             data: orderDate,
             valor: totalValor,
             quantidade: totalServicos,
           };
-        })
-        .filter((order) => {
-          const startDate = new Date(dateRange.start);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(dateRange.end);
-          endDate.setHours(23, 59, 59, 999);
-          return (
-            (order.status?.toLowerCase() === 'pronto' ||
-              order.status?.toLowerCase() === 'entregue') &&
-            order.data >= startDate &&
-            order.data <= endDate
-          );
         });
         if (selectedMechanic !== "all") {
-          orders = []; // ordens não possuem mecânico, então retornamos vazio
+          orders = [];
         }
       }
 
       let avulsos = [];
       if (selectedOrigin !== "os") {
-        const avulsoRef = collection(db, "servicosAvulsos");
-        const avulsoQuery = query(avulsoRef, orderBy("dataCriacao", "desc"));
-        const avulsoSnap = await getDocs(avulsoQuery);
-        avulsos = avulsoSnap.docs
+        const qAv = query(
+          collection(db, "servicosAvulsos"),
+          where("dataIndex", ">=", startTs),
+          where("dataIndex", "<=", endTs),
+          orderBy("dataIndex", "desc")
+        );
+        const avSnap = await getDocs(qAv);
+        avulsos = avSnap.docs
           .map((doc) => {
             const data = doc.data();
-            const dataCriacao = data.dataCriacao?.toDate ? data.dataCriacao.toDate() : new Date();
+            const dataCriacao = data.dataIndex?.toDate
+              ? data.dataIndex.toDate()
+              : new Date();
             const quantidade = parseInt(data.quantidade) || 1;
             const valorTotal = (parseFloat(data.valor) || 0) * quantidade;
             detailRows.push({
@@ -278,22 +327,14 @@ const ReportsManagement = () => {
               servico: data.servico,
             };
           })
-          .filter((item) => {
-            const startDate = new Date(dateRange.start);
-            startDate.setHours(0, 0, 0, 0);
-            const endDate = new Date(dateRange.end);
-            endDate.setHours(23, 59, 59, 999);
-            return (
-              item.data >= startDate &&
-              item.data <= endDate &&
+          .filter(
+            (item) =>
               (selectedService === "all" || item.servico === selectedService) &&
               (selectedMechanic === "all" || item.mecanicoId === selectedMechanic)
-            );
-          });
+          );
       }
 
       const combined = [...orders, ...avulsos];
-
       const processedData = processOrders(combined, reportType);
       setReportData(processedData);
       setDetailedServices(

@@ -1,8 +1,10 @@
 {
-    "rewrites": [
-      {
-        "source": "/(.*)",
-        "destination": "/index.html"
-      }
-    ]
-  }
+  // Permite servir manifest e assets estáticos sem redirecionamento
+  "rewrites": [
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/icons/(.*)", "destination": "/icons/$1" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/favicon.ico", "destination": "/favicon.ico" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
