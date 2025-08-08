@@ -57,10 +57,13 @@ const MechanicHistory = () => {
         const orderServices = [];
         ordersSnap.forEach((doc) => {
           const data = doc.data();
-          if (data.status !== "Pronto") return;
-          const orderDate = data.dataAtualizacao
-            ? data.dataAtualizacao.toDate()
-            : data.dataCriacao.toDate();
+          if (data.status !== "Pronto" && data.status !== "Entregue") return;
+          const getDate = (field) =>
+            field ? (field.toDate ? field.toDate() : new Date(field)) : null;
+          const orderDate =
+            getDate(data.dataConclusao) ||
+            getDate(data.dataAtualizacao) ||
+            getDate(data.dataCriacao);
           if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike) => {
               if (bike.valorServicos) {

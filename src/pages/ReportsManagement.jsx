@@ -172,13 +172,12 @@ const ReportsManagement = () => {
           let totalValor = 0;
           let totalServicos = 0;
 
-          const orderDate = data.dataAtualizacao
-            ? (typeof data.dataAtualizacao === 'string'
-                ? new Date(data.dataAtualizacao)
-                : data.dataAtualizacao.toDate())
-            : (typeof data.dataCriacao === 'string'
-                ? new Date(data.dataCriacao)
-                : data.dataCriacao.toDate());
+          const getDate = (field) =>
+            field ? (typeof field === 'string' ? new Date(field) : field.toDate()) : null;
+          const orderDate =
+            getDate(data.dataConclusao) ||
+            getDate(data.dataAtualizacao) ||
+            getDate(data.dataCriacao);
 
           if (data.bicicletas?.length > 0) {
             data.bicicletas.forEach((bike) => {
