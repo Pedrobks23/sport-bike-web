@@ -32,10 +32,17 @@ const storage = getStorage(app);
 export const updateOrderStatus = async (orderId, newStatus) => {
   try {
     const orderRef = doc(db, "ordens", orderId);
-    await updateDoc(orderRef, {
+    const updateData = {
       status: newStatus,
       dataAtualizacao: serverTimestamp(),
-    });
+    };
+
+    // Registra a data de conclusão quando a ordem é marcada como pronta
+    if (newStatus === "Pronto") {
+      updateData.dataConclusao = serverTimestamp();
+    }
+
+    await updateDoc(orderRef, updateData);
     return true;
   } catch (error) {
     console.error("Erro ao atualizar status:", error);
