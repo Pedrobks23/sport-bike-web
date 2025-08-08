@@ -32,10 +32,17 @@ const storage = getStorage(app);
 export const updateOrderStatus = async (orderId, newStatus) => {
   try {
     const orderRef = doc(db, "ordens", orderId);
-    await updateDoc(orderRef, {
+    const updateData = {
       status: newStatus,
       dataAtualizacao: serverTimestamp(),
-    });
+    };
+
+    // Registra a data de conclusão quando a ordem é marcada como pronta
+    if (newStatus === "Pronto") {
+      updateData.dataConclusao = serverTimestamp();
+    }
+
+    await updateDoc(orderRef, updateData);
     return true;
   } catch (error) {
     console.error("Erro ao atualizar status:", error);
@@ -92,12 +99,18 @@ export const consultarOS = async (tipo, valor) => {
       const telefoneNumerico = valor.replace(/\D/g, "");
       console.log("Buscando pelo telefone:", telefoneNumerico);
 
-      // Filtra por telefone
-      q = query(
-        osRef,
-        where("cliente.telefone", "==", telefoneNumerico),
-        orderBy("dataCriacao", "desc"),
-      );
+      // Filtra por telefone completo ou sem DDD
+      q = telefoneNumerico.length === 9
+        ? query(
+            osRef,
+            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          )
+        : query(
+            osRef,
+            where("cliente.telefone", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          );
 
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
@@ -115,11 +128,17 @@ export const consultarOS = async (tipo, valor) => {
       }
 
       const telefoneNumerico = valor.replace(/\D/g, "");
-      q = query(
-        osRef,
-        where("cliente.telefone", "==", telefoneNumerico),
-        orderBy("dataCriacao", "desc"),
-      );
+      q = telefoneNumerico.length === 9
+        ? query(
+            osRef,
+            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          )
+        : query(
+            osRef,
+            where("cliente.telefone", "==", telefoneNumerico),
+            orderBy("dataCriacao", "desc"),
+          );
 
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {

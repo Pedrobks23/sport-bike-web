@@ -18,6 +18,7 @@ import { ArrowLeft, PlusCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import generateWorkshopTagsPDF from "../utils/generateWorkshopTagsPDF";
+import { listMechanics } from "../services/mechanicService";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
 const logo = new URL("/assets/Logo.png", import.meta.url).href;
@@ -77,12 +78,19 @@ function NewOrder() {
   // Armazena a ordem criada para imprimir depois
   const [createdOrder, setCreatedOrder] = useState(null);
 
+  const [mechanics, setMechanics] = useState([]);
+  const [selectedMechanic, setSelectedMechanic] = useState("");
+
   // -----------------------------
   // EFFECTS
   // -----------------------------
   // Carrega serviços ao montar
   useEffect(() => {
     loadServices();
+  }, []);
+
+  useEffect(() => {
+    listMechanics().then(setMechanics).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -172,7 +180,11 @@ function NewOrder() {
       const clientDoc = await getDoc(clientRef);
 
       if (clientDoc.exists()) {
-        setClientData(clientDoc.data());
+        const data = clientDoc.data();
+        setClientData({
+          ...data,
+          telefoneSemDDD: data.telefoneSemDDD || telefone.slice(-9)
+        });
         await loadClientBikes(telefone);
       } else {
         setClientData(null);
@@ -199,10 +211,11 @@ function NewOrder() {
       const clientRef = doc(db, "clientes", newClient.telefone);
       await setDoc(clientRef, {
         ...newClient,
+        telefoneSemDDD: newClient.telefone.slice(-9),
         dataCriacao: serverTimestamp(),
       });
 
-      setClientData(newClient);
+      setClientData({ ...newClient, telefoneSemDDD: newClient.telefone.slice(-9) });
       setShowClientForm(false);
       await loadClientBikes(newClient.telefone);
       setTelefone(newClient.telefone);
@@ -786,12 +799,14 @@ function NewOrder() {
         cliente: {
           nome: clientData.nome,
           telefone: clientData.telefone,
+          telefoneSemDDD: clientData.telefoneSemDDD || clientData.telefone.slice(-9),
           endereco: clientData.endereco,
         },
         bicicletas: bicicletasOrdem,
         valorTotal: valorTotal,
         observacoes,
         status: "Pendente",
+        mecanicoId: selectedMechanic,
         dataCriacao: new Date().toISOString(),
         dataAgendamento: new Date(scheduledDate + "T12:00:00").toISOString(),
         dataAtualizacao: new Date().toISOString(),
@@ -840,6 +855,7 @@ function NewOrder() {
         </header>
 
         {/* MAIN */}
+        {!createdOrder ? (
         <main className="container mx-auto px-4 py-8 pb-24">
         {error && (
           <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -1203,6 +1219,25 @@ function NewOrder() {
             </div>
 
             <div className="mb-4">
+              <label htmlFor="mechanic" className="font-semibold block mb-2">
+                Mecânico
+              </label>
+              <select
+                id="mechanic"
+                value={selectedMechanic}
+                onChange={(e) => setSelectedMechanic(e.target.value)}
+                className="px-4 py-2 border rounded-lg w-full"
+              >
+                <option value="">Selecione um mecânico</option>
+                {mechanics.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
               <label htmlFor="observacoes" className="font-semibold block mb-2">
                 Observações (opcional)
               </label>
@@ -1230,33 +1265,44 @@ function NewOrder() {
             >
               Criar Ordem de Serviço
             </button>
-
-            {/* Se a ordem foi criada, mostramos botões de impressão */}
-            {createdOrder && (
-              <div className="mt-6 space-x-4">
-                <button
-                  onClick={() => generatePDFClient(createdOrder)}
-                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
-                >
-                  Imprimir Versão Cliente
-                </button>
-                <button
-                  onClick={() => generatePDFStore(createdOrder)}
-                  className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
-                >
-                  Imprimir Versão Loja
-                </button>
-                <button
-                  onClick={() => generateWorkshopTagsPDF(createdOrder)}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-                >
-                  Imprimir Etiquetas
-                </button>
-              </div>
-            )}
           </div>
         )}
       </main>
+        ) : (
+      <main className="container mx-auto px-4 py-8 pb-24">
+        <h2 className="text-2xl font-bold mb-4">Ordem criada com sucesso!</h2>
+        <div className="space-y-6">
+          <div className="space-x-4">
+            <button
+              onClick={() => generatePDFClient(createdOrder)}
+              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
+            >
+              Imprimir Versão Cliente
+            </button>
+            <button
+              onClick={() => generatePDFStore(createdOrder)}
+              className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
+            >
+              Imprimir Versão Loja
+            </button>
+            <button
+              onClick={() => generateWorkshopTagsPDF(createdOrder)}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+            >
+              Imprimir Etiquetas
+            </button>
+          </div>
+          <div>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            >
+              Criar nova ordem
+            </button>
+          </div>
+        </div>
+      </main>
+        )}
       </div>
     </div>
   );
