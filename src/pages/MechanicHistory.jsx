@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { listMechanics } from "../services/mechanicService";
+import { listQuickServices } from "../services/quickServiceService";
 
 const MechanicHistory = () => {
   const { id } = useParams();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mechanic, setMechanic] = useState(null);
+  const [services, setServices] = useState([]);
 
   useEffect(() => {
     const theme = localStorage.getItem("theme");
@@ -17,6 +19,11 @@ const MechanicHistory = () => {
     listMechanics().then((list) => {
       setMechanic(list.find((m) => m.id === id));
     });
+    listQuickServices()
+      .then((data) => {
+        setServices(data.filter((s) => s.mecanicoId === id));
+      })
+      .catch(console.error);
   }, [id]);
 
   return (
@@ -31,7 +38,43 @@ const MechanicHistory = () => {
           </h1>
         </header>
         <main className="p-4">
-          <p className="text-gray-700 dark:text-gray-300">Histórico não implementado.</p>
+          {services.length === 0 ? (
+            <p className="text-gray-700 dark:text-gray-300">Nenhum serviço registrado.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-600">
+                    <th className="py-2 px-2 text-left">Data</th>
+                    <th className="py-2 px-2 text-left">Serviço</th>
+                    <th className="py-2 px-2 text-center">Qtd</th>
+                    <th className="py-2 px-2 text-right">Valor</th>
+                    <th className="py-2 px-2 text-left">Obs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <td className="py-2 px-2">
+                        {s.dataCriacao
+                          ? new Date(s.dataCriacao).toLocaleDateString("pt-BR")
+                          : ""}
+                      </td>
+                      <td className="py-2 px-2">{s.servico}</td>
+                      <td className="py-2 px-2 text-center">{s.quantidade}</td>
+                      <td className="py-2 px-2 text-right">
+                        R$ {Number(s.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-2 px-2">{s.observacoes || ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </main>
       </div>
     </div>

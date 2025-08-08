@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
 import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
@@ -44,6 +44,7 @@ const ReportsManagement = () => {
   const averageTicket = totalServices ? totalRevenue / totalServices : 0;
   const tableColumns = [
     { name: "data", label: "Data" },
+    { name: "os", label: "OS" },
     { name: "servico", label: "Serviço" },
     { name: "mecanico", label: "Mecânico" },
     { name: "origem", label: "Origem" },
@@ -190,6 +191,7 @@ const ReportsManagement = () => {
                     totalServicos += quantidade;
                     detailRows.push({
                       data: orderDate,
+                      os: doc.id,
                       servico: serviceName,
                       quantidade,
                       valor: servicoTotal,
@@ -210,6 +212,7 @@ const ReportsManagement = () => {
                     totalServicos += quantidade;
                     detailRows.push({
                       data: orderDate,
+                      os: doc.id,
                       servico: serviceName,
                       quantidade,
                       valor: servicoTotal,
@@ -259,6 +262,7 @@ const ReportsManagement = () => {
             const valorTotal = (parseFloat(data.valor) || 0) * quantidade;
             detailRows.push({
               data: dataCriacao,
+              os: "",
               servico: data.servico,
               quantidade,
               valor: valorTotal,
