@@ -170,19 +170,18 @@ const ReportsManagement = () => {
         let querySnapshot;
 
         try {
-          const rangeQuery = query(
+          const ordersQuery = query(
             ordensRef,
-            where("dataConclusao", ">=", startDate),
-            where("dataConclusao", "<=", endDate)
+            where("dataAtualizacao", ">=", startDate),
+            where("dataAtualizacao", "<=", endDate),
+            orderBy("dataAtualizacao", "desc")
           );
-          querySnapshot = await getDocs(rangeQuery);
-
-          if (querySnapshot.empty) {
-            const ordersQuery = query(ordensRef, orderBy("dataAtualizacao", "desc"));
-            querySnapshot = await getDocs(ordersQuery);
-          }
+          querySnapshot = await getDocs(ordersQuery);
         } catch (err) {
-          console.warn("Consulta por dataConclusao falhou, usando dataAtualizacao:", err);
+          console.warn(
+            "Consulta por dataAtualizacao falhou, carregando todas as ordens:",
+            err
+          );
           const ordersQuery = query(ordensRef, orderBy("dataAtualizacao", "desc"));
           querySnapshot = await getDocs(ordersQuery);
         }
