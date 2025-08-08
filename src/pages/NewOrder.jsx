@@ -855,6 +855,7 @@ function NewOrder() {
         </header>
 
         {/* MAIN */}
+        {!createdOrder ? (
         <main className="container mx-auto px-4 py-8 pb-24">
         {error && (
           <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -1264,33 +1265,44 @@ function NewOrder() {
             >
               Criar Ordem de Serviço
             </button>
-
-            {/* Se a ordem foi criada, mostramos botões de impressão */}
-            {createdOrder && (
-              <div className="mt-6 space-x-4">
-                <button
-                  onClick={() => generatePDFClient(createdOrder)}
-                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
-                >
-                  Imprimir Versão Cliente
-                </button>
-                <button
-                  onClick={() => generatePDFStore(createdOrder)}
-                  className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
-                >
-                  Imprimir Versão Loja
-                </button>
-                <button
-                  onClick={() => generateWorkshopTagsPDF(createdOrder)}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-                >
-                  Imprimir Etiquetas
-                </button>
-              </div>
-            )}
           </div>
         )}
       </main>
+        ) : (
+      <main className="container mx-auto px-4 py-8 pb-24">
+        <h2 className="text-2xl font-bold mb-4">Ordem criada com sucesso!</h2>
+        <div className="space-y-6">
+          <div className="space-x-4">
+            <button
+              onClick={() => generatePDFClient(createdOrder)}
+              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
+            >
+              Imprimir Versão Cliente
+            </button>
+            <button
+              onClick={() => generatePDFStore(createdOrder)}
+              className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
+            >
+              Imprimir Versão Loja
+            </button>
+            <button
+              onClick={() => generateWorkshopTagsPDF(createdOrder)}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+            >
+              Imprimir Etiquetas
+            </button>
+          </div>
+          <div>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            >
+              Criar nova ordem
+            </button>
+          </div>
+        </div>
+      </main>
+        )}
       </div>
     </div>
   );

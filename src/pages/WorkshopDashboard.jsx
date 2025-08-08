@@ -31,7 +31,9 @@ import {
   updateOrderPart,
   getOrder,
   getServices,
+  updateOrderMechanic,
 } from "../services/orderService";
+import { listMechanics } from "../services/mechanicService";
 
 // -------- ADAPTAÇÃO: Importação para PDF (sem remover nada do seu código) --------
 import { jsPDF } from "jspdf";
@@ -90,6 +92,7 @@ const WorkshopDashboard = () => {
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showPartModal, setShowPartModal] = useState(false);
   const [serviceTable, setServiceTable] = useState({});
+  const [mechanics, setMechanics] = useState([]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -114,13 +117,15 @@ const WorkshopDashboard = () => {
     const initialize = async () => {
       try {
         setLoading(true);
-        const [ordersData, servicesData] = await Promise.all([
+        const [ordersData, servicesData, mechanicsData] = await Promise.all([
           getOrders(),
           getServices(),
+          listMechanics(),
         ]);
 
         setOrders(ordersData);
         setServiceTable(servicesData);
+        setMechanics(mechanicsData);
       } catch (err) {
         console.error("Erro ao inicializar:", err);
         setError("Erro ao carregar dados. Por favor, recarregue a página.");
@@ -187,6 +192,16 @@ const WorkshopDashboard = () => {
     } catch (error) {
       console.error("Erro ao atualizar ordem:", error);
       setError("Erro ao atualizar ordem");
+    }
+  };
+
+  const handleAssignMechanic = async (orderId, mechanicId) => {
+    try {
+      await updateOrderMechanic(orderId, mechanicId);
+      await handleOrderUpdate();
+    } catch (error) {
+      console.error("Erro ao atribuir mecânico:", error);
+      setError("Erro ao atribuir mecânico");
     }
   };
 
@@ -803,6 +818,20 @@ const WorkshopDashboard = () => {
                 Gerar Recibo
               </button>
             )}
+          </div>
+          <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+            <select
+              value={order.mecanicoId || ""}
+              onChange={(e) => handleAssignMechanic(order.id, e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md px-2 py-1 text-sm"
+            >
+              <option value="">Sem mecânico</option>
+              {mechanics.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
