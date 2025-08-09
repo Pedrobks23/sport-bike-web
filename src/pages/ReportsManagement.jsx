@@ -1,8 +1,16 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, Download, BarChart3, Calendar, TrendingUp, DollarSign, Package } from "lucide-react";
-import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
+import {
+  collection,
+  query,
+  getDocs,
+  where,
+  Timestamp,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "../config/firebase";
 import { listMechanics } from "../services/mechanicService";
+import { listQuickServices } from "../services/quickServiceService";
 import {
   LineChart,
   Line,
@@ -15,17 +23,18 @@ import {
 } from "recharts";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import GenericDataTable from "../components/GenericDataTable";
 
 const ReportsManagement = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reportType, setReportType] = useState("monthly");
   const [selectedService, setSelectedService] = useState("all");
-  const [services, setServices] = useState([]);
-  const [mechanics, setMechanics] = useState([]);
   const [selectedMechanic, setSelectedMechanic] = useState("all");
-  const [selectedOrigin, setSelectedOrigin] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [itemType, setItemType] = useState("all");
+  const [mechanics, setMechanics] = useState([]);
+  const [services, setServices] = useState([]);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const getDefaultDateRange = () => {
     const end = new Date();
     const start = new Date();
@@ -37,20 +46,10 @@ const ReportsManagement = () => {
   };
   const [dateRange, setDateRange] = useState(getDefaultDateRange());
   const [reportData, setReportData] = useState([]);
-  const [detailedServices, setDetailedServices] = useState([]);
 
   const totalRevenue = reportData.reduce((sum, item) => sum + item.total, 0);
   const totalServices = reportData.reduce((sum, item) => sum + item.quantity, 0);
   const averageTicket = totalServices ? totalRevenue / totalServices : 0;
-  const tableColumns = [
-    { name: "data", label: "Data" },
-    { name: "os", label: "OS" },
-    { name: "servico", label: "Serviço" },
-    { name: "mecanico", label: "Mecânico" },
-    { name: "origem", label: "Origem" },
-    { name: "quantidade", label: "Qtd" },
-    { name: "valor", label: "Valor" },
-  ];
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -82,12 +81,13 @@ const ReportsManagement = () => {
       console.error("Erro ao carregar serviços:", error);
     }
   };
+
   const loadMechanics = async () => {
     try {
       const data = await listMechanics();
       setMechanics(data);
-    } catch (error) {
-      console.error("Erro ao carregar mecânicos:", error);
+    } catch (err) {
+      console.error('Erro ao carregar mecânicos:', err);
     }
   };
   const processOrders = (orders, type) => {
@@ -158,188 +158,204 @@ const ReportsManagement = () => {
 
   const loadReportData = async () => {
     setLoading(true);
+    const ordensRef = collection(db, 'ordens');
+    const start = Timestamp.fromDate(new Date(`${dateRange.start}T00:00`));
+    const end = Timestamp.fromDate(new Date(`${dateRange.end}T23:59`));
+    const q = query(
+      ordensRef,
+      where('dataConclusao', '>=', start),
+      where('dataConclusao', '<=', end),
+      orderBy('dataConclusao')
+    );
     try {
-      const detailRows = [];
-      let orders = [];
-      if (selectedOrigin !== "avulso") {
-        const ordensRef = collection(db, "ordens");
-        const ordersQuery = query(ordensRef, orderBy("dataCriacao", "desc"));
-        const querySnapshot = await getDocs(ordersQuery);
+      const snap = await getDocs(q);
+      const agg = {};
 
-        orders = querySnapshot.docs
-        .map((doc) => {
-          const data = doc.data();
-          let totalValor = 0;
-          let totalServicos = 0;
+      const addRow = (periodKey, mechId, nome, qtd, valor, fonte, tipo) => {
+        if (itemType !== 'all' && itemType !== tipo) return;
+        if (!agg[periodKey]) agg[periodKey] = { total: 0, qtd: 0, lines: [] };
+        agg[periodKey].total += valor * qtd;
+        agg[periodKey].qtd += qtd;
+        agg[periodKey].lines.push({ fonte, mechId, nome, qtd, valor, tipo });
+      };
 
-          const getDate = (field) =>
-            field ? (typeof field === 'string' ? new Date(field) : field.toDate()) : null;
-          const orderDate =
-            getDate(data.dataConclusao) ||
-            getDate(data.dataAtualizacao) ||
-            getDate(data.dataCriacao);
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.status !== 'Pronto') return;
+        const dataFinal =
+          typeof data.dataConclusao === 'string'
+            ? new Date(data.dataConclusao)
+            : data.dataConclusao.toDate();
 
-          if (data.bicicletas?.length > 0) {
-            data.bicicletas.forEach((bike) => {
-              if (bike.valorServicos) {
-                Object.entries(bike.valorServicos).forEach(([serviceName, valor]) => {
-                  if (selectedService === "all" || serviceName === selectedService) {
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = parseFloat(valor) * quantidade;
-                    totalValor += servicoTotal;
-                    totalServicos += quantidade;
-                    detailRows.push({
-                      data: orderDate,
-                      os: data.codigo || doc.id,
-                      servico: serviceName,
-                      quantidade,
-                      valor: servicoTotal,
-                      mecanico: "",
-                      origem: "OS",
-                    });
-                  }
-                });
-              }
+        const getPeriod = () => {
+          switch (reportType) {
+            case 'daily':
+              return dataFinal.toLocaleDateString('pt-BR');
+            case 'weekly': {
+              const ws = new Date(dataFinal);
+              ws.setDate(ws.getDate() - ws.getDay());
+              return `Semana de ${ws.toLocaleDateString('pt-BR')}`;
+            }
+            case 'monthly':
+            default:
+              return dataFinal.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+          }
+        };
 
-              if (bike.serviceValues) {
-                Object.entries(bike.serviceValues).forEach(([serviceName, serviceData]) => {
-                  if (selectedService === "all" || serviceName === selectedService) {
-                    const valor = serviceData.valorFinal || serviceData.valor || 0;
-                    const quantidade = bike.services?.[serviceName] || 1;
-                    const servicoTotal = valor * quantidade;
-                    totalValor += servicoTotal;
-                    totalServicos += quantidade;
-                    detailRows.push({
-                      data: orderDate,
-                      os: data.codigo || doc.id,
-                      servico: serviceName,
-                      quantidade,
-                      valor: servicoTotal,
-                      mecanico: "",
-                      origem: "OS",
-                    });
-                  }
-                });
-              }
+        (data.bicicletas || []).forEach((bike) => {
+          const mechCond =
+            selectedMechanic === 'all'
+              ? true
+              : selectedMechanic === 'none'
+              ? !bike.mecanicoId
+              : bike.mecanicoId === selectedMechanic;
+          if (!mechCond) return;
+          const periodKey = getPeriod();
+
+          if (sourceFilter === 'all' || sourceFilter === 'os') {
+            const addService = (nome, qtd, valor) => {
+              if (selectedService !== 'all' && nome !== selectedService) return;
+              addRow(periodKey, bike.mecanicoId || '', nome, qtd, valor, 'os', 'service');
+            };
+            if (Array.isArray(bike.servicosInclusos)) {
+              bike.servicosInclusos.forEach((s) => addService(s.nome || s.servico || s.id, s.quantidade, s.valorFinal ?? s.valor));
+            } else if (bike.serviceValues) {
+              Object.entries(bike.serviceValues).forEach(([nome, s]) => {
+                addService(nome, bike.services?.[nome] || s.quantidade, s.valorFinal ?? s.valor);
+              });
+            } else if (bike.valorServicos) {
+              Object.entries(bike.valorServicos).forEach(([nome, val]) => {
+                addService(nome, bike.services?.[nome], val);
+              });
+            }
+
+            (bike.pecas || []).forEach((p) => {
+              if (itemType !== 'all' && itemType !== 'part') return;
+              const qty = parseInt(p.quantidade) || 1;
+              const val = parseFloat(p.valor) || 0;
+              addRow(periodKey, bike.mecanicoId || '', p.nome, qty, val, 'os', 'part');
             });
           }
-
-          return {
-            id: doc.id,
-            status: data.status,
-            data: orderDate,
-            valor: totalValor,
-            quantidade: totalServicos,
-          };
-        })
-        .filter((order) => {
-          const startDate = new Date(dateRange.start);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(dateRange.end);
-          endDate.setHours(23, 59, 59, 999);
-          return (
-            order.status?.toLowerCase() === 'pronto' &&
-            order.data >= startDate &&
-            order.data <= endDate
-          );
         });
-        if (selectedMechanic !== "all") {
-          orders = []; // ordens não possuem mecânico, então retornamos vazio
-        }
-      }
+      });
 
-      let avulsos = [];
-      if (selectedOrigin !== "os") {
-        const avulsoRef = collection(db, "servicosAvulsos");
-        const avulsoQuery = query(avulsoRef, orderBy("dataCriacao", "desc"));
-        const avulsoSnap = await getDocs(avulsoQuery);
-        avulsos = avulsoSnap.docs
-          .map((doc) => {
-            const data = doc.data();
-            const dataCriacao = data.dataCriacao?.toDate ? data.dataCriacao.toDate() : new Date();
-            const quantidade = parseInt(data.quantidade) || 1;
-            const valorTotal = (parseFloat(data.valor) || 0) * quantidade;
-            detailRows.push({
-              data: dataCriacao,
-              os: "",
-              servico: data.servico,
-              quantidade,
-              valor: valorTotal,
-              mecanico: mechanics.find((m) => m.id === data.mecanicoId)?.nome || "",
-              origem: "Avulso",
+      if (sourceFilter === 'all' || sourceFilter === 'avulso') {
+        const avulsoSnap = await getDocs(
+          query(
+            collection(db, 'servicosAvulsos'),
+            where('data', '>=', start),
+            where('data', '<=', end)
+          )
+        );
+        avulsoSnap.forEach((d) => {
+          const { data, servico, quantidade, valor, mecanicoId, pecas = [] } = d.data();
+          const dt = data.toDate();
+          let periodKey;
+          switch (reportType) {
+            case 'daily':
+              periodKey = dt.toLocaleDateString('pt-BR');
+              break;
+            case 'weekly': {
+              const ws = new Date(dt);
+              ws.setDate(ws.getDate() - ws.getDay());
+              periodKey = `Semana de ${ws.toLocaleDateString('pt-BR')}`;
+              break;
+            }
+            case 'monthly':
+            default:
+              periodKey = dt.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+          }
+          if (
+            (selectedMechanic === 'all') ||
+            (selectedMechanic === 'none' ? !mecanicoId : mecanicoId === selectedMechanic)
+          ) {
+            if (selectedService === 'all' || servico === selectedService) {
+              addRow(periodKey, mecanicoId || '', servico, quantidade, valor, 'avulso', 'service');
+            }
+            pecas.forEach((p) => {
+              if (selectedService !== 'all' && p.nome !== selectedService) return;
+              const qt = parseInt(p.quantidade) || 1;
+              const vl = parseFloat(p.valor) || 0;
+              addRow(periodKey, mecanicoId || '', p.nome, qt, vl, 'avulso', 'part');
             });
-            return {
-              id: doc.id,
-              data: dataCriacao,
-              valor: valorTotal,
-              quantidade,
-              mecanicoId: data.mecanicoId,
-              servico: data.servico,
-            };
-          })
-          .filter((item) => {
-            const startDate = new Date(dateRange.start);
-            startDate.setHours(0, 0, 0, 0);
-            const endDate = new Date(dateRange.end);
-            endDate.setHours(23, 59, 59, 999);
-            return (
-              item.data >= startDate &&
-              item.data <= endDate &&
-              (selectedService === "all" || item.servico === selectedService) &&
-              (selectedMechanic === "all" || item.mecanicoId === selectedMechanic)
-            );
-          });
+          }
+        });
       }
 
-      const combined = [...orders, ...avulsos];
-
-      const processedData = processOrders(combined, reportType);
-      setReportData(processedData);
-      setDetailedServices(
-        detailRows.map((d) => ({
-          ...d,
-          data: d.data.toLocaleDateString("pt-BR"),
-          valor: d.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+      const result = Object.entries(agg)
+        .map(([period, info]) => ({
+          period,
+          total: Number(info.total.toFixed(2)),
+          quantity: info.qtd,
+          lines: info.lines,
         }))
-      );
+        .sort((a, b) => new Date(a.period) - new Date(b.period));
+
+      setReportData(result);
     } catch (error) {
-      console.error("Erro ao carregar dados:", error);
+      console.error('Erro ao carregar dados:', error);
+      if (error?.message?.includes('create_composite')) {
+        console.log('Crie o índice em:', error.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const exportPDF = () => {
+  const exportPDF = async (opts = {}) => {
     const doc = new jsPDF();
+    const startStr = dateRange.start;
+    const endStr = dateRange.end;
+    const format = reportType === 'daily' ? 'Diário' : reportType === 'weekly' ? 'Semanal' : 'Mensal';
+    const mechValue = opts.reset ? 'all' : selectedMechanic;
+    const mechName =
+      mechValue === 'all'
+        ? 'Todos'
+        : mechValue === 'none'
+        ? 'Sem mecânico'
+        : mechanics.find((m) => m.id === mechValue)?.nome || mechValue;
 
-    doc.text("Relatório de Serviços", 14, 15);
-    doc.text(`Período: ${dateRange.start} a ${dateRange.end}`, 14, 25);
+    doc.text(`Relatório • ${format}`, 14, 15);
+    doc.text(`Período: ${startStr} – ${endStr}`, 14, 22);
+    doc.text(`Serviço: ${selectedService === 'all' ? 'Todos' : selectedService}`, 14, 29);
+    doc.text(`Mecânico: ${mechName}`, 14, 36);
 
-    const tableColumn = ["Período", "Quantidade", "Total"];
-    const tableRows = reportData.map((item) => [
-      item.period,
-      item.quantity,
-      `R$ ${item.total.toFixed(2)}`,
-    ]);
+    const dataSet = reportData;
+    const headResumo = [['Período', 'Quantidade', 'Total']];
+    const bodyResumo = dataSet.map((r) => [r.period, r.quantity, r.total.toFixed(2)]);
+    doc.autoTable({ head: headResumo, body: bodyResumo, startY: 40, headStyles: { fillColor: [250, 204, 21] } });
 
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 35,
-      theme: "grid",
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [37, 99, 235] },
-    });
+    const lines = dataSet.flatMap((r) =>
+      r.lines.map((l) => [
+        r.period,
+        l.fonte === 'avulso' ? 'Avulso' : 'OS',
+        mechanics.find((m) => m.id === l.mechId)?.nome || (l.mechId ? l.mechId : '—'),
+        l.tipo === 'part' ? 'Peça' : 'Serviço',
+        l.nome,
+        l.qtd,
+        (l.valor * l.qtd).toFixed(2),
+      ])
+    );
 
-    doc.save(`relatorio-${new Date().toISOString()}.pdf`);
+    if (lines.length) {
+      doc.autoTable({
+        head: [['Período', 'Fonte', 'Mecânico', 'Tipo', 'Item', 'Qtd', 'Total']],
+        body: lines,
+        startY: doc.lastAutoTable.finalY + 10,
+        headStyles: { fillColor: [250, 204, 21] },
+      });
+    }
+
+    doc.save('relatorio.pdf');
   };
   useEffect(() => {
     loadServices();
     loadMechanics();
   }, []);
+
   useEffect(() => {
     loadReportData();
-  }, [reportType, selectedService, selectedMechanic, selectedOrigin, dateRange, mechanics]);
+  }, [reportType, selectedService, selectedMechanic, dateRange, sourceFilter, itemType]);
   useEffect(() => {
     const now = new Date();
     let start = new Date(now);
@@ -374,19 +390,37 @@ const ReportsManagement = () => {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center space-x-3">
-                  <div className="bg-gradient-to-r from-indigo-400 to-indigo-600 p-2 rounded-full">
+                  <div className="bg-gradient-to-r from-amber-400 to-black p-2 rounded-full">
                     <BarChart3 className="w-6 h-6 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Relatórios</h1>
                 </div>
               </div>
-              <button
-                onClick={exportPDF}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
-              >
-                <Download className="w-5 h-5" />
-                <span>Exportar PDF</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportMenu((s) => !s)}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Exportar PDF ▼</span>
+                </button>
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-2 bg-white shadow rounded text-sm z-10">
+                    <button
+                      onClick={() => { setShowExportMenu(false); exportPDF(); }}
+                      className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                    >
+                      Atual (com filtros)
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); exportPDF({ reset: true }); }}
+                      className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                    >
+                      Todos os dados
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -394,7 +428,32 @@ const ReportsManagement = () => {
         <main className="container mx-auto px-4 py-8">
           <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
             <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Filtros do Relatório</h2>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fonte das entradas</label>
+                <select
+                  value={sourceFilter}
+                  onChange={e => setSourceFilter(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="all">Todas as fontes</option>
+                  <option value="os">Ordens de Serviço</option>
+                  <option value="avulso">Serviços Avulsos</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de item</label>
+                <select
+                  value={itemType}
+                  onChange={e => setItemType(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="all">Peças + Serviços</option>
+                  <option value="service">Somente Serviços</option>
+                  <option value="part">Somente Peças</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Tipo de Relatório
@@ -433,23 +492,13 @@ const ReportsManagement = () => {
                   onChange={(e) => setSelectedMechanic(e.target.value)}
                   className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 >
-                  <option value="all">Todos</option>
+                  <option value="all">Todos os mecânicos</option>
+                  <option value="none">Sem mecânico</option>
                   {mechanics.map((m) => (
-                    <option key={m.id} value={m.id}>{m.nome}</option>
+                    <option key={m.id} value={m.id}>
+                      {m.nome}
+                    </option>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Origem</label>
-                <select
-                  value={selectedOrigin}
-                  onChange={(e) => setSelectedOrigin(e.target.value)}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                >
-                  <option value="all">Todas</option>
-                  <option value="os">OS</option>
-                  <option value="avulso">Avulso</option>
                 </select>
               </div>
 
@@ -497,8 +546,8 @@ const ReportsManagement = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-400">Total de Serviços</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-white">{totalServices}</p>
                 </div>
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
-                  <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full">
+                  <Package className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                 </div>
               </div>
             </div>
@@ -533,7 +582,11 @@ const ReportsManagement = () => {
           </div>
 
           <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Resultados</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
+              Resultados
+              {selectedService !== 'all' && ` — ${selectedService}`}
+              {selectedMechanic !== 'all' && ` — ${mechanics.find(m=>m.id===selectedMechanic)?.nome || ''}`}
+            </h2>
             <div className="h-64 bg-gray-100 dark:bg-gray-700 rounded-lg mb-6 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={reportData}>
@@ -556,27 +609,35 @@ const ReportsManagement = () => {
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-600">
                     <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">PERÍODO</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-800 dark:text-white">QUANTIDADE</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">FONTE</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">MECÂNICO</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">TIPO</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">ITEM</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-800 dark:text-white">QTD</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-800 dark:text-white">TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reportData.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                    >
-                      <td className="py-3 px-4 text-gray-800 dark:text-white">{item.period}</td>
-                      <td className="py-3 px-4 text-center text-gray-800 dark:text-white">{item.quantity}</td>
-                      <td className="py-3 px-4 text-right font-semibold text-gray-800 dark:text-white">
-                        R$ {item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  ))}
+                  {reportData.flatMap(({ period, lines }) =>
+                    lines.map((l, i) => (
+                      <tr
+                        key={period + i}
+                        className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <td className="py-3 px-4">{period}</td>
+                        <td className="py-3 px-4">{l.fonte === 'avulso' ? 'Avulso' : 'OS'}</td>
+                        <td className="py-3 px-4">{mechanics.find(m => m.id === l.mechId)?.nome || (l.mechId ? l.mechId : '—')}</td>
+                        <td className="py-3 px-4">{l.tipo === 'part' ? 'Peça' : 'Serviço'}</td>
+                        <td className="py-3 px-4">{l.nome}</td>
+                        <td className="py-3 px-4 text-center">{l.qtd}</td>
+                        <td className="py-3 px-4 text-right">R$ {(l.valor * l.qtd).toFixed(2)}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
-                    <td className="py-3 px-4 font-bold text-gray-800 dark:text-white">TOTAL GERAL</td>
+                    <td colSpan="5" className="py-3 px-4 font-bold text-gray-800 dark:text-white">TOTAL GERAL</td>
                     <td className="py-3 px-4 text-center font-bold text-gray-800 dark:text-white">{totalServices}</td>
                     <td className="py-3 px-4 text-right font-bold text-amber-600 dark:text-amber-400 text-lg">
                       R$ {totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -585,10 +646,6 @@ const ReportsManagement = () => {
                 </tfoot>
               </table>
             </div>
-          </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mt-8">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Serviços Individuais</h2>
-            <GenericDataTable columns={tableColumns} data={detailedServices} />
           </div>
         </main>
       </div>

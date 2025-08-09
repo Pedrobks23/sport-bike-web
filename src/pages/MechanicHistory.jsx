@@ -10,7 +10,6 @@ import {
 } from "firebase/firestore";
 import { listMechanics } from "../services/mechanicService";
 import { listQuickServices } from "../services/quickServiceService";
-import GenericDataTable from "../components/GenericDataTable";
 import { db } from "../config/firebase";
 
 const MechanicHistory = () => {
@@ -127,16 +126,6 @@ const MechanicHistory = () => {
     observacoes: s.observacoes,
   }));
 
-  const columns = [
-    { name: "data", label: "Data" },
-    { name: "os", label: "OS" },
-    { name: "servico", label: "Serviço" },
-    { name: "quantidade", label: "Qtd" },
-    { name: "valor", label: "Valor" },
-    { name: "origem", label: "Origem", options: { filter: true } },
-    { name: "observacoes", label: "Obs" },
-  ];
-
   return (
     <div className={`min-h-screen ${isDarkMode ? "dark" : ""}`}>
       <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
@@ -194,13 +183,38 @@ const MechanicHistory = () => {
                 </div>
               </div>
 
-              <GenericDataTable
-                title="Histórico de Serviços"
-                columns={columns}
-                data={tableData}
-                loading={loading}
-                options={{ filter: true, search: true }}
-              />
+              {loading ? (
+                <p className="text-gray-700 dark:text-gray-300">Carregando...</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="px-2 py-1 text-left">Data</th>
+                        <th className="px-2 py-1 text-left">OS</th>
+                        <th className="px-2 py-1 text-left">Serviço</th>
+                        <th className="px-2 py-1 text-left">Qtd</th>
+                        <th className="px-2 py-1 text-left">Valor</th>
+                        <th className="px-2 py-1 text-left">Origem</th>
+                        <th className="px-2 py-1 text-left">Obs</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tableData.map((row, idx) => (
+                        <tr key={idx} className="border-b last:border-0">
+                          <td className="px-2 py-1">{row.data}</td>
+                          <td className="px-2 py-1">{row.os}</td>
+                          <td className="px-2 py-1">{row.servico}</td>
+                          <td className="px-2 py-1">{row.quantidade}</td>
+                          <td className="px-2 py-1">{row.valor}</td>
+                          <td className="px-2 py-1">{row.origem}</td>
+                          <td className="px-2 py-1">{row.observacoes}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </main>
