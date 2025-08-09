@@ -18,7 +18,6 @@ import {
   X,
   Play,
   Pause,
-  ShoppingCart,
   Award,
   Truck,
   CreditCard,
@@ -29,31 +28,18 @@ import {
 import { useNavigate } from "react-router-dom"
 import { auth } from "../config/firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
-
-const normalizeDriveUrl = (url) => {
-  if (!url) return url
-  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
-  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`
-  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
-  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`
-  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/)
-  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`
-  return url
-}
+import FeaturedGrid from "../components/FeaturedGrid"
 
 export default function Home() {
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
-  const [currentProduct, setCurrentProduct] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(true)
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
-  const [featuredProducts, setFeaturedProducts] = useState([])
   const [showFeatured, setShowFeatured] = useState(true)
   const videoRef = useRef(null)
 
@@ -169,26 +155,16 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    const fetchData = async () => {
-      const prods = await getFeaturedProducts()
-      const normalized = prods
-        .map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }))
-        .filter((p) => p.visible !== false)
-      const settings = await getHomeSettings()
-      setFeaturedProducts(normalized)
-      setShowFeatured(settings.showFeaturedProducts ?? true)
-    }
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    featuredProducts.forEach((p) => {
-      if (p.image) {
-        const img = new Image()
-        img.src = p.image
+    const fetchSettings = async () => {
+      try {
+        const settings = await getHomeSettings()
+        setShowFeatured(settings.showFeaturedProducts ?? true)
+      } catch (err) {
+        console.error("Erro ao carregar configurações:", err)
       }
-    })
-  }, [featuredProducts])
+    }
+    fetchSettings()
+  }, [])
 
   // sync video playback state
   useEffect(() => {
@@ -208,22 +184,13 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // auto rotate testimonials and products
+  // auto rotate testimonials
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
-      if (featuredProducts.length > 0) {
-        setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)
-      }
     }, 5000)
     return () => clearInterval(interval)
-  }, [testimonials.length, featuredProducts.length])
-
-  useEffect(() => {
-    if (featuredProducts.length > 0) {
-      setCurrentProduct(0)
-    }
-  }, [featuredProducts.length])
+  }, [testimonials.length])
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -455,89 +422,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Featured Products Carousel */}
-        {showFeatured && (
-          <section className="py-20 bg-white dark:bg-gray-800">
-            <div className="container mx-auto px-4">
-              <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
-                  Produtos em Destaque
-                </h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                  Confira nossa seleção especial de bikes e acessórios
-                </p>
-              </div>
-              <div className="relative max-w-4xl mx-auto">
-                {featuredProducts.length > 0 ? (
-                  <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 shadow-2xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                      <div>
-                        {featuredProducts[currentProduct].image && (
-                          <img
-                            src={featuredProducts[currentProduct].image}
-                            alt={featuredProducts[currentProduct].name}
-                            className="w-full h-64 object-cover rounded-lg"
-                            loading="lazy"
-                          />
-                        )}
-                      </div>
-                      <div className="text-white">
-                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
-                          {featuredProducts[currentProduct].category}
-                        </span>
-                        <h3 className="text-2xl font-bold mt-4 mb-2">{featuredProducts[currentProduct].name}</h3>
-                        <p className="text-3xl font-bold mb-2">{featuredProducts[currentProduct].price}</p>
-                        {featuredProducts[currentProduct].description && (
-                          <p className="mb-4 text-white/90 whitespace-pre-line">
-                            {featuredProducts[currentProduct].description}
-                          </p>
-                        )}
-                        <button
-                          onClick={() =>
-                            handleWhatsApp(
-                              `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`,
-                            )
-                          }
-                          className="bg-white text-amber-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
-                        >
-                          <ShoppingCart className="w-5 h-5" />
-                          <span>Tenho Interesse</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
-                )}
-                <button
-                  onClick={() =>
-                    setCurrentProduct((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)
-                  }
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
-                >
-                  <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                </button>
-                <button
-                  onClick={() => setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
-                >
-                  <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                </button>
-                <div className="flex justify-center mt-8 space-x-2">
-                  {featuredProducts.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentProduct(index)}
-                      className={`w-3 h-3 rounded-full transition-all ${
-                        index === currentProduct ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+        {showFeatured && <FeaturedGrid />}
 
         {/* Services Section */}
         <section id="servicos" className="py-20 bg-gray-50 dark:bg-gray-900">
