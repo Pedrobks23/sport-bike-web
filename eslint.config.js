@@ -33,6 +33,11 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      'react/prop-types': 'off',
+      'no-unused-vars': 'warn',
+      'no-prototype-builtins': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react/display-name': 'off',
     },
   },
 ]
