@@ -18,7 +18,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { v2 as cloudinary } from "cloudinary";
 
-export const config = { runtime: "nodejs18.x" };
+export const config = { runtime: "nodejs" };
 
 const {
   CLOUDINARY_CLOUD_NAME,
@@ -54,7 +54,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
 
-    const { publicId } = req.body || {};
+    // Em @vercel/node, JSON já vem em req.body quando Content-Type: application/json
+    const { publicId } = (req.body || {}) as { publicId?: string };
+
     if (!publicId || typeof publicId !== "string") {
       return res.status(400).json({ ok: false, error: "publicId inválido" });
     }
@@ -65,3 +67,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ ok: false, error: e?.message || "Erro interno" });
   }
 }
+
