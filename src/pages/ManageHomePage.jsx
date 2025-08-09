@@ -23,7 +23,7 @@ export default function ManageHomePage() {
       category: "MTB 29",
       price: "R$ 1.200",
       description: "Modelo de entrada para trilhas",
-      image: "/placeholder.svg?height=200&width=300",
+      image: "",
       featured: true,
       visible: true,
     },
@@ -33,7 +33,7 @@ export default function ManageHomePage() {
       category: "Speed",
       price: "R$ 3.500",
       description: "Bicicleta de alta performance em carbono",
-      image: "/placeholder.svg?height=200&width=300",
+      image: "",
       featured: true,
       visible: true,
     },
@@ -43,7 +43,7 @@ export default function ManageHomePage() {
       category: "Urbana",
       price: "R$ 890",
       description: "Perfeita para deslocamentos diários",
-      image: "/placeholder.svg?height=200&width=300",
+      image: "",
       featured: false,
       visible: true,
     },
@@ -79,7 +79,7 @@ export default function ManageHomePage() {
         category,
         price,
         description,
-        image: "/placeholder.svg?height=200&width=300",
+        image: "",
         featured: false,
         visible: true,
       },
@@ -184,7 +184,7 @@ export default function ManageHomePage() {
                   >
                   <div className="relative">
                     <img
-                      src={product.image || "/placeholder.svg"}
+                      src={product.image}
                       alt={product.name}
                       className="w-full h-48 object-cover"
                       loading="lazy"

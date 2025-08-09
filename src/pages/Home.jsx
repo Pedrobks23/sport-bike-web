@@ -411,9 +411,7 @@ export default function Home() {
               muted
               loop
               playsInline
-              poster="/placeholder.svg?height=1080&width=1920"
             >
-              <source src="/placeholder-video.mp4" type="video/mp4" />
             </video>
           </div>
           <button
@@ -474,12 +472,14 @@ export default function Home() {
                   <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 shadow-2xl">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                       <div>
-                        <img
-                          src={featuredProducts[currentProduct].image || "/placeholder.svg"}
-                          alt={featuredProducts[currentProduct].name}
-                          className="w-full h-64 object-cover rounded-lg"
-                          loading="lazy"
-                        />
+                        {featuredProducts[currentProduct].image && (
+                          <img
+                            src={featuredProducts[currentProduct].image}
+                            alt={featuredProducts[currentProduct].name}
+                            className="w-full h-64 object-cover rounded-lg"
+                            loading="lazy"
+                          />
+                        )}
                       </div>
                       <div className="text-white">
                         <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
