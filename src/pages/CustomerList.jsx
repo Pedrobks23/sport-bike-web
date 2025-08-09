@@ -587,11 +587,14 @@ const CustomerList = () => {
                   {expandedCustomer === customer.id && (
                     <div className="mt-4 space-y-2">
                       {customerBikes[customer.id]?.map((bike) => (
-                        <div key={bike.id} className="flex items-start justify-between gap-2 text-sm">
+                        <div
+                          key={bike.id}
+                          className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-2 text-sm"
+                        >
                           <span className="flex-1 min-w-0 break-words">
                             {bike.marca} {bike.modelo} - {bike.cor}
                           </span>
-                          <div className="flex-shrink-0 space-x-1">
+                          <div className="flex-shrink-0 flex space-x-1 mt-2 xl:mt-0">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
