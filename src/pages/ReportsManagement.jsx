@@ -238,8 +238,7 @@ const ReportsManagement = () => {
           const endDate = new Date(dateRange.end);
           endDate.setHours(23, 59, 59, 999);
           return (
-            (order.status?.toLowerCase() === 'pronto' ||
-              order.status?.toLowerCase() === 'entregue') &&
+            order.status?.toLowerCase() === 'pronto' &&
             order.data >= startDate &&
             order.data <= endDate
           );

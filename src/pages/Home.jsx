@@ -31,6 +31,7 @@ import { auth } from "../config/firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
+import ResponsiveContainer from "../components/ResponsiveContainer"
 
 const normalizeDriveUrl = (url) => {
   if (!url) return url
@@ -274,7 +275,7 @@ export default function Home() {
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
-          <div className="container mx-auto px-4">
+          <ResponsiveContainer>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 animate-pulse">
               {benefits.map((benefit, index) => (
                 <div key={index} className="flex items-center space-x-2 text-sm font-medium">
@@ -283,7 +284,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
+          </ResponsiveContainer>
         </div>
 
         {/* Header */}
@@ -294,7 +295,7 @@ export default function Home() {
               : "bg-transparent mt-10"
           }`}
         >
-          <div className="container mx-auto px-4 py-4">
+          <ResponsiveContainer className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
@@ -397,7 +398,7 @@ export default function Home() {
                 </div>
               </nav>
             )}
-          </div>
+          </ResponsiveContainer>
         </header>
 
         {/* Hero Section */}
@@ -541,7 +542,7 @@ export default function Home() {
 
         {/* Services Section */}
         <section id="servicos" className="py-20 bg-gray-50 dark:bg-gray-900">
-          <div className="container mx-auto px-4">
+          <ResponsiveContainer>
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Nossos Serviços</h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
@@ -567,7 +568,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
+          </ResponsiveContainer>
         </section>
 
         {/* FAQ Section */}
