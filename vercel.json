@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/**/*.{js,ts}": {
+    "api/**/*": {
       "runtime": "nodejs18.x"
     }
   }
