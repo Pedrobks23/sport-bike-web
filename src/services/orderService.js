@@ -8,8 +8,7 @@ import {
   doc,
   deleteDoc,
   getDoc,
-  serverTimestamp,
-  limit
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -231,10 +230,6 @@ export const removeOrderService = async (orderId, bikeIndex, serviceName) => {
       throw new Error('Nenhum serviço encontrado para esta bicicleta');
     }
 
-    // Salva o valor do serviço antes de removê-lo
-    const quantidade = parseInt(bikes[bikeIndex].services[serviceName] || 0);
-    const valorServico = order.valorServicos?.[serviceName] || 70; // Valor padrão se não encontrado
-    const valorTotal = quantidade * valorServico;
 
     // Remove o serviço
     delete bikes[bikeIndex].services[serviceName];
