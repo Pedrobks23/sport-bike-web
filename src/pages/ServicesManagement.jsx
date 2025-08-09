@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   PlusCircle,
   ArrowLeft,
@@ -14,7 +14,6 @@ import {
   getDocs,
   addDoc,
   updateDoc,
-  deleteDoc,
   doc,
   deleteField,
 } from "firebase/firestore";
@@ -28,7 +27,6 @@ const ServicesManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [mostRequestedService, setMostRequestedService] = useState("");
 
@@ -485,15 +483,6 @@ const ServicesManagement = () => {
         />
       )}
 
-      {showDetailsModal && selectedService && (
-        <ServiceDetailsModal
-          service={selectedService}
-          onClose={() => {
-            setShowDetailsModal(false);
-            setSelectedService(null);
-          }}
-        />
-      )}
     </div>
     </div>
   );

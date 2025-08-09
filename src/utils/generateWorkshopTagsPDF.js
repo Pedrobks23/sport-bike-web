@@ -49,7 +49,6 @@ async function generateWorkshopTagsPDF(ordem) {
       return subtotal
     }
 
-    let currentPage = 0
     const tagsPerPage = 3
 
     ordem.bicicletas?.forEach((bike, index) => {
@@ -57,7 +56,6 @@ async function generateWorkshopTagsPDF(ordem) {
 
       if (index > 0 && index % tagsPerPage === 0) {
         docPDF.addPage()
-        currentPage++
       }
 
       const col = tagIndex % cols
