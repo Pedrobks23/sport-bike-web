@@ -299,7 +299,7 @@ export default function ManageReceiptsPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                           <div>
                             <span className="font-medium text-gray-600 dark:text-gray-400">DATA</span>
                             <p className="text-gray-800 dark:text-white">{receipt.date}</p>

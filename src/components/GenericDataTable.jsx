@@ -11,6 +11,9 @@ const GenericDataTable = ({ columns, data, title, options = {}, loading = false 
     sort: true,
     rowsPerPage: 100,
     selectableRows: "none",
+    responsive: "standard",
+    tableBodyHeight: "auto",
+    tableBodyMaxHeight: "60vh",
   };
 
   const mergedOptions = { ...defaultOptions, ...options };
