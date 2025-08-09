@@ -105,11 +105,12 @@ const ReportsManagement = () => {
           case "daily":
             key = orderDate.toLocaleDateString("pt-BR");
             break;
-          case "weekly":
+          case "weekly": {
             const weekStart = new Date(orderDate);
             weekStart.setDate(weekStart.getDate() - weekStart.getDay());
             key = `Semana de ${weekStart.toLocaleDateString("pt-BR")}`;
             break;
+          }
           case "monthly":
           default:
             key = orderDate.toLocaleString("pt-BR", {
