@@ -1,434 +1,417 @@
-"use client"
+/**
+ * HomeManagement.jsx
+ *
+ * O que faz:
+ * - CRUD de "featured" no Firestore.
+ * - Upload de imagem via Cloudinary UNSIGNED (arquivo) ou uso de URL colada (já hospedada).
+ * - Salva em cada doc: title, description, price (number), visible (boolean),
+ *   imageUrl, imageUrlCard (otimizada), publicId (quando upload no Cloudinary),
+ *   createdAt, updatedAt.
+ * - Ao remover: se tiver publicId, chama /api/cloudinary-delete com Authorization: Bearer <token>.
+ * - Ao editar e trocar imagem: remove imagem antiga (se publicId) antes de salvar nova.
+ *
+ * ENV necessárias (client):
+ * - VITE_CLOUDINARY_CLOUD_NAME
+ * - VITE_CLOUDINARY_UPLOAD_PRESET
+ * - VITE_ADMIN_API_TOKEN (opcional, porém recomendado para proteger a rota /api/cloudinary-delete)
+ *
+ * Observações:
+ * - NÃO usa Firebase Storage.
+ * - Se a imagem vier de URL externa (não Cloudinary), publicId = null e NÃO tenta deletar no Cloudinary.
+ */
 
-import React, { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react";
 import {
-  ArrowLeft,
-  Bike,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  EyeOff,
-  Search,
-} from "lucide-react"
+  collection,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+import { db } from "../config/firebase";
 import {
-  getFeaturedProducts,
-  createFeaturedProduct,
-  updateFeaturedProduct,
-  deleteFeaturedProduct,
-  getHomeSettings,
-  updateHomeSettings,
-} from "../services/homeService"
-import { uploadImage } from "../services/uploadImage"
+  uploadImageToCloudinary,
+  optimizeCloudinaryUrl,
+  isCloudinaryUrl,
+  extractPublicIdFromUrl,
+} from "../services/cloudinary";
 
-const normalizeDriveUrl = (url) => {
-  if (!url) return url
-  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
-  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`
-  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
-  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`
-  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/)
-  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`
-  return url
-}
+const ADMIN_API_TOKEN = import.meta.env.VITE_ADMIN_API_TOKEN; // recomendado: proteger a rota
 
-const emptyProduct = {
-  name: "",
-  price: "",
-  image: "",
-  category: "",
-  description: "",
-  visible: true,
-}
-
-const ProductModal = ({ isEdit, onClose, onSave, product }) => {
-  const [formData, setFormData] = useState({
-    ...emptyProduct,
-    ...product,
-    visible: product?.visible ?? true,
-  })
-  const [imageFile, setImageFile] = useState(null)
-  const [preview, setPreview] = useState(product?.image || "")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setImageFile(file)
-      setPreview(URL.createObjectURL(file))
-    }
-  }
-
-  const handleUrlChange = (e) => {
-    const value = e.target.value
-    setFormData((prev) => ({ ...prev, image: value }))
-    setPreview(normalizeDriveUrl(value))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (isSubmitting) return
-    setIsSubmitting(true)
-    try {
-      await onSave({ ...formData, imageFile })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6">
-        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-          {isEdit ? "Editar" : "Novo"} Produto
-        </h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nome</label>
-            <input
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Preço</label>
-            <input
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Categoria</label>
-            <input
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Descrição</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              rows="3"
-            />
-          </div>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="visible"
-              checked={formData.visible}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, visible: e.target.checked }))
-              }
-              className="w-4 h-4"
-            />
-            <span className="text-sm">Exibir produto</span>
-          </label>
-          <div>
-            <label className="block text-sm font-medium mb-1">Link da Imagem (Google Drive)</label>
-            <input
-              name="image"
-              value={formData.image}
-              onChange={handleUrlChange}
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="https://drive.google.com/..."
-            />
-            <label className="block text-sm font-medium mb-1">Upload da Imagem</label>
-            <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
-            {preview && (
-              <img
-                src={preview}
-                alt="Pré-visualização"
-                className="mt-2 w-full h-60 object-cover rounded"
-              />
-            )}
-          </div>
-          <div className="flex justify-end gap-4 mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-300">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`px-6 py-2 rounded text-white ${
-                isSubmitting
-                  ? "bg-blue-300 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600"
-              }`}
-            >
-              {isSubmitting ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+function formatPriceBR(value) {
+  if (typeof value !== "number" || Number.isNaN(value)) return "R$ 0,00";
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 export default function HomeManagement() {
-  const navigate = useNavigate()
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [products, setProducts] = useState([])
-  const [showFeatured, setShowFeatured] = useState(true)
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [editProduct, setEditProduct] = useState(null)
-  const [searchTerm, setSearchTerm] = useState("")
+  // Listagem
+  const [items, setItems] = useState([]);
 
-  const loadData = async () => {
-    const [prods, settings] = await Promise.all([getFeaturedProducts(), getHomeSettings()])
-    setProducts(prods)
-    setShowFeatured(settings.showFeaturedProducts ?? true)
-    setLoading(false)
+  // Form
+  const [editingId, setEditingId] = useState(null);
+  const [title, setTitle] = useState("");
+  const [description, setDesc] = useState("");
+  const [priceInput, setPriceInput] = useState(""); // string -> number
+  const [visible, setVisible] = useState(true);
+
+  // Imagem
+  const [imageMode, setImageMode] = useState("file"); // "file" | "url"
+  const [file, setFile] = useState(null);
+  const [urlInput, setUrlInput] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  // Carregar listagem
+  useEffect(() => {
+    const q = query(collection(db, "featured"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setItems(list);
+    });
+    return () => unsub();
+  }, []);
+
+  function resetForm() {
+    setEditingId(null);
+    setTitle("");
+    setDesc("");
+    setPriceInput("");
+    setVisible(true);
+    setImageMode("file");
+    setFile(null);
+    setUrlInput("");
+    setErr("");
+  }
+
+  function parsePriceToNumber(input) {
+    if (typeof input === "number") return input;
+    if (!input) return 0;
+    // Aceita "120", "120,50", "120.50"
+    const norm = String(input).replace(/\./g, "").replace(",", ".");
+    const n = Number(norm);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  async function callDeleteOnServer(publicId) {
+    if (!publicId) return { ok: true };
+
+    const res = await fetch("/api/cloudinary-delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(ADMIN_API_TOKEN ? { Authorization: `Bearer ${ADMIN_API_TOKEN}` } : {}),
+      },
+      body: JSON.stringify({ publicId }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Falha ao deletar no Cloudinary: ${res.status} ${res.statusText} ${text}`);
+    }
+    return res.json();
+  }
+
+  async function handleCreateOrUpdate(e) {
+    e?.preventDefault?.();
+    setErr("");
+    setLoading(true);
+    try {
+      const price = parsePriceToNumber(priceInput);
+
+      let imageUrl = "";
+      let imageUrlCard = "";
+      let publicId = null;
+
+      if (imageMode === "file") {
+        if (!file) throw new Error("Selecione um arquivo de imagem.");
+        const { secureUrl, publicId: pid } = await uploadImageToCloudinary(file);
+        imageUrl = secureUrl;
+        imageUrlCard = optimizeCloudinaryUrl(secureUrl, 800);
+        publicId = pid;
+      } else {
+        if (!urlInput) throw new Error("Informe a URL da imagem.");
+        imageUrl = urlInput.trim();
+        if (isCloudinaryUrl(imageUrl)) {
+          imageUrlCard = optimizeCloudinaryUrl(imageUrl, 800);
+          // Tentativa de extrair publicId (opcional, útil para backfill)
+          publicId = extractPublicIdFromUrl(imageUrl);
+        } else {
+          imageUrlCard = ""; // para URLs externas que não suportam transformações
+          publicId = null;
+        }
+      }
+
+      const payload = {
+        title: title.trim(),
+        description: description.trim(),
+        price,
+        visible: !!visible,
+        imageUrl,
+        imageUrlCard: imageUrlCard || imageUrl, // fallback
+        publicId: publicId || null,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (!editingId) {
+        await addDoc(collection(db, "featured"), {
+          ...payload,
+          createdAt: serverTimestamp(),
+        });
+      } else {
+        // Se estamos trocando imagem, precisamos deletar a antiga se ela existia (apenas se o usuário mudou a imagem)
+        const current = items.find((it) => it.id === editingId);
+        const isChangingImage =
+          (imageMode === "file" && file) ||
+          (imageMode === "url" && urlInput && urlInput.trim() !== current?.imageUrl);
+
+        if (isChangingImage && current?.publicId) {
+          await callDeleteOnServer(current.publicId);
+        }
+
+        await updateDoc(doc(db, "featured", editingId), payload);
+      }
+
+      resetForm();
+    } catch (e) {
+      console.error(e);
+      setErr(e?.message || "Erro ao salvar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function startEdit(item) {
+    setEditingId(item.id);
+    setTitle(item.title || "");
+    setDesc(item.description || "");
+    setPriceInput(
+      typeof item.price === "number" ? String(item.price).replace(".", ",") : (item.price ?? "")
+    );
+    setVisible(!!item.visible);
+    setImageMode("url");
+    setUrlInput(item.imageUrl || "");
+    setFile(null);
+    setErr("");
+  }
+
+  async function handleDelete(item) {
+    if (!confirm(`Remover "${item.title}"?`)) return;
+
+    setLoading(true);
+    setErr("");
+    try {
+      if (item.publicId) {
+        await callDeleteOnServer(item.publicId);
+      }
+      await deleteDoc(doc(db, "featured", item.id));
+    } catch (e) {
+      console.error(e);
+      setErr(e?.message || "Erro ao remover");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function toggleVisibility(item) {
+    setErr("");
+    try {
+      await updateDoc(doc(db, "featured", item.id), {
+        visible: !item.visible,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.error(e);
+      setErr(e?.message || "Erro ao alternar visibilidade");
+    }
+  }
+
+  // (Opcional) backfill publicId se vier Cloudinary e não tiver publicId
+  async function backfillPublicId(item) {
+    if (item.publicId || !isCloudinaryUrl(item.imageUrl)) return;
+    const pid = extractPublicIdFromUrl(item.imageUrl);
+    if (!pid) return;
+    try {
+      await updateDoc(doc(db, "featured", item.id), { publicId: pid, updatedAt: serverTimestamp() });
+    } catch (e) {
+      console.warn("Backfill publicId falhou:", e);
+    }
   }
 
   useEffect(() => {
-    loadData()
-  }, [])
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme")
-    if (savedTheme === "dark") {
-      setIsDarkMode(true)
-      document.documentElement.classList.add("dark")
-    }
-  }, [])
-
-  const handleAdd = async (data) => {
-    let imageUrl = data.image ? normalizeDriveUrl(data.image) : ""
-    if (data.imageFile) {
-      imageUrl = await uploadImage(data.imageFile)
-    }
-    await createFeaturedProduct({ ...data, image: imageUrl })
-    setShowModal(false)
-    loadData()
-  }
-
-  const handleUpdate = async (data) => {
-    let imageUrl = editProduct.image
-    if (data.imageFile) {
-      imageUrl = await uploadImage(data.imageFile)
-    } else if (data.image) {
-      imageUrl = normalizeDriveUrl(data.image)
-    }
-    await updateFeaturedProduct(editProduct.id, { ...data, image: imageUrl })
-    setEditProduct(null)
-    setShowModal(false)
-    loadData()
-  }
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Excluir produto?")) {
-      await deleteFeaturedProduct(id)
-      loadData()
-    }
-  }
-
-  const handleToggleProductVisibility = async (id, current) => {
-    const newValue = !current
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, visible: newValue } : p))
-    )
-    await updateFeaturedProduct(id, { visible: newValue })
-  }
-
-  const toggleVisibility = async () => {
-    const newValue = !showFeatured
-    setShowFeatured(newValue)
-    await updateHomeSettings({ showFeaturedProducts: newValue })
-  }
-
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+    // Executa um backfill leve de publicId para itens antigos (não bloqueante)
+    items.forEach((it) => backfillPublicId(it));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
-        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => navigate("/admin")}
-                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div className="flex items-center space-x-3">
-                  <div className="bg-gradient-to-r from-amber-400 to-amber-600 p-2 rounded-full">
-                    <Bike className="w-6 h-6 text-white" />
-                  </div>
-                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Home</h1>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Novo Produto</span>
-              </button>
-            </div>
+    <div className="p-4 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Gerenciar Destaques (Home)</h1>
+
+      <form onSubmit={handleCreateOrUpdate} className="grid gap-4 p-4 rounded-xl border border-neutral-800">
+        {err && <div className="text-red-500 text-sm">{err}</div>}
+
+        <div className="grid gap-2">
+          <label className="text-sm font-medium">Título</label>
+          <input
+            className="border rounded-lg px-3 py-2 bg-neutral-900 border-neutral-700"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex.: Revisão Completa"
+            required
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-medium">Descrição</label>
+          <textarea
+            className="border rounded-lg px-3 py-2 bg-neutral-900 border-neutral-700 min-h-[90px]"
+            value={description}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder="Detalhes do serviço/produto"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-medium">Preço</label>
+          <input
+            className="border rounded-lg px-3 py-2 bg-neutral-900 border-neutral-700"
+            value={priceInput}
+            onChange={(e) => setPriceInput(e.target.value)}
+            placeholder="Ex.: 120,50"
+            inputMode="decimal"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-medium">Imagem</label>
+
+          <div className="flex gap-3 items-center">
+            <button
+              type="button"
+              onClick={() => setImageMode("file")}
+              className={`px-3 py-1 rounded-lg border ${imageMode === "file" ? "border-blue-500" : "border-neutral-700"}`}
+            >
+              Arquivo
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageMode("url")}
+              className={`px-3 py-1 rounded-lg border ${imageMode === "url" ? "border-blue-500" : "border-neutral-700"}`}
+            >
+              URL
+            </button>
           </div>
-        </header>
-        <main className="container mx-auto px-4 py-8">
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showFeatured}
-                    onChange={toggleVisibility}
-                    className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500"
-                  />
-                  <span className="text-gray-800 dark:text-white font-medium">Exibir seção de produtos em destaque</span>
-                </label>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar produtos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          {loading ? (
-            <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
+
+          {imageMode === "file" ? (
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="border rounded-lg px-3 py-2 bg-neutral-900 border-neutral-700"
+            />
           ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-                  >
-                    <div className="relative">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-60 object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-4 right-4">
-                        <button
-                          onClick={() =>
-                            handleToggleProductVisibility(
-                              product.id,
-                              product.visible !== false
-                            )
-                          }
-                          className={`p-2 rounded-full transition-colors ${
-                            product.visible !== false
-                              ? "bg-amber-500 text-white"
-                              : "bg-white/80 text-gray-600 hover:bg-amber-500 hover:text-white"
-                          }`}
-                          title={
-                            product.visible !== false
-                              ? "Ocultar produto"
-                              : "Exibir produto"
-                          }
-                        >
-                          {product.visible !== false ? (
-                            <Eye className="w-4 h-4" />
-                          ) : (
-                            <EyeOff className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                      {product.visible === false && (
-                        <div className="absolute top-4 left-4">
-                          <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Oculto
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{product.category}</span>
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-1">{product.name}</h3>
-                        <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">{product.price}</p>
-                        {product.description && (
-                          <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 whitespace-pre-line">
-                            {product.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => {
-                              setEditProduct(product)
-                              setShowModal(true)
-                            }}
-                            className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                            title="Editar produto"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(product.id)}
-                            className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                            title="Excluir produto"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">ID: {product.id}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-12">
-                  <Bike className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhum produto encontrado</h3>
-                  <p className="text-gray-500 dark:text-gray-500">Tente ajustar os filtros ou adicione novos produtos</p>
-                </div>
-              )}
-            </>
+            <input
+              type="url"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://exemplo.com/imagem.jpg"
+              className="border rounded-lg px-3 py-2 bg-neutral-900 border-neutral-700"
+            />
           )}
-        </main>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            id="visible"
+            type="checkbox"
+            checked={visible}
+            onChange={(e) => setVisible(e.target.checked)}
+          />
+          <label htmlFor="visible" className="text-sm">Visível na Home</label>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+          >
+            {editingId ? (loading ? "Salvando..." : "Salvar alterações") : (loading ? "Criando..." : "Criar destaque")}
+          </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="px-4 py-2 rounded-lg border border-neutral-700"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-3">Itens</h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((it) => (
+            <div key={it.id} className="border border-neutral-800 rounded-xl overflow-hidden">
+              <div className="aspect-video bg-neutral-900">
+                {/* Usa imageUrlCard || imageUrl */}
+                { (it.imageUrlCard || it.imageUrl) ? (
+                  <img
+                    src={it.imageUrlCard || it.imageUrl}
+                    alt={it.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full grid place-items-center text-neutral-500 text-sm">Sem imagem</div>
+                )}
+              </div>
+              <div className="p-3 grid gap-2">
+                <div className="font-medium">{it.title}</div>
+                <div className="text-sm text-neutral-300 line-clamp-2">{it.description}</div>
+                <div className="text-sm">{formatPriceBR(Number(it.price || 0))}</div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    className="px-3 py-1 rounded-lg border border-neutral-700"
+                    onClick={() => startEdit(it)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="px-3 py-1 rounded-lg border border-neutral-700"
+                    onClick={() => toggleVisibility(it)}
+                  >
+                    {it.visible ? "Ocultar" : "Exibir"}
+                  </button>
+                  <button
+                    className="px-3 py-1 rounded-lg border border-red-800 text-red-300"
+                    onClick={() => handleDelete(it)}
+                  >
+                    Remover
+                  </button>
+                </div>
+
+                <div className="text-[11px] text-neutral-500">
+                  {it.publicId ? `Cloudinary ID: ${it.publicId}` : "Sem publicId"}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {items.length === 0 && (
+          <div className="text-sm text-neutral-400 mt-4">Nenhum item encontrado.</div>
+        )}
       </div>
-      {showModal && (
-        <ProductModal
-          isEdit={!!editProduct}
-          product={editProduct || emptyProduct}
-          onClose={() => {
-            setShowModal(false)
-            setEditProduct(null)
-          }}
-          onSave={editProduct ? handleUpdate : handleAdd}
-        />
-      )}
     </div>
-  )
+  );
 }
+
