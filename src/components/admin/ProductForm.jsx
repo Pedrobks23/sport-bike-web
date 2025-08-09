@@ -6,8 +6,6 @@ import {
   extractPublicIdFromUrl
 } from "../../services/cloudinary";
 
-const ADMIN_API_TOKEN = import.meta.env.VITE_ADMIN_API_TOKEN; // opcional
-
 export default function ProductForm({ onSubmit, initial, submitting }) {
   const [title, setTitle] = useState("");
   const [description, setDesc] = useState("");
@@ -16,17 +14,13 @@ export default function ProductForm({ onSubmit, initial, submitting }) {
   const [mode, setMode] = useState("file"); // file | url
   const [file, setFile] = useState(null);
   const [url, setUrl] = useState("");
-
-  // Preview da imagem
   const [preview, setPreview] = useState("");
 
   useEffect(() => {
     if (initial) {
       setTitle(initial.title || "");
       setDesc(initial.description || "");
-      setPriceInput(
-        typeof initial.price === "number" ? String(initial.price).replace(".", ",") : (initial.price ?? "")
-      );
+      setPriceInput(typeof initial.price === "number" ? String(initial.price).replace(".", ",") : (initial.price ?? ""));
       setVisible(!!initial.visible);
       setMode("url");
       setUrl(initial.imageUrl || "");
@@ -37,13 +31,12 @@ export default function ProductForm({ onSubmit, initial, submitting }) {
     }
   }, [initial]);
 
-  // monta/desmonta preview
   useEffect(() => {
-    let revokeUrl = null;
+    let revoke = null;
     if (mode === "file" && file) {
       const obj = URL.createObjectURL(file);
       setPreview(obj);
-      revokeUrl = obj;
+      revoke = obj;
     } else if (mode === "url" && url) {
       setPreview(url);
     } else if (initial?.imageUrl) {
@@ -51,7 +44,7 @@ export default function ProductForm({ onSubmit, initial, submitting }) {
     } else {
       setPreview("");
     }
-    return () => { if (revokeUrl) URL.revokeObjectURL(revokeUrl); };
+    return () => { if (revoke) URL.revokeObjectURL(revoke); };
   }, [mode, file, url, initial]);
 
   function parsePrice(input) {
@@ -107,50 +100,31 @@ export default function ProductForm({ onSubmit, initial, submitting }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm">
+    <form onSubmit={handleSubmit} className="card p-5">
       <h2 className="text-xl font-semibold mb-4">{initial ? "Editar produto" : "Novo produto"}</h2>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="grid gap-2">
           <label className="text-sm font-medium">Título</label>
-          <input
-            className="input"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex.: Bicicleta Aro 29"
-            required
-          />
+          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Bicicleta Aro 29" required />
         </div>
 
         <div className="grid gap-2">
           <label className="text-sm font-medium">Preço</label>
-          <input
-            className="input"
-            value={priceInput}
-            onChange={(e) => setPriceInput(e.target.value)}
-            placeholder="Ex.: 1200,00"
-            inputMode="decimal"
-          />
+          <input className="input" value={priceInput} onChange={(e) => setPriceInput(e.target.value)} placeholder="Ex.: 1200,00" inputMode="decimal" />
         </div>
 
         <div className="grid gap-2 md:col-span-2">
           <label className="text-sm font-medium">Descrição</label>
-          <textarea
-            className="input min-h-[90px]"
-            value={description}
-            onChange={(e) => setDesc(e.target.value)}
-            placeholder="Detalhes do produto"
-          />
+          <textarea className="textarea" value={description} onChange={(e) => setDesc(e.target.value)} placeholder="Detalhes do produto" />
         </div>
 
         <div className="grid gap-2 md:col-span-2">
           <label className="text-sm font-medium">Imagem</label>
 
           <div className="flex gap-2">
-            <button type="button" onClick={() => setMode("file")}
-              className={`btn ${mode === "file" ? "btn-primary" : "btn-outline"}`}>Arquivo</button>
-            <button type="button" onClick={() => setMode("url")}
-              className={`btn ${mode === "url" ? "btn-primary" : "btn-outline"}`}>URL</button>
+            <button type="button" onClick={() => setMode("file")} className={`btn ${mode === "file" ? "btn-primary" : "btn-outline"}`}>Arquivo</button>
+            <button type="button" onClick={() => setMode("url")} className={`btn ${mode === "url" ? "btn-primary" : "btn-outline"}`}>URL</button>
           </div>
 
           {mode === "file" ? (
@@ -159,7 +133,6 @@ export default function ProductForm({ onSubmit, initial, submitting }) {
             <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." className="input" />
           )}
 
-          {/* Preview */}
           <div className="mt-3 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-800">
             <div className="aspect-video">
               {preview ? (
@@ -186,12 +159,3 @@ export default function ProductForm({ onSubmit, initial, submitting }) {
     </form>
   );
 }
-
-/* Tailwind helpers (adicione no CSS global, se ainda não estiverem):
-.input { @apply border rounded-xl px-3 py-2 bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 focus:outline-none focus:ring focus:ring-blue-500/30; }
-.btn { @apply px-3 py-2 rounded-xl border transition; }
-.btn-outline { @apply border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800; }
-.btn-primary { @apply border-blue-600 bg-blue-600 text-white hover:bg-blue-700; }
-.btn-success { @apply border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700; }
-.btn-ghost { @apply border-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800; }
-*/

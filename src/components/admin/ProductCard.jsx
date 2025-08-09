@@ -4,12 +4,9 @@ function fmtBRL(n) { return Number(n || 0).toLocaleString("pt-BR",{style:"curren
 
 export default function ProductCard({ item, onEdit, onToggleVisible, onDelete }) {
   return (
-    <div className="relative border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 shadow-sm">
-      {/* Badge OCULTO */}
+    <div className="relative card overflow-hidden">
       {!item.visible && (
-        <span className="absolute top-2 left-2 z-10 text-[11px] px-2 py-1 rounded-full bg-amber-500/90 text-black font-semibold tracking-wide">
-          OCULTO
-        </span>
+        <span className="absolute top-2 left-2 z-10 badge bg-amber-500/90 text-black">OCULTO</span>
       )}
 
       <div className={`aspect-video ${!item.visible ? "opacity-70 saturate-50" : ""} bg-neutral-100 dark:bg-neutral-800`}>
@@ -28,7 +25,7 @@ export default function ProductCard({ item, onEdit, onToggleVisible, onDelete })
         <div className="flex gap-2 pt-2">
           <button className="btn btn-outline" onClick={() => onEdit(item)}>Editar</button>
           <button className="btn btn-outline" onClick={() => onToggleVisible(item)}>{item.visible ? "Ocultar" : "Exibir"}</button>
-          <button className="btn border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => onDelete(item)}>Remover</button>
+          <button className="btn btn-danger" onClick={() => onDelete(item)}>Remover</button>
         </div>
 
         <div className="text-[11px] text-neutral-400">

@@ -1,60 +1,113 @@
-/**
- * FeaturedGrid.jsx
- * Lê "featured" (visible == true), orderBy(createdAt desc).
- * Renderiza cards com imageUrlCard || imageUrl, título, descrição e preço (R$).
- */
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { listenFeatured } from "../services/featured";
 
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
-import { db } from "../config/firebase";
-
-function fmtBRL(n) {
-  const v = Number(n || 0);
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+function fmtBRL(n) { return Number(n || 0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
 
 export default function FeaturedGrid() {
   const [items, setItems] = useState([]);
+  const [index, setIndex] = useState(0);
+  const timer = useRef(null);
 
+  // carrega somente visíveis, ordem desc
   useEffect(() => {
-    const q = query(
-      collection(db, "featured"),
-      where("visible", "==", true),
-      orderBy("createdAt", "desc")
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = listenFeatured(setItems, true);
     return () => unsub();
   }, []);
 
+  const count = items.length;
+  const current = useMemo(() => (count ? items[index % count] : null), [items, index, count]);
+
+  // auto-rotate
+  useEffect(() => {
+    clearInterval(timer.current);
+    if (count > 1) {
+      timer.current = setInterval(() => setIndex((i) => (i + 1) % count), 6000);
+    }
+    return () => clearInterval(timer.current);
+  }, [count]);
+
+  if (!count) {
+    return null;
+  }
+
+  const prev = () => setIndex((i) => (i - 1 + count) % count);
+  const next = () => setIndex((i) => (i + 1) % count);
+
   return (
-    <section className="max-w-6xl mx-auto p-4">
-      <h2 className="text-xl font-semibold mb-4">Destaques</h2>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((it) => (
-          <article key={it.id} className="border border-neutral-800 rounded-xl overflow-hidden">
-            <div className="aspect-video bg-neutral-900">
-              {(it.imageUrlCard || it.imageUrl) ? (
-                <img
-                  src={it.imageUrlCard || it.imageUrl}
-                  alt={it.title}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full grid place-items-center text-neutral-500 text-sm">Sem imagem</div>
-              )}
-            </div>
-            <div className="p-3 grid gap-1">
-              <h3 className="font-medium">{it.title}</h3>
-              {it.description && <p className="text-sm text-neutral-300 line-clamp-2">{it.description}</p>}
-              <div className="text-sm">{fmtBRL(it.price)}</div>
-            </div>
-          </article>
-        ))}
+    <section className="max-w-6xl mx-auto px-4 md:px-6 py-10">
+      <header className="text-center mb-8">
+        <h2 className="text-4xl md:text-5xl font-extrabold">Produtos em Destaque</h2>
+        <p className="text-neutral-600 dark:text-neutral-300 mt-2">Confira nossa seleção especial de bikes e acessórios</p>
+      </header>
+
+      <div
+        className="relative rounded-3xl p-6 md:p-10 bg-gradient-to-br from-amber-400 to-amber-500 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.35)]"
+        onMouseEnter={() => clearInterval(timer.current)}
+        onMouseLeave={() => {
+          if (count > 1) timer.current = setInterval(() => setIndex((i) => (i + 1) % count), 6000);
+        }}
+      >
+        {/* conteúdo */}
+        <div className="grid md:grid-cols-2 gap-6 items-center">
+          <div className="aspect-video rounded-2xl overflow-hidden bg-white/20">
+            <img
+              src={current.imageUrlCard || current.imageUrl}
+              alt={current.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="text-white">
+            <h3 className="text-3xl md:text-4xl font-extrabold">{current.title}</h3>
+            <div className="text-3xl md:text-4xl font-extrabold mt-2">{fmtBRL(current.price)}</div>
+            {current.description && (
+              <ul className="mt-4 space-y-1">
+                {String(current.description).split(/\n|;|,|•/).slice(0,6).map((line, i) => (
+                  <li key={i} className="opacity-90">• {line.trim()}</li>
+                ))}
+              </ul>
+            )}
+
+            <button
+              className="mt-6 btn bg-white text-amber-700 border-white hover:bg-neutral-100"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
+            >
+              🛒 Tenho Interesse
+            </button>
+          </div>
+        </div>
+
+        {/* setas */}
+        {count > 1 && (
+          <>
+            <button
+              aria-label="Anterior"
+              onClick={prev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full grid place-items-center bg-white text-amber-700 shadow"
+            >‹</button>
+            <button
+              aria-label="Próximo"
+              onClick={next}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full grid place-items-center bg-white text-amber-700 shadow"
+            >›</button>
+          </>
+        )}
+
+        {/* dots */}
+        {count > 1 && (
+          <div className="mt-6 flex gap-2 justify-center">
+            {items.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                className={`w-2.5 h-2.5 rounded-full transition ${i === index ? "bg-white" : "bg-white/50"}`}
+                aria-label={`Slide ${i+1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      {items.length === 0 && <div className="text-sm text-neutral-400 mt-3">Nenhum destaque disponível no momento.</div>}
     </section>
   );
 }
