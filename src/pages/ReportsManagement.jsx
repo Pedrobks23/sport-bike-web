@@ -6,10 +6,10 @@ import {
   getDocs,
   where,
   Timestamp,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { listMechanics } from "../services/mechanicService";
-import { listQuickServices } from "../services/quickServiceService";
 import {
   LineChart,
   Line,
@@ -37,7 +37,7 @@ const ReportsManagement = () => {
   const getDefaultDateRange = () => {
     const end = new Date();
     const start = new Date();
-    start.setDate(start.getDate() - 30);
+    start.setMonth(start.getMonth() - 1);
     return {
       start: start.toISOString().split("T")[0],
       end: end.toISOString().split("T")[0],
@@ -89,71 +89,7 @@ const ReportsManagement = () => {
       console.error('Erro ao carregar mecânicos:', err);
     }
   };
-  const processOrders = (orders, type) => {
-    try {
-      console.log("Iniciando processamento de ordens:", orders);
-      const data = {};
-  
-      orders.forEach((order) => {
-        if (!order.data) return;
-  
-        const orderDate = order.data;
-        let key;
-        
-        switch (type) {
-          case "daily":
-            key = orderDate.toLocaleDateString("pt-BR");
-            break;
-          case "weekly":
-            const weekStart = new Date(orderDate);
-            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-            key = `Semana de ${weekStart.toLocaleDateString("pt-BR")}`;
-            break;
-          case "monthly":
-          default:
-            key = orderDate.toLocaleString("pt-BR", {
-              month: "long",
-              year: "numeric",
-            });
-        }
-  
-        // Inicializa o período se não existir
-        if (!data[key]) {
-          data[key] = { total: 0, quantity: 0 };
-        }
-  
-        // Usa os valores diretos da ordem, sem acumular
-        if (order.valor > 0) {
-          data[key].total += Number(order.valor);
-          data[key].quantity = data[key].quantity + Number(order.quantidade);
-        }
-  
-        console.log(`Acumulado para ${key}:`, {
-          ordem: order.id,
-          valorOriginal: order.valor,
-          servicosOriginal: order.quantidade,
-          valorAcumulado: data[key].total,
-          servicosAcumulados: data[key].quantity
-        });
-      });
-  
-      // Remove períodos sem valores
-      const result = Object.entries(data)
-        .filter(([_, values]) => values.total > 0)
-        .map(([period, values]) => ({
-          period,
-          total: Number(values.total.toFixed(2)),
-          quantity: values.quantity
-        }))
-        .sort((a, b) => new Date(a.period) - new Date(b.period));
-  
-      console.log("Resultado final processado:", result);
-      return result;
-    } catch (error) {
-      console.error("Erro ao processar ordens:", error);
-      return [];
-    }
-  };
+  // função de processamento legacy removida – cálculos feitos diretamente em loadReportData
 
   const loadReportData = async () => {
     setLoading(true);
@@ -167,12 +103,12 @@ const ReportsManagement = () => {
       const snap = await getDocs(q);
       const agg = {};
 
-      const addRow = (periodKey, mechId, nome, qtd, valor, fonte, tipo) => {
+      const addRow = (periodKey, mechId, nome, qtd, valor, fonte, tipo, ref) => {
         if (itemType !== 'all' && itemType !== tipo) return;
         if (!agg[periodKey]) agg[periodKey] = { total: 0, qtd: 0, lines: [] };
         agg[periodKey].total += valor * qtd;
         agg[periodKey].qtd += qtd;
-        agg[periodKey].lines.push({ fonte, mechId, nome, qtd, valor, tipo });
+        agg[periodKey].lines.push({ fonte, mechId, nome, qtd, valor, tipo, ref });
       };
 
       snap.forEach((docSnap) => {
@@ -198,20 +134,22 @@ const ReportsManagement = () => {
           }
         };
 
+        const osRef = data.codigo || docSnap.id;
         (data.bicicletas || []).forEach((bike) => {
+          const mechId = bike.mecanicoId || data.mecanicoId || '';
           const mechCond =
             selectedMechanic === 'all'
               ? true
               : selectedMechanic === 'none'
-              ? !bike.mecanicoId
-              : bike.mecanicoId === selectedMechanic;
+              ? !mechId
+              : mechId === selectedMechanic;
           if (!mechCond) return;
           const periodKey = getPeriod();
 
           if (sourceFilter === 'all' || sourceFilter === 'os') {
             const addService = (nome, qtd, valor) => {
               if (selectedService !== 'all' && nome !== selectedService) return;
-              addRow(periodKey, bike.mecanicoId || '', nome, qtd, valor, 'os', 'service');
+              addRow(periodKey, mechId, nome, qtd, valor, 'os', 'service', osRef);
             };
             if (Array.isArray(bike.servicosInclusos)) {
               bike.servicosInclusos.forEach((s) => addService(s.nome || s.servico || s.id, s.quantidade, s.valorFinal ?? s.valor));
@@ -229,7 +167,7 @@ const ReportsManagement = () => {
               if (itemType !== 'all' && itemType !== 'part') return;
               const qty = parseInt(p.quantidade) || 1;
               const val = parseFloat(p.valor) || 0;
-              addRow(periodKey, bike.mecanicoId || '', p.nome, qty, val, 'os', 'part');
+              addRow(periodKey, mechId, p.nome, qty, val, 'os', 'part', osRef);
             });
           }
         });
@@ -240,9 +178,11 @@ const ReportsManagement = () => {
           query(
             collection(db, 'servicosAvulsos'),
             where('data', '>=', start),
-            where('data', '<=', end)
+            where('data', '<=', end),
+            orderBy('data')
           )
         );
+        let avulsoIndex = 1;
         avulsoSnap.forEach((d) => {
           const { data, servico, quantidade, valor, mecanicoId, pecas = [] } = d.data();
           const dt = data.toDate();
@@ -265,14 +205,15 @@ const ReportsManagement = () => {
             (selectedMechanic === 'all') ||
             (selectedMechanic === 'none' ? !mecanicoId : mecanicoId === selectedMechanic)
           ) {
+            const ref = `AV-${avulsoIndex++}`;
             if (selectedService === 'all' || servico === selectedService) {
-              addRow(periodKey, mecanicoId || '', servico, quantidade, valor, 'avulso', 'service');
+              addRow(periodKey, mecanicoId || '', servico, quantidade, valor, 'avulso', 'service', ref);
             }
             pecas.forEach((p) => {
               if (selectedService !== 'all' && p.nome !== selectedService) return;
               const qt = parseInt(p.quantidade) || 1;
               const vl = parseFloat(p.valor) || 0;
-              addRow(periodKey, mecanicoId || '', p.nome, qt, vl, 'avulso', 'part');
+              addRow(periodKey, mecanicoId || '', p.nome, qt, vl, 'avulso', 'part', ref);
             });
           }
         });
@@ -325,6 +266,7 @@ const ReportsManagement = () => {
       r.lines.map((l) => [
         r.period,
         l.fonte === 'avulso' ? 'Avulso' : 'OS',
+        l.ref || '',
         mechanics.find((m) => m.id === l.mechId)?.nome || (l.mechId ? l.mechId : '—'),
         l.tipo === 'part' ? 'Peça' : 'Serviço',
         l.nome,
@@ -335,7 +277,7 @@ const ReportsManagement = () => {
 
     if (lines.length) {
       doc.autoTable({
-        head: [['Período', 'Fonte', 'Mecânico', 'Tipo', 'Item', 'Qtd', 'Total']],
+        head: [['Período', 'Fonte', 'OS/Nº', 'Mecânico', 'Tipo', 'Item', 'Qtd', 'Total']],
         body: lines,
         startY: doc.lastAutoTable.finalY + 10,
         headStyles: { fillColor: [250, 204, 21] },
@@ -363,7 +305,7 @@ const ReportsManagement = () => {
         start.setDate(now.getDate() - 7);
         break;
       case "monthly":
-        start.setMonth(now.getMonth() - 6);
+        start.setMonth(now.getMonth() - 1);
         break;
     }
 
@@ -606,6 +548,7 @@ const ReportsManagement = () => {
                   <tr className="border-b border-gray-200 dark:border-gray-600">
                     <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">PERÍODO</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">FONTE</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">OS/Nº</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">MECÂNICO</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">TIPO</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-800 dark:text-white">ITEM</th>
@@ -622,6 +565,7 @@ const ReportsManagement = () => {
                       >
                         <td className="py-3 px-4">{period}</td>
                         <td className="py-3 px-4">{l.fonte === 'avulso' ? 'Avulso' : 'OS'}</td>
+                        <td className="py-3 px-4">{l.ref || '—'}</td>
                         <td className="py-3 px-4">{mechanics.find(m => m.id === l.mechId)?.nome || (l.mechId ? l.mechId : '—')}</td>
                         <td className="py-3 px-4">{l.tipo === 'part' ? 'Peça' : 'Serviço'}</td>
                         <td className="py-3 px-4">{l.nome}</td>
