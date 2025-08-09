@@ -584,6 +584,7 @@ const CustomerList = () => {
                         Histórico
                       </button>
                     </div>
+                  </div>
                   {expandedCustomer === customer.id && (
                     <div className="mt-4 space-y-2">
                       {customerBikes[customer.id]?.map((bike) => (
@@ -636,7 +637,6 @@ const CustomerList = () => {
                       </div>
                     </div>
                   )}
-                  </div>
                 </div>
               </div>
             ))}

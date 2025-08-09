@@ -6,7 +6,6 @@ import {
   getDocs,
   where,
   Timestamp,
-  orderBy,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { listMechanics } from "../services/mechanicService";
@@ -159,14 +158,11 @@ const ReportsManagement = () => {
   const loadReportData = async () => {
     setLoading(true);
     const ordensRef = collection(db, 'ordens');
-    const start = Timestamp.fromDate(new Date(`${dateRange.start}T00:00`));
-    const end = Timestamp.fromDate(new Date(`${dateRange.end}T23:59`));
-    const q = query(
-      ordensRef,
-      where('dataConclusao', '>=', start),
-      where('dataConclusao', '<=', end),
-      orderBy('dataConclusao')
-    );
+    const startDate = new Date(`${dateRange.start}T00:00`);
+    const endDate = new Date(`${dateRange.end}T23:59`);
+    const start = Timestamp.fromDate(startDate);
+    const end = Timestamp.fromDate(endDate);
+    const q = query(ordensRef, where('status', '==', 'Pronto'));
     try {
       const snap = await getDocs(q);
       const agg = {};
@@ -181,11 +177,11 @@ const ReportsManagement = () => {
 
       snap.forEach((docSnap) => {
         const data = docSnap.data();
-        if (data.status !== 'Pronto') return;
-        const dataFinal =
-          typeof data.dataConclusao === 'string'
-            ? new Date(data.dataConclusao)
-            : data.dataConclusao.toDate();
+        let dataFinal = data.dataConclusao || data.dataAtualizacao || data.dataCriacao;
+        if (dataFinal?.toDate) dataFinal = dataFinal.toDate();
+        else if (typeof dataFinal === 'string') dataFinal = new Date(dataFinal);
+        if (!dataFinal) return;
+        if (dataFinal < startDate || dataFinal > endDate) return;
 
         const getPeriod = () => {
           switch (reportType) {
