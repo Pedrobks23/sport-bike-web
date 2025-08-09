@@ -398,7 +398,6 @@ export default function Home() {
                 </div>
               </nav>
             )}
-          </div>
           </ResponsiveContainer>
         </header>
 
