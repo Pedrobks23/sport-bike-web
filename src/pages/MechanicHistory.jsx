@@ -28,16 +28,17 @@ export default function MechanicHistory() {
         }),
         listOrdersByMechanic(mechId, {
           start: new Date(`${range.start}T00:00`),
-          end: new Date(`${range.end}T23:59`)
-        })
+          end: new Date(`${range.end}T23:59`),
+        }),
       ]);
-      quick.sort((a, b) => new Date(b.data) - new Date(a.data));
+      const toJsDate = (v) => (v?.toDate ? v.toDate() : v);
+      quick.sort((a, b) => toJsDate(b.data) - toJsDate(a.data));
       quick.forEach((r, i) => {
         r.os = `SA-${i + 1}`;
       });
 
       const tmp = [...quick, ...os];
-      tmp.sort((a, b) => new Date(b.data) - new Date(a.data));
+      tmp.sort((a, b) => toJsDate(b.data) - toJsDate(a.data));
       setRows(tmp);
       setLoading(false);
     })();

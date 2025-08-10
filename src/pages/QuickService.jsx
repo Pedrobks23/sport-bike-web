@@ -8,6 +8,7 @@ import {
   updateQuickService,
   deleteQuickService,
 } from "../services/quickServiceService";
+import { formatDate } from "../utils/formatDate";
 
 const QuickService = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -66,7 +67,7 @@ const QuickService = () => {
         await updateQuickService(editingId, payload);
         setMessage("Serviço atualizado com sucesso");
       } else {
-        await addQuickService({ ...payload, dataCriacao: serverTimestamp() });
+        await addQuickService({ ...payload, data: serverTimestamp() });
         setMessage("Serviço salvo com sucesso");
       }
       setForm({ mecanicoId: "", servico: "", valor: "", quantidade: 1, observacoes: "" });
@@ -201,7 +202,7 @@ const QuickService = () => {
                         className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
                         <td className="py-2 px-2">
-                          {s.dataCriacao ? new Date(s.dataCriacao).toLocaleDateString("pt-BR") : ""}
+                          {formatDate(s.data?.toDate ? s.data.toDate() : s.data, { date: true })}
                         </td>
                         <td className="py-2 px-2">{getMechanicName(s.mecanicoId)}</td>
                         <td className="py-2 px-2">{s.servico}</td>
