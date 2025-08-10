@@ -1,70 +1,96 @@
+// src/services/homeService.js
+// Fornece:
+//  - getFeaturedProducts(): lista produtos em destaque (primeiro tenta `products` com `isFeatured`,
+//    senão faz fallback para coleção antiga `featuredProducts`).
+//  - getHomeSettings(): lê /home/settings com defaults (showFeaturedProducts, showProductsSection, showServicesSection, whatsappPhone).
+//  - updateHomeSettings(): atualiza /home/settings (merge).
+
 import {
   collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
   doc,
   getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
   setDoc,
 } from "firebase/firestore";
-import { db } from "../config/firebase";
-import { uploadImage, deleteImageByUrl } from "./uploadImage";
+import { db } from "@/config/firebase";
 
-export const getFeaturedProducts = async () => {
-  const ref = collection(db, "featuredProducts");
-  const snap = await getDocs(ref);
-  return snap.docs.map((d) => {
-    const data = d.data();
-    return { id: d.id, ...data, visible: data.visible ?? true };
-  });
-};
-
-
-export const createFeaturedProduct = async ({ imageFile, ...data }) => {
-  const refCollection = collection(db, "featuredProducts");
-  let imageUrl = data.image || "";
-  if (imageFile) {
-    imageUrl = await uploadImage(imageFile);
-  }
-  const docRef = await addDoc(refCollection, {
-    ...data,
-    image: imageUrl,
-    createdAt: serverTimestamp(),
-  });
-  const snap = await getDoc(docRef);
-  return { id: docRef.id, ...snap.data() };
-};
-
-export const updateFeaturedProduct = async (id, { imageFile, ...data }) => {
-  const refDoc = doc(db, "featuredProducts", id);
-  const updates = { ...data, updatedAt: serverTimestamp() };
-  if (imageFile) {
-    const snap = await getDoc(refDoc);
-    const oldUrl = snap.data()?.image;
-    if (oldUrl) await deleteImageByUrl(oldUrl);
-    const url = await uploadImage(imageFile);
-    updates.image = url;
-  }
-  await updateDoc(refDoc, updates);
-};
-
-export const deleteFeaturedProduct = async (id) => {
-  const ref = doc(db, "featuredProducts", id);
-  const snap = await getDoc(ref);
-  const url = snap.data()?.image;
-  if (url) await deleteImageByUrl(url);
-  await deleteDoc(ref);
-};
-
-export const getHomeSettings = async () => {
+// ---------- SETTINGS DA HOME ----------
+export async function getHomeSettings() {
   const ref = doc(db, "home", "settings");
   const snap = await getDoc(ref);
-  return snap.exists() ? snap.data() : { showFeaturedProducts: true };
-};
 
-export const updateHomeSettings = async (data) => {
+  const defaults = {
+    showFeaturedProducts: true,
+    showProductsSection: true,
+    showServicesSection: true,
+    whatsappPhone: "", // opcional
+  };
+
+  return snap.exists() ? { ...defaults, ...snap.data() } : defaults;
+}
+
+export async function updateHomeSettings(data) {
   const ref = doc(db, "home", "settings");
   await setDoc(ref, data, { merge: true });
-};
+  return true;
+}
+
+// ---------- PRODUTOS EM DESTAQUE ----------
+export async function getFeaturedProducts() {
+  // 1) Caminho novo: coleção "products" com flag isFeatured
+  try {
+    const q = query(
+      collection(db, "products"),
+      where("isFeatured", "==", true)
+      // orderBy opcional, só se você tiver o índice criado:
+      // orderBy("createdAt", "desc")
+    );
+    const snap = await getDocs(q);
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // Home.jsx já filtra visible !== false depois de normalizar, mas filtramos aqui também
+    const visibleItems = items.filter((p) => p.visible !== false);
+
+    if (visibleItems.length > 0) {
+      // normalização mínima para evitar campos undefined
+      return visibleItems.map((p) => ({
+        id: p.id,
+        name: p.name || "",
+        category: p.category || "",
+        price: p.price || "",
+        description: p.description || "",
+        image: p.image || "",
+        visible: p.visible !== false,
+      }));
+    }
+  } catch (e) {
+    // se a coleção/índice não existir, caímos no fallback
+    console.warn("[homeService] Falha ao ler 'products' (isFeatured). Fallback para 'featuredProducts'.", e?.message || e);
+  }
+
+  // 2) Fallback legado: coleção "featuredProducts"
+  //    (mantém compatibilidade com versões antigas do app)
+  try {
+    const snap = await getDocs(collection(db, "featuredProducts"));
+    const items = snap.docs.map((d) => {
+      const data = d.data() || {};
+      return {
+        id: d.id,
+        name: data.name || "",
+        category: data.category || "",
+        price: data.price || "",
+        description: data.description || "",
+        image: data.image || "",
+        visible: data.visible !== false, // alguns legados podem não ter esse campo
+      };
+    });
+
+    // alguns projetos armazenavam "featureds" já filtrados
+    return items.filter((p) => p.visible !== false);
+  } catch (e) {
+    console.error("[homeService] Erro ao ler 'featuredProducts':", e);
+    return [];
+  }
+}

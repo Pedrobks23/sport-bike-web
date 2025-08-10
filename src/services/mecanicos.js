@@ -7,7 +7,7 @@ export function listenMecanicos(cb, onError) {
     return onSnapshot(
       q,
       (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-      onError
+      (e) => onError?.(e)
     );
   } catch (e) {
     onError?.(e);

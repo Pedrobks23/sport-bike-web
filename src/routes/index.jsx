@@ -8,7 +8,6 @@ import CustomerList from "../pages/CustomerList";
 import ServicesManagement from "../pages/ServicesManagement";
 import ReportsManagement from "../pages/ReportsManagement";
 import ReceiptsManagement from "../pages/ReceiptsManagement";
-import ManageHomePage from "../pages/ManageHomePage";
 import ServiceOrdersPage from "../pages/ServiceOrdersPage";
 import ManageReceiptsPage from "../pages/ManageReceiptsPage";
 import NewOrder from "../pages/NewOrder"; // Adicione esta importação
@@ -18,6 +17,13 @@ import ServicoRapido from "../pages/ServicoRapido";
 import MechanicsManagement from "../pages/MechanicsManagement";
 import HistoricoMecanico from "../pages/HistoricoMecanico";
 import PrivateRoute from "../components/PrivateRoute";
+import Mecanicos from "../pages/Mecanicos";
+// import
+import ProductsPublic from "@/pages/ProductsPublic";
+
+
+
+
 
 export const router = createBrowserRouter([
   {
@@ -129,14 +135,6 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/admin/manage-home",
-    element: (
-      <PrivateRoute>
-        <ManageHomePage />
-      </PrivateRoute>
-    ),
-  },
-  {
     path: "/admin/service-orders",
     element: (
       <PrivateRoute>
@@ -152,4 +150,23 @@ export const router = createBrowserRouter([
       </PrivateRoute>
     ),
   },
+  {
+  path: "/admin/mecanicos",
+  element: (
+    <PrivateRoute>
+      <Mecanicos />
+    </PrivateRoute>
+  ),
+},
+{
+  path: "/admin/historico-mecanico/:mecanicoId",
+  element: (
+    <PrivateRoute>
+      <HistoricoMecanico />
+    </PrivateRoute>
+  ),
+},
+{ path: "/produtos", 
+  element: <ProductsPublic /> },
+
 ]);

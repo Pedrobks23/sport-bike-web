@@ -9,5 +9,14 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
+  },
+  server: {
+    port: 5173, // porta do Vite
+    proxy: {
+      '/api/cloudinary': {
+        target: 'http://localhost:8787', // porta do server local
+        changeOrigin: true
+      }
+    }
   }
 })

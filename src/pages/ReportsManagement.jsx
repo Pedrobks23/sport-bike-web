@@ -174,50 +174,77 @@ const ReportsManagement = () => {
       });
 
       if (sourceFilter === 'all' || sourceFilter === 'avulso') {
-        const avulsoSnap = await getDocs(
-          query(
-            collection(db, 'servicosAvulsos'),
-            where('data', '>=', start),
-            where('data', '<=', end),
-            orderBy('data')
-          )
-        );
-        let avulsoIndex = 1;
-        avulsoSnap.forEach((d) => {
-          const { data, servico, quantidade, valor, mecanicoId, pecas = [] } = d.data();
-          const dt = data.toDate();
-          let periodKey;
-          switch (reportType) {
-            case 'daily':
-              periodKey = dt.toLocaleDateString('pt-BR');
-              break;
-            case 'weekly': {
-              const ws = new Date(dt);
-              ws.setDate(ws.getDate() - ws.getDay());
-              periodKey = `Semana de ${ws.toLocaleDateString('pt-BR')}`;
-              break;
-            }
-            case 'monthly':
-            default:
-              periodKey = dt.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
-          }
-          if (
-            (selectedMechanic === 'all') ||
-            (selectedMechanic === 'none' ? !mecanicoId : mecanicoId === selectedMechanic)
-          ) {
-            const ref = `AV-${avulsoIndex++}`;
-            if (selectedService === 'all' || servico === selectedService) {
-              addRow(periodKey, mecanicoId || '', servico, quantidade, valor, 'avulso', 'service', ref);
-            }
-            pecas.forEach((p) => {
-              if (selectedService !== 'all' && p.nome !== selectedService) return;
-              const qt = parseInt(p.quantidade) || 1;
-              const vl = parseFloat(p.valor) || 0;
-              addRow(periodKey, mecanicoId || '', p.nome, qt, vl, 'avulso', 'part', ref);
-            });
-          }
-        });
+  // 1) documentos com campo `data`
+  const snapData = await getDocs(
+    query(
+      collection(db, 'servicosAvulsos'),
+      where('data', '>=', start),
+      where('data', '<=', end),
+      orderBy('data')
+    )
+  );
+
+  // 2) fallback para documentos antigos com `dataCriacao`
+  const snapCriacao = await getDocs(
+    query(
+      collection(db, 'servicosAvulsos'),
+      where('dataCriacao', '>=', start),
+      where('dataCriacao', '<=', end),
+      orderBy('dataCriacao')
+    )
+  );
+
+  let avulsoIndex = 1;
+  const handleDoc = (d, useCriacao = false) => {
+    const { data, dataCriacao, servico, quantidade, valor, mecanicoId, pecas = [] } = d.data();
+    const ts = useCriacao ? dataCriacao?.toDate?.() : data?.toDate?.();
+    if (!ts) return;
+
+    let periodKey;
+    switch (reportType) {
+      case 'daily':
+        periodKey = ts.toLocaleDateString('pt-BR');
+        break;
+      case 'weekly': {
+        const ws = new Date(ts);
+        ws.setDate(ws.getDate() - ws.getDay());
+        periodKey = `Semana de ${ws.toLocaleDateString('pt-BR')}`;
+        break;
       }
+      case 'monthly':
+      default:
+        periodKey = ts.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+
+    const mechCond =
+      selectedMechanic === 'all'
+        ? true
+        : selectedMechanic === 'none'
+        ? !mecanicoId
+        : mecanicoId === selectedMechanic;
+
+    if (!mechCond) return;
+
+    const ref = `AV-${avulsoIndex++}`;
+
+    // Serviço avulso
+    if (selectedService === 'all' || servico === selectedService) {
+      addRow(periodKey, mecanicoId || '', servico, parseInt(quantidade) || 1, parseFloat(valor) || 0, 'avulso', 'service', ref);
+    }
+
+    // Peças avulsas (se houver)
+    (pecas || []).forEach((p) => {
+      if (selectedService !== 'all' && p.nome !== selectedService) return;
+      const qt = parseInt(p.quantidade) || 1;
+      const vl = parseFloat(p.valor) || 0;
+      addRow(periodKey, mecanicoId || '', p.nome, qt, vl, 'avulso', 'part', ref);
+    });
+  };
+
+  snapData.forEach((d) => handleDoc(d, false));
+  snapCriacao.forEach((d) => handleDoc(d, true));
+}
+
 
       const result = Object.entries(agg)
         .map(([period, info]) => ({
