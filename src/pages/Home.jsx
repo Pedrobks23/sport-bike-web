@@ -412,9 +412,8 @@ export default function Home() {
               muted
               loop
               playsInline
-              poster="/placeholder.svg?height=1080&width=1920"
+              poster=""
             >
-              <source src="/placeholder-video.mp4" type="video/mp4" />
             </video>
           </div>
           <button
@@ -476,7 +475,7 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                       <div>
                         <img
-                          src={featuredProducts[currentProduct].image || "/placeholder.svg"}
+                          src={featuredProducts[currentProduct].image || ""}
                           alt={featuredProducts[currentProduct].name}
                           className="w-full h-64 object-cover rounded-lg"
                           loading="lazy"
