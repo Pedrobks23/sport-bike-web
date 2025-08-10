@@ -420,6 +420,35 @@ export const removeOrderPart = async (orderId, bikeIndex, partIndex) => {
   }
 };
 
+export const listOrdersByMechanic = async (mecId, { start, end } = {}) => {
+  let q = query(collection(db, 'ordens'), where('status', '==', 'Pronto'));
+  if (start) q = query(q, where('dataConclusao', '>=', start));
+  if (end) q = query(q, where('dataConclusao', '<=', end));
+  q = query(q, orderBy('dataConclusao', 'desc'));
+  const snap = await getDocs(q);
+  const rows = [];
+  snap.forEach(docSnap => {
+    const ord = docSnap.data();
+    (ord.bicicletas || []).forEach(b => {
+      if (b.mecanicoId !== mecId) return;
+      const services = b.serviceValues || b.valorServicos || {};
+      Object.entries(services).forEach(([nome, info]) => {
+        const qtd = b.services?.[nome] || info.quantidade || 1;
+        const val = info.valorFinal ?? info.valor ?? info;
+        rows.push({
+          data: ord.dataConclusao?.toDate?.() ?? new Date(ord.dataConclusao),
+          fonte: 'OS',
+          os: ord.codigo,
+          servico: nome,
+          qtd,
+          valor: val,
+        });
+      });
+    });
+  });
+  return rows;
+};
+
 export const getLatestCompletedOrderByPhone = async (phone) => {
   try {
     const ordersRef = collection(db, 'ordens');
