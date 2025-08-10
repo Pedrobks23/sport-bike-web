@@ -11,8 +11,9 @@ export default function HistoricoMecanico(){
   const [inicio,setInicio]=useState(toDateInputValue(new Date(Date.now()-30*86400000)));
   const [fim,setFim]=useState(toDateInputValue(new Date()));
   const [avulsos,setAvulsos]=useState([]); const [ordens,setOrdens]=useState([]); const [loading,setLoading]=useState(false);
+  const [permIssue,setPermIssue]=useState(false);
 
-  useEffect(()=>{ const u=listenMecanicos(setMecanicos); return ()=>u(); },[]);
+  useEffect(()=>{ const u=listenMecanicos(setMecanicos,()=>setPermIssue(true)); return ()=>u(); },[]);
   useEffect(()=>{ if(!selected){ setAvulsos([]); setOrdens([]); return; } setLoading(true);
     const s=new Date(inicio), e=new Date(fim);
     const u1=listenAvulsosByMecanicoAndRange(selected.id,s,e,setAvulsos);
@@ -30,6 +31,7 @@ export default function HistoricoMecanico(){
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-4">Histórico do Mecânico</h1>
+      {permIssue && <div className="mb-3 text-amber-600 text-sm">Atenção: as regras do Firestore podem estar bloqueando leitura/escrita.</div>}
 
       {/* Cards de mecânicos */}
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 mb-5">
