@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Wrench } from "lucide-react";
 import { listenMecanicos } from "../services/mecanicos";
 import { listenByMecanicoAndRange } from "../services/servicosAvulsos";
 
@@ -9,6 +11,8 @@ function toDateInputValue(d) {
 function fmtBRL(n) { return Number(n || 0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
 
 export default function HistoricoMecanico() {
+  const navigate = useNavigate();
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [mecanicos, setMecanicos] = useState([]);
   const [mecanicoId, setMecanicoId] = useState("");
   const [inicio, setInicio] = useState(toDateInputValue(new Date(Date.now() - 30*86400000)));
@@ -17,6 +21,11 @@ export default function HistoricoMecanico() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
     const unsub = listenMecanicos((arr) => {
       setMecanicos(arr);
       if (!mecanicoId && arr.length) setMecanicoId(arr[0].id);
@@ -39,10 +48,29 @@ export default function HistoricoMecanico() {
   const total = useMemo(() => lista.reduce((acc, it) => acc + Number(it.valor || 0), 0), [lista]);
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6">
-      <h1 className="text-2xl font-bold mb-4">Histórico do Mecânico</h1>
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
+      <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="flex items-center space-x-3">
+                <div className="bg-gradient-to-r from-gray-400 to-gray-600 p-2 rounded-full">
+                  <Wrench className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Histórico do Mecânico</h1>
+              </div>
+            </div>
+          </div>
+        </header>
 
-      <div className="card p-4 mb-6 grid gap-3 md:grid-cols-4">
+        <main className="container mx-auto px-4 py-8">
+      <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-4 mb-6 grid gap-3 md:grid-cols-4">
         <div className="grid gap-2 md:col-span-2">
           <label className="text-sm font-medium">Mecânico</label>
           <select className="input" value={mecanicoId} onChange={(e) => setMecanicoId(e.target.value)}>
@@ -59,7 +87,7 @@ export default function HistoricoMecanico() {
         </div>
       </div>
 
-      <div className="overflow-x-auto card">
+      <div className="overflow-x-auto bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl">
         <table className="min-w-full text-sm">
           <thead className="bg-neutral-100 dark:bg-neutral-800">
             <tr>
@@ -94,6 +122,8 @@ export default function HistoricoMecanico() {
             </tr>
           </tfoot>
         </table>
+      </div>
+        </main>
       </div>
     </div>
   );
