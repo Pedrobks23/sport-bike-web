@@ -1,3 +1,4 @@
+/* eslint-env node */
 // CommonJS: Node roda sem "type": "module"
 const express = require("express");
 const cors = require("cors");
@@ -32,15 +33,16 @@ app.post("/api/cloudinary/sign", (req, res) => {
     const cloudName = requireEnv("CLOUDINARY_CLOUD_NAME");
     const apiKey = requireEnv("CLOUDINARY_API_KEY");
     const apiSecret = requireEnv("CLOUDINARY_API_SECRET");
-    const defaultFolder = process.env.CLOUDINARY_UPLOAD_FOLDER || "sportbike/featured";
+    const defaultFolder = process.env.CLOUDINARY_FOLDER || "sportbike";
 
-    const { folder } = req.body || {};
+    const { folder, public_id } = req.body || {};
     const timestamp = Math.floor(Date.now() / 1000);
 
-    const paramsToSign = {
-      folder: folder || defaultFolder,
-      timestamp,
-    };
+    const effectiveFolder = folder || defaultFolder;
+    const paramsToSign = {};
+    if (effectiveFolder) paramsToSign.folder = effectiveFolder;
+    if (public_id) paramsToSign.public_id = public_id;
+    paramsToSign.timestamp = timestamp;
 
     const sorted = Object.keys(paramsToSign)
       .sort()
@@ -55,7 +57,8 @@ app.post("/api/cloudinary/sign", (req, res) => {
       signature,
       cloudName,
       apiKey,
-      folder: paramsToSign.folder,
+      folder: effectiveFolder,
+      public_id,
     });
   } catch (e) {
     console.error(e);
@@ -69,11 +72,15 @@ app.post("/api/cloudinary/destroy", async (req, res) => {
     const apiKey = requireEnv("CLOUDINARY_API_KEY");
     const apiSecret = requireEnv("CLOUDINARY_API_SECRET");
 
-    const { publicId } = req.body || {};
-    if (!publicId) return res.status(400).json({ error: "publicId is required" });
+    const { public_id, publicId } = req.body || {};
+    const pid = public_id || publicId;
+    if (!pid) return res.status(400).json({ error: "public_id_required" });
+    if (pid.includes(":")) {
+      return res.status(400).json({ error: "invalid_public_id", details: "public_id cannot contain ':'" });
+    }
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const paramsToSign = { public_id: publicId, timestamp };
+    const paramsToSign = { public_id: pid, timestamp };
 
     const sorted = Object.keys(paramsToSign)
       .sort()
@@ -84,7 +91,7 @@ app.post("/api/cloudinary/destroy", async (req, res) => {
     const signature = crypto.createHash("sha1").update(toSign).digest("hex");
 
     const form = new URLSearchParams();
-    form.append("public_id", publicId);
+    form.append("public_id", pid);
     form.append("timestamp", String(timestamp));
     form.append("api_key", apiKey);
     form.append("signature", signature);
@@ -95,11 +102,7 @@ app.post("/api/cloudinary/destroy", async (req, res) => {
     });
 
     const json = await resp.json();
-    if (json.result !== "ok") {
-      return res.status(400).json({ error: "Cloudinary destroy failed", detail: json });
-    }
-
-    res.json({ ok: true });
+    res.json(json);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to destroy image" });
