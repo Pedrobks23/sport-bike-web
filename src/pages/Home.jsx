@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 "use client"
 
 import { useEffect, useState, useRef } from "react"
@@ -32,17 +33,9 @@ import { onAuthStateChanged } from "firebase/auth"
 import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
 import ResponsiveContainer from "../components/ResponsiveContainer"
+import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
+import { Link } from "react-router-dom";
 
-const normalizeDriveUrl = (url) => {
-  if (!url) return url
-  const file = url.match(/https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
-  if (file) return `https://drive.google.com/uc?export=view&id=${file[1]}`
-  const open = url.match(/https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
-  if (open) return `https://drive.google.com/uc?export=view&id=${open[1]}`
-  const uc = url.match(/https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/)
-  if (uc) return `https://drive.google.com/uc?export=view&id=${uc[1]}`
-  return url
-}
 
 export default function Home() {
   const navigate = useNavigate()
@@ -54,6 +47,8 @@ export default function Home() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(true)
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [showFeatured, setShowFeatured] = useState(true)
   const videoRef = useRef(null)
@@ -169,24 +164,40 @@ export default function Home() {
     }
   }, [])
 
+  // carrega destaques (usa Cloudinary quando houver)
   useEffect(() => {
     const fetchData = async () => {
-      const prods = await getFeaturedProducts()
-      const normalized = prods
-        .map((p) => ({ ...p, image: normalizeDriveUrl(p.image) }))
-        .filter((p) => p.visible !== false)
-      const settings = await getHomeSettings()
-      setFeaturedProducts(normalized)
-      setShowFeatured(settings.showFeaturedProducts ?? true)
+      try {
+        const prods = await getFeaturedProducts() // pode retornar todos os 'featured'
+        const settings = await getHomeSettings()
+
+        const normalized = (prods || [])
+          .filter((p) => p && p.visible !== false) // respeita visibilidade
+          .map((p) => {
+            // p.image pode ser objeto ({url, publicId}) ou string (legado)
+            const imgObj = typeof p.image === "string" ? { url: p.image } : p.image
+            // monta URL com foco automático (centraliza a bike em imagens verticais tbm)
+            const displayUrl = cldFill(imgObj, { w: 800, h: 600 })
+            return { ...p, displayUrl }
+          })
+
+        setFeaturedProducts(normalized)
+        setShowFeatured(settings.showFeaturedProducts ?? true)
+      } catch (e) {
+        console.error(e)
+        setFeaturedProducts([])
+        setShowFeatured(true)
+      }
     }
     fetchData()
   }, [])
 
+  // Preload das imagens dos destaques
   useEffect(() => {
     featuredProducts.forEach((p) => {
-      if (p.image) {
+      if (p?.displayUrl) {
         const img = new Image()
-        img.src = p.image
+        img.src = p.displayUrl
       }
     })
   }, [featuredProducts])
@@ -456,7 +467,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
         {/* Featured Products Carousel */}
         {showFeatured && (
           <section className="py-20 bg-white dark:bg-gray-800">
@@ -475,18 +485,24 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                       <div>
                         <img
-                          src={featuredProducts[currentProduct].image || ""}
+                          src={featuredProducts[currentProduct].displayUrl || ""}
                           alt={featuredProducts[currentProduct].name}
-                          className="w-full h-64 object-cover rounded-lg"
+                          className="w-full h-64 object-cover object-center rounded-lg"
                           loading="lazy"
                         />
                       </div>
                       <div className="text-white">
-                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
-                          {featuredProducts[currentProduct].category}
-                        </span>
-                        <h3 className="text-2xl font-bold mt-4 mb-2">{featuredProducts[currentProduct].name}</h3>
-                        <p className="text-3xl font-bold mb-2">{featuredProducts[currentProduct].price}</p>
+                        {featuredProducts[currentProduct].category && (
+                          <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                            {featuredProducts[currentProduct].category}
+                          </span>
+                        )}
+                        <h3 className="text-2xl font-bold mt-4 mb-2">
+                          {featuredProducts[currentProduct].name}
+                        </h3>
+                        <p className="text-3xl font-bold mb-2">
+                          {featuredProducts[currentProduct].price}
+                        </p>
                         {featuredProducts[currentProduct].description && (
                           <p className="mb-4 text-white/90 whitespace-pre-line">
                             {featuredProducts[currentProduct].description}
@@ -509,20 +525,24 @@ export default function Home() {
                 ) : (
                   <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
                 )}
-                <button
-                  onClick={() =>
-                    setCurrentProduct((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)
-                  }
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
-                >
-                  <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                </button>
-                <button
-                  onClick={() => setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
-                >
-                  <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                </button>
+                {featuredProducts.length > 1 && (
+                  <>
+                    <button
+                      onClick={() =>
+                        setCurrentProduct((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)
+                      }
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+                    >
+                      <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentProduct((prev) => (prev + 1) % featuredProducts.length)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
+                    >
+                      <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                    </button>
+                  </>
+                )}
                 <div className="flex justify-center mt-8 space-x-2">
                   {featuredProducts.map((_, index) => (
                     <button
@@ -535,10 +555,20 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+
+              {/* Botão para todos os produtos */}
+              <div className="mt-12 flex justify-center">
+                <Link
+                  to="/produtos"
+                  className="inline-flex items-center gap-3 rounded-full bg-amber-500 text-white px-6 py-3 font-semibold shadow-lg hover:bg-amber-600 hover:scale-105 transform transition-all duration-300 animate-pulse"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  Ver todos os produtos
+                </Link>
+              </div>
             </div>
           </section>
         )}
-
         {/* Services Section */}
         <section id="servicos" className="py-20 bg-gray-50 dark:bg-gray-900">
           <ResponsiveContainer>

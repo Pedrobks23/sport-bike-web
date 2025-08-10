@@ -3,8 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
+    "scripts": {
+    "dev:web": "vite",
+    "dev:api": "node server/local-cloudinary-api.cjs",
+    "dev": "concurrently -k \"npm run dev:web\" \"npm run dev:api\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -15,7 +17,10 @@
     "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.18.0",
     "@tanstack/react-query": "^5.62.3",
+    "cors": "^2.8.5",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "firebase": "^11.0.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
@@ -37,6 +42,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.0",
     "eslint": "^9.15.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
