@@ -913,7 +913,7 @@ function NewOrder() {
         )}
 
         {/* SEÇÃO CLIENTE */}
-        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
+        <div className="relative z-20 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
           <h2 className="text-xl font-bold mb-4">Cliente</h2>
 
           <div className="flex gap-4 mb-4">
@@ -927,7 +927,7 @@ function NewOrder() {
                 maxLength={11}
               />
               {phoneSuggestions.length > 0 && (
-                <ul className="absolute left-0 w-full bg-white border rounded-lg shadow mt-1 max-h-40 overflow-auto z-10">
+                <ul className="absolute left-0 w-full bg-white border rounded-lg shadow mt-1 max-h-40 overflow-auto z-50">
                   {phoneSuggestions.map((s) => (
                     <li
                       key={s.telefone}
