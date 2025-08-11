@@ -11,7 +11,7 @@ type Props = {
 export default function BadgeStat({ title, value, delta, trend }: Props) {
   const TrendIcon = trend === "down" ? ArrowDownRight : ArrowUpRight;
   const trendClass =
-    trend === "down" ? "text-red-500 bg-red-500/10" : "text-emerald-500 bg-emerald-500/10";
+    trend === "down" ? "text-red-500 bg-red-500/10" : "text-brand-black bg-brand-yellow";
 
   return (
     <Card className="p-5">

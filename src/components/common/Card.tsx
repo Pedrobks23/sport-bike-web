@@ -13,8 +13,8 @@ export default function Card({
   return (
     <div
       className={clsx(
-        "rounded-xl2 shadow-soft border border-white/10",
-        dark ? "bg-[var(--card-dark)] text-white" : "bg-white",
+        "rounded-xl2 shadow-soft border",
+        dark ? "border-white/10 bg-[var(--card-dark)] text-white" : "border-black/10 bg-white",
         className
       )}
     >

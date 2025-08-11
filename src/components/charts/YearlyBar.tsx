@@ -11,8 +11,8 @@ export default function YearlyBar({ summary }: { summary: YearSummary }) {
           <YAxis hide />
           <Tooltip />
           <Legend />
-          <Bar dataKey="income" fill="#2AD39A" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="expenses" fill="#0EA5E9" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="income" fill="#FFD600" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="expenses" fill="#9CA3AF" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

@@ -15,10 +15,10 @@ const items = [
 
 export default function Sidebar() {
   return (
-    <aside className="hidden md:flex md:w-64 flex-col border-r border-white/10 bg-white">
+    <aside className="hidden md:flex md:w-64 flex-col border-r border-black/10 bg-white">
       <div className="h-16 flex items-center px-6 border-b">
-        <div className="h-8 w-8 rounded-md bg-brand-green"></div>
-        <span className="ml-3 font-semibold">Admin</span>
+        <div className="h-8 w-8 rounded-md bg-brand-yellow"></div>
+        <span className="ml-3 font-semibold">Sport Bike Admin</span>
       </div>
       <nav className="flex-1 p-3">
         {items.map((item) => {
@@ -31,8 +31,8 @@ export default function Sidebar() {
                 clsx(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
                   isActive
-                    ? "bg-brand-greenLight/40 text-brand-green"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-brand-yellow/40 text-brand-black"
+                    : "text-gray-700 hover:bg-gray-100"
                 )
               }
             >

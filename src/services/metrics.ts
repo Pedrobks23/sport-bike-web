@@ -5,19 +5,19 @@ import { startOfMonth } from "date-fns";
 
 export function getBanner() {
   return {
-    user: "Fabiana Capmany",
-    text: "Best seller of the month! You have done 57.6% more sales today.",
-    cta: "Go now",
+    user: "Equipe Sport Bike",
+    text: "Você realizou 57,6% mais vendas hoje.",
+    cta: "Ver detalhes",
   };
 }
 
 export function getFeaturedProduct() {
   return {
-    title: "Pegasus Running Shoes",
+    title: "Capacete de ciclismo",
     image:
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop",
-    badge: "NEW",
-    cta: "Buy now",
+    badge: "NOVO",
+    cta: "Comprar",
   };
 }
 

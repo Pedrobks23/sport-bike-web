@@ -1,7 +1,7 @@
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { DonutSlice } from "@/types/analytics";
 
-const COLORS = ["#2AD39A", "#A6F5C3", "#0EA5E9"];
+const COLORS = ["#FFD600", "#F5E27A", "#9CA3AF"]; // amarelo principal, amarelo claro, cinza
 
 export default function DonutByGender({ data }: { data: DonutSlice[] }) {
   return (
