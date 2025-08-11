@@ -12,6 +12,8 @@ import {
   serverTimestamp,
   orderBy,
   limit,
+  startAt,
+  endAt,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { ArrowLeft, PlusCircle } from "lucide-react";
@@ -22,6 +24,14 @@ import { listMechanics } from "../services/mechanicService";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
 const logo = new URL("/assets/Logo.png", import.meta.url).href;
+
+function formatPhone(phone) {
+  if (!phone) return "";
+  const ddd = phone.slice(0, 2);
+  const first = phone.slice(2, 7);
+  const last = phone.slice(7, 11);
+  return `(${ddd}) ${first}-${last}`;
+}
 
 function NewOrder() {
   const navigate = useNavigate();
@@ -41,6 +51,7 @@ function NewOrder() {
     telefone: "",
     endereco: "",
   });
+  const [phoneSuggestions, setPhoneSuggestions] = useState([]);
 
   // Estados das bicicletas
   const [bikes, setBikes] = useState([]);
@@ -172,32 +183,70 @@ function NewOrder() {
   // -----------------------------
   // FUNÇÕES DO CLIENTE
   // -----------------------------
-  async function searchClient() {
-    if (!telefone) return;
+  async function fetchPhoneSuggestions(value) {
+    if (value.length < 3) {
+      setPhoneSuggestions([]);
+      return;
+    }
+    try {
+      const clientesRef = collection(db, "clientes");
+      const q = query(
+        clientesRef,
+        orderBy("telefone"),
+        startAt(value),
+        endAt(value + "\uf8ff"),
+        limit(5)
+      );
+      const snapshot = await getDocs(q);
+      const suggestions = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return { telefone: data.telefone, nome: data.nome };
+      });
+      setPhoneSuggestions(suggestions);
+    } catch (err) {
+      console.error("Erro ao buscar telefones:", err);
+    }
+  }
+
+  function handleTelefoneChange(e) {
+    const value = e.target.value.replace(/\D/g, "");
+    setTelefone(value);
+    fetchPhoneSuggestions(value);
+  }
+
+  async function searchClient(phoneParam) {
+    const phoneToSearch = phoneParam || telefone;
+    if (!phoneToSearch) return;
     try {
       setLoading(true);
-      const clientRef = doc(db, "clientes", telefone);
+      const clientRef = doc(db, "clientes", phoneToSearch);
       const clientDoc = await getDoc(clientRef);
 
       if (clientDoc.exists()) {
         const data = clientDoc.data();
         setClientData({
           ...data,
-          telefoneSemDDD: data.telefoneSemDDD || telefone.slice(-9)
+          telefoneSemDDD: data.telefoneSemDDD || phoneToSearch.slice(-9),
         });
-        await loadClientBikes(telefone);
+        await loadClientBikes(phoneToSearch);
       } else {
         setClientData(null);
         setBikes([]);
         setShowClientForm(true);
-        setNewClient((prev) => ({ ...prev, telefone: telefone }));
+        setNewClient((prev) => ({ ...prev, telefone: phoneToSearch }));
       }
+      setPhoneSuggestions([]);
+      setTelefone(phoneToSearch);
     } catch (err) {
       console.error("Erro ao buscar cliente:", err);
       setError("Erro ao buscar cliente");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSelectSuggestion(phone) {
+    await searchClient(phone);
   }
 
   async function handleCreateClient() {
@@ -868,16 +917,32 @@ function NewOrder() {
           <h2 className="text-xl font-bold mb-4">Cliente</h2>
 
           <div className="flex gap-4 mb-4">
-            <input
-              type="text"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value.replace(/\D/g, ""))}
-              placeholder="Digite o telefone do cliente"
-              className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              maxLength={11}
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={telefone}
+                onChange={handleTelefoneChange}
+                placeholder="Digite o telefone do cliente"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                maxLength={11}
+              />
+              {phoneSuggestions.length > 0 && (
+                <ul className="absolute left-0 w-full bg-white border rounded-lg shadow mt-1 max-h-40 overflow-auto z-10">
+                  {phoneSuggestions.map((s) => (
+                    <li
+                      key={s.telefone}
+                      onMouseDown={() => handleSelectSuggestion(s.telefone)}
+                      className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between"
+                    >
+                      <span>{formatPhone(s.telefone)}</span>
+                      <span className="text-gray-500">{s.nome}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <button
-              onClick={searchClient}
+              onClick={() => searchClient()}
               disabled={loading || !telefone}
               className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
             >
