@@ -2,7 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import Home from "../pages/Home";
 import ConsultaOS from "../pages/ConsultaOS";
 import AdminLogin from "../pages/AdminLogin";
-import Admin from "../pages/Admin";
+import AdminSmartDashboard from "../pages/AdminSmartDashboard";
 import WorkshopDashboard from "../pages/WorkshopDashboard";
 import CustomerList from "../pages/CustomerList";
 import ServicesManagement from "../pages/ServicesManagement";
@@ -42,7 +42,7 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: (
       <PrivateRoute>
-        <Admin />
+        <AdminSmartDashboard />
       </PrivateRoute>
     ),
   },
