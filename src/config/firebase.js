@@ -169,7 +169,11 @@ export const extWatchGenerateOnce = (docId, onDone) => {
     const d = snap.data();
     if (!d) return;
     if (d.response || d?.status?.state === "ERROR") {
-      onDone({ response: d.response, status: d.status });
+      const err =
+        d?.status?.message ||
+        d?.status?.error ||
+        (typeof d?.status === "string" ? d.status : "");
+      onDone({ response: d.response, status: d.status, errorText: err });
       unsub();
     }
   });
