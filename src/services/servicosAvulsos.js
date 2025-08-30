@@ -1,11 +1,14 @@
 import {
   addDoc,
   collection,
+  doc,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
+  deleteDoc,
   Timestamp,
   where,
 } from "firebase/firestore";
@@ -26,6 +29,23 @@ export async function createServicoAvulso({ mecanicoId, servico, quantidade, val
     // dataCriacao: serverTimestamp(), // descomente se precisar retrocompat
   };
   return addDoc(collection(db, COLL), payload);
+}
+
+/** Atualiza um serviço avulso existente */
+export async function updateServicoAvulso(id, { mecanicoId, servico, quantidade, valor, observacoes }) {
+  const payload = {
+    mecanicoId,
+    servico: (servico || "").trim(),
+    quantidade: Number(quantidade || 1),
+    valor: Number(valor || 0),
+    observacoes: (observacoes || "").trim(),
+  };
+  return updateDoc(doc(db, COLL, id), payload);
+}
+
+/** Remove um serviço avulso */
+export function deleteServicoAvulso(id) {
+  return deleteDoc(doc(db, COLL, id));
 }
 
 /** Últimos N lançamentos do mecânico (merge `data` e `dataCriacao`) */

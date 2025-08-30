@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import { listenMecanicos } from "../services/mecanicos";
-import { createServicoAvulso, listenAvulsosByRange } from "../services/servicosAvulsos";
+import { createServicoAvulso, listenAvulsosByRange, updateServicoAvulso, deleteServicoAvulso } from "../services/servicosAvulsos";
 
 function fmt(d) { return d.toLocaleDateString("pt-BR"); }
 function toInput(d){ const p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
@@ -47,20 +47,47 @@ export default function ServicoRapido(){
 
   // modal state
   const [form,setForm]=useState({ mecanicoId:"", servico:"", quantidade:1, valor:"", observacoes:"" });
-  function resetForm(){ setForm({ mecanicoId:"", servico:"", quantidade:1, valor:"", observacoes:"" }); }
+  const [editId,setEditId]=useState(null);
+  function resetForm(){ setForm({ mecanicoId:"", servico:"", quantidade:1, valor:"", observacoes:"" }); setEditId(null); }
 
   async function salvar(e){
     e?.preventDefault?.();
     const v = String(form.valor||"").replace(/\./g,"").replace(",",".");
-    await createServicoAvulso({
+    const payload = {
       mecanicoId: form.mecanicoId,
       servico: form.servico,
       quantidade: Number(form.quantidade||1),
       valor: Number(v||0),
       observacoes: form.observacoes
-    });
+    };
+    if(editId){
+      await updateServicoAvulso(editId, payload);
+    } else {
+      await createServicoAvulso(payload);
+    }
     setOpenModal(false);
     resetForm();
+  }
+
+  function editar(id){
+    const item = itens.find(i=>i.id===id);
+    if(item){
+      setForm({
+        mecanicoId: item.mecanicoId || "",
+        servico: item.servico || "",
+        quantidade: item.quantidade || 1,
+        valor: item.valor!=null ? String(item.valor) : "",
+        observacoes: item.observacoes || ""
+      });
+      setEditId(id);
+      setOpenModal(true);
+    }
+  }
+
+  async function remover(id){
+    if(window.confirm("Excluir este serviço?")){
+      await deleteServicoAvulso(id);
+    }
   }
 
   return (
@@ -135,8 +162,8 @@ export default function ServicoRapido(){
                 <td className="p-3 text-right">{fmtBRL(r.valor)}</td>
                 <td className="p-3">
                   <div className="flex gap-2 text-neutral-600">
-                    <button title="Editar"><Edit size={16}/></button>
-                    <button title="Excluir" className="text-red-600"><Trash2 size={16}/></button>
+                    <button title="Editar" onClick={()=>editar(r.id)}><Edit size={16}/></button>
+                    <button title="Excluir" onClick={()=>remover(r.id)} className="text-red-600"><Trash2 size={16}/></button>
                   </div>
                 </td>
               </tr>
@@ -147,9 +174,9 @@ export default function ServicoRapido(){
 
       {/* modal novo serviço */}
       {openModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={()=>setOpenModal(false)}>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={()=>{setOpenModal(false); resetForm();}}>
           <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow max-w-lg w-full p-5" onClick={(e)=>e.stopPropagation()}>
-            <h2 className="text-lg font-semibold mb-3">Novo Serviço Avulso</h2>
+            <h2 className="text-lg font-semibold mb-3">{editId ? "Editar Serviço Avulso" : "Novo Serviço Avulso"}</h2>
             <form onSubmit={salvar} className="grid gap-3">
               <div>
                 <label className="block text-sm mb-1">Mecânico</label>
@@ -183,7 +210,7 @@ export default function ServicoRapido(){
               </div>
 
               <div className="flex justify-end gap-2 mt-2">
-                <button type="button" onClick={()=>setOpenModal(false)} className="rounded-xl border px-4 py-2">Cancelar</button>
+                <button type="button" onClick={()=>{setOpenModal(false); resetForm();}} className="rounded-xl border px-4 py-2">Cancelar</button>
                 <button type="submit" className="rounded-xl px-4 py-2 bg-amber-500 text-white">Salvar</button>
               </div>
             </form>
