@@ -26,3 +26,6 @@ dist-ssr
 # dotenv environment variables file
 .env
 .env.local
+
+# Deployment
+vercel.json
