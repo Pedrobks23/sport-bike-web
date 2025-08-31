@@ -20,6 +20,7 @@ import PrivateRoute from "../components/PrivateRoute";
 import Mecanicos from "../pages/Mecanicos";
 // import
 import ProductsPublic from "@/pages/ProductsPublic";
+import AssistantChat from "@/components/AssistantChat";
 
 
 
@@ -166,7 +167,8 @@ export const router = createBrowserRouter([
     </PrivateRoute>
   ),
 },
-{ path: "/produtos", 
+{ path: "/produtos",
   element: <ProductsPublic /> },
+  { path: "/assistente", element: <AssistantChat /> },
 
 ]);

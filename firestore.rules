@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    match /generate/{docId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update, delete: if false; // extensão atualiza
+    }
+
+    match /clientes/{id} { allow read, create, update: if request.auth != null; }
+    match /clientes/{id}/bikes/{bikeId} { allow read, create, update: if request.auth != null; }
+
+    match /ordens/{id} { allow read, create, update: if request.auth != null; }
+
+    match /servicos/{id} { allow read: if request.auth != null; }
+    match /servicosList/{id} { allow read: if request.auth != null; }
+    match /servicosAvulsos/{id} { allow read: if request.auth != null; }
+
+    match /mecanicos/{id} { allow read: if request.auth != null; }
+    match /products/{id} { allow read: if request.auth != null; }
+    match /featuredProducts/{id} { allow read: if request.auth != null; }
+    match /recibos/{id} { allow read: if request.auth != null; }
+  }
+}
