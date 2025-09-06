@@ -6,12 +6,14 @@ async function generateWorkshopTagsPDF(ordem) {
     const pageWidth = docPDF.internal.pageSize.getWidth()
     const pageHeight = docPDF.internal.pageSize.getHeight()
 
-    const tagWidth = 90
-    const tagHeight = 80
+    const tagWidth = 100
+    const tagHeight = 90
     const cols = 2
     const marginX = (pageWidth - cols * tagWidth) / (cols + 1)
     const marginY = 20
     const gapY = 15
+
+    const normalizeText = (t) => (t || "").replace(/([,/])(\S)/g, "$1 $2")
 
     const formatarData = (data) => {
       const date = new Date(data)
@@ -73,41 +75,41 @@ async function generateWorkshopTagsPDF(ordem) {
       let yPos = y + 12
 
       docPDF.setLineDashPattern([], 0)
-      docPDF.setFontSize(14)
+      docPDF.setFontSize(16)
       docPDF.setFont("helvetica", "bold")
       docPDF.text(`${ordem.codigo} | BIKE ${index + 1}`, x + tagWidth / 2, yPos, { align: "center" })
-      yPos += 6
+      yPos += 8
 
-      docPDF.setFontSize(10)
+      docPDF.setFontSize(11)
       docPDF.text(formatarData(ordem.dataAgendamento), x + tagWidth / 2, yPos, { align: "center" })
-      yPos += 6
+      yPos += 7
 
       docPDF.line(x + 5, yPos, x + tagWidth - 5, yPos)
       yPos += 5
 
-      docPDF.setFontSize(9)
-      const nomeCliente = ordem.cliente?.nome || "-"
+      docPDF.setFontSize(10)
+      const nomeCliente = normalizeText(ordem.cliente?.nome || "-")
       const nomeLines = docPDF.splitTextToSize(nomeCliente, tagWidth - 10)
       docPDF.text(nomeLines, x + 5, yPos)
-      yPos += nomeLines.length * 3 + 2
+      yPos += nomeLines.length * 4 + 3
 
       docPDF.text(`Tel: ${ordem.cliente?.telefone || "-"}`, x + 5, yPos)
-      yPos += 5
+      yPos += 6
+
+      docPDF.setFontSize(14)
+      docPDF.setFont("helvetica", "bold")
+      docPDF.rect(x + 5, yPos - 3, tagWidth - 10, 7)
+      const bikeText = normalizeText(`${bike.marca} ${bike.modelo} ${bike.cor}`.trim())
+      const bikeLines = docPDF.splitTextToSize(bikeText, tagWidth - 12)
+      docPDF.text(bikeLines, x + tagWidth / 2, yPos, { align: "center" })
+      yPos += Math.max(bikeLines.length * 5, 7) + 4
 
       docPDF.setFontSize(12)
       docPDF.setFont("helvetica", "bold")
-      docPDF.rect(x + 5, yPos - 3, tagWidth - 10, 6)
-      const bikeText = `${bike.marca} ${bike.modelo} ${bike.cor}`.trim()
-      const bikeLines = docPDF.splitTextToSize(bikeText, tagWidth - 12)
-      docPDF.text(bikeLines, x + tagWidth / 2, yPos, { align: "center" })
-      yPos += Math.max(bikeLines.length * 4, 6) + 3
+      docPDF.text("SERVIÇOS:", x + 5, yPos)
+      yPos += 5
 
       docPDF.setFontSize(10)
-      docPDF.setFont("helvetica", "bold")
-      docPDF.text("SERVIÇOS:", x + 5, yPos)
-      yPos += 4
-
-      docPDF.setFontSize(9)
       docPDF.setFont("helvetica", "bold")
       if (bike.services) {
         Object.entries(bike.services).forEach(([serviceName, quantity]) => {
@@ -117,27 +119,29 @@ async function generateWorkshopTagsPDF(ordem) {
               bike.serviceValues?.[serviceName]?.valor ||
               0
             const subtotal = serviceValue * quantity
-            docPDF.text(`• ${serviceName} (${quantity}x) = R$ ${subtotal.toFixed(2)}`, x + 5, yPos)
-            yPos += 3
+            const serviceLabel = normalizeText(serviceName)
+            docPDF.text(`• ${serviceLabel} (${quantity}x) = R$ ${subtotal.toFixed(2)}`, x + 5, yPos)
+            yPos += 4
           }
         })
       }
-      yPos += 2
+      yPos += 3
 
-      docPDF.setFontSize(10)
+      docPDF.setFontSize(12)
       docPDF.setFont("helvetica", "bold")
       docPDF.text("PEÇAS:", x + 5, yPos)
-      yPos += 4
+      yPos += 5
 
-      docPDF.setFontSize(9)
+      docPDF.setFontSize(10)
       docPDF.setFont("helvetica", "bold")
       if (bike.pecas && bike.pecas.length > 0) {
         bike.pecas.forEach((peca) => {
           const qty = parseInt(peca.quantidade) || 1
           const valorPeca = Number.parseFloat(peca.valor) || 0
           const subtotal = valorPeca * qty
-          docPDF.text(`• ${peca.nome} (${qty}x) = R$ ${subtotal.toFixed(2)}`, x + 5, yPos)
-          yPos += 3
+          const partName = normalizeText(peca.nome)
+          docPDF.text(`• ${partName} (${qty}x) = R$ ${subtotal.toFixed(2)}`, x + 5, yPos)
+          yPos += 4
         })
       } else {
         docPDF.text("Nenhuma peça.", x + 5, yPos)
