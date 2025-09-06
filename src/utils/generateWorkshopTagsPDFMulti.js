@@ -99,10 +99,11 @@ async function generateWorkshopTagsPDFMulti(selections) {
 
       docPDF.setFontSize(14);
       docPDF.setFont("helvetica", "bold");
-      docPDF.rect(x + 5, yPos - 3, tagWidth - 10, 7);
       const bikeText = normalizeText(`${bike.marca} ${bike.modelo} ${bike.cor}`.trim());
       const bikeLines = docPDF.splitTextToSize(bikeText, tagWidth - 12);
       docPDF.text(bikeLines, x + tagWidth / 2, yPos, { align: "center" });
+      docPDF.setLineWidth(0.5);
+      docPDF.line(x + 5, yPos + 2.5, x + tagWidth - 5, yPos + 2.5);
       yPos += Math.max(bikeLines.length * 5, 7) + 4;
 
       docPDF.setFontSize(12);

@@ -1,175 +1,147 @@
-import jsPDF from "jspdf"
+// src/utils/generateWorkshopTagsPDF.js
+// Gera 1 tag por página (A4) com fluxo vertical dinâmico
+// - Não corta itens longos
+// - Lista "Serviços" e "Peças" inteiras antes do SUBTOTAL
+// - Paginação automática se necessário
+// - Sem barras pretas sobre o nome da bicicleta
 
-async function generateWorkshopTagsPDF(ordem) {
-  try {
-    const docPDF = new jsPDF()
-    const pageWidth = docPDF.internal.pageSize.getWidth()
-    const pageHeight = docPDF.internal.pageSize.getHeight()
+import jsPDF from "jspdf";
 
-    const tagWidth = 100
-    const tagHeight = 90
-    const cols = 2
-    const marginX = (pageWidth - cols * tagWidth) / (cols + 1)
-    const marginY = 20
-    const gapY = 15
-
-    const normalizeText = (t) => (t || "").replace(/([,/])(\S)/g, "$1 $2")
-
-    const formatarData = (data) => {
-      const date = new Date(data)
-      const diasSemana = [
-        "DOMINGO",
-        "SEGUNDA",
-        "TERÇA",
-        "QUARTA",
-        "QUINTA",
-        "SEXTA",
-        "SÁBADO",
-      ]
-      return `${date.toLocaleDateString("pt-BR")} ${diasSemana[date.getDay()]}`
+// ---------- Helpers ----------
+function brl(v) {
+  const n = Number(v ?? 0);
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+function val(x, ...alts) {
+  for (const k of [x, ...alts]) if (k !== undefined && k !== null) return k;
+  return undefined;
+}
+function extractServicos(order) {
+  const src = val(order?.servicos, order?.serviços, order?.services) ?? [];
+  return normalizeItemArray(src);
+}
+function extractPecas(order) {
+  const src = val(order?.pecas, order?.peças, order?.parts, order?.itensPecas) ?? [];
+  return normalizeItemArray(src);
+}
+function normalizeItemArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((it) => {
+    if (typeof it === "string") return { nome: it, quantidade: 1, preco: undefined };
+    return {
+      nome: val(it?.nome, it?.name, it?.titulo, it?.descricao, it?.description) ?? "",
+      quantidade: val(it?.quantidade, it?.qtd, it?.qty, 1),
+      preco: val(it?.preco, it?.price, it?.valor, it?.valorUnit, 0),
+    };
+  });
+}
+function formatItemLine(it) {
+  const q = Number(it.quantidade ?? 1);
+  const preco = it.preco != null ? ` = ${brl(it.preco)}` : "";
+  return `• ${String(it.nome)}  (${q}x)${preco}`;
+}
+function sum(arr) {
+  return arr.reduce((acc, it) => acc + Number(it.preco ?? 0) * Number(it.quantidade ?? 1), 0);
+}
+function writeLines(doc, lines, x, y, maxWidth, lineHeight, bottomLimit) {
+  let yy = y;
+  for (const line of lines) {
+    const wrapped = doc.splitTextToSize(line, maxWidth);
+    for (const w of wrapped) {
+      if (yy > bottomLimit) {
+        doc.addPage();
+        yy = drawPageFrame(doc);
+      }
+      doc.text(w, x, yy);
+      yy += lineHeight;
     }
-
-    const calcularSubtotalBike = (bike) => {
-      let subtotal = 0
-      if (bike.services) {
-        Object.entries(bike.services).forEach(([serviceName, quantity]) => {
-          if (quantity > 0) {
-            const serviceValue =
-              bike.serviceValues?.[serviceName]?.valorFinal ||
-              bike.serviceValues?.[serviceName]?.valor ||
-              0
-            subtotal += serviceValue * quantity
-          }
-        })
-      }
-      if (bike.pecas) {
-        bike.pecas.forEach((peca) => {
-          const qty = parseInt(peca.quantidade) || 1
-          subtotal += (Number.parseFloat(peca.valor) || 0) * qty
-        })
-      }
-      return subtotal
-    }
-
-    let currentPage = 0
-    const tagsPerPage = 3
-
-    ordem.bicicletas?.forEach((bike, index) => {
-      const tagIndex = index % tagsPerPage
-
-      if (index > 0 && index % tagsPerPage === 0) {
-        docPDF.addPage()
-        currentPage++
-      }
-
-      const col = tagIndex % cols
-      const row = Math.floor(tagIndex / cols)
-
-      const x = marginX + col * (tagWidth + marginX)
-      const y = marginY + row * (tagHeight + gapY)
-
-      docPDF.setLineDashPattern([3, 3], 0)
-      docPDF.setLineWidth(1.5)
-      docPDF.rect(x, y, tagWidth, tagHeight)
-
-      let yPos = y + 12
-
-      docPDF.setLineDashPattern([], 0)
-      docPDF.setFontSize(16)
-      docPDF.setFont("helvetica", "bold")
-      docPDF.text(`${ordem.codigo} | BIKE ${index + 1}`, x + tagWidth / 2, yPos, { align: "center" })
-      yPos += 8
-
-      docPDF.setFontSize(11)
-      docPDF.text(formatarData(ordem.dataAgendamento), x + tagWidth / 2, yPos, { align: "center" })
-      yPos += 7
-
-      docPDF.line(x + 5, yPos, x + tagWidth - 5, yPos)
-      yPos += 5
-
-      docPDF.setFontSize(10)
-      const nomeCliente = normalizeText(ordem.cliente?.nome || "-")
-      const nomeLines = docPDF.splitTextToSize(nomeCliente, tagWidth - 10)
-      docPDF.text(nomeLines, x + 5, yPos)
-      yPos += nomeLines.length * 4 + 3
-
-      docPDF.text(`Tel: ${ordem.cliente?.telefone || "-"}`, x + 5, yPos)
-      yPos += 6
-
-      docPDF.setFontSize(14)
-      docPDF.setFont("helvetica", "bold")
-      docPDF.rect(x + 5, yPos - 3, tagWidth - 10, 7)
-      const bikeText = normalizeText(`${bike.marca} ${bike.modelo} ${bike.cor}`.trim())
-      const bikeLines = docPDF.splitTextToSize(bikeText, tagWidth - 12)
-      docPDF.text(bikeLines, x + tagWidth / 2, yPos, { align: "center" })
-      yPos += Math.max(bikeLines.length * 5, 7) + 4
-
-      docPDF.setFontSize(12)
-      docPDF.setFont("helvetica", "bold")
-      docPDF.text("SERVIÇOS:", x + 5, yPos)
-      yPos += 5
-
-      docPDF.setFontSize(10)
-      docPDF.setFont("helvetica", "bold")
-      if (bike.services) {
-        Object.entries(bike.services).forEach(([serviceName, quantity]) => {
-          if (quantity > 0) {
-            const serviceValue =
-              bike.serviceValues?.[serviceName]?.valorFinal ||
-              bike.serviceValues?.[serviceName]?.valor ||
-              0
-            const subtotal = serviceValue * quantity
-            const serviceLabel = normalizeText(serviceName)
-            docPDF.text(`• ${serviceLabel} (${quantity}x) = R$ ${subtotal.toFixed(2)}`, x + 5, yPos)
-            yPos += 4
-          }
-        })
-      }
-      yPos += 3
-
-      docPDF.setFontSize(12)
-      docPDF.setFont("helvetica", "bold")
-      docPDF.text("PEÇAS:", x + 5, yPos)
-      yPos += 5
-
-      docPDF.setFontSize(10)
-      docPDF.setFont("helvetica", "bold")
-      if (bike.pecas && bike.pecas.length > 0) {
-        bike.pecas.forEach((peca) => {
-          const qty = parseInt(peca.quantidade) || 1
-          const valorPeca = Number.parseFloat(peca.valor) || 0
-          const subtotal = valorPeca * qty
-          const partName = normalizeText(peca.nome)
-          docPDF.text(`• ${partName} (${qty}x) = R$ ${subtotal.toFixed(2)}`, x + 5, yPos)
-          yPos += 4
-        })
-      } else {
-        docPDF.text("Nenhuma peça.", x + 5, yPos)
-      }
-
-      const subtotal = calcularSubtotalBike(bike)
-      docPDF.setFontSize(14)
-      docPDF.setFont("helvetica", "bold")
-      docPDF.setFillColor(220, 220, 220)
-      docPDF.rect(x + 5, y + tagHeight - 12, tagWidth - 10, 8, "F")
-      docPDF.rect(x + 5, y + tagHeight - 12, tagWidth - 10, 8)
-      docPDF.text(`SUBTOTAL: R$ ${subtotal.toFixed(2)}`, x + tagWidth / 2, y + tagHeight - 7, { align: "center" })
-    })
-
-    docPDF.setFontSize(10)
-    docPDF.setFont("helvetica", "bold")
-    docPDF.text(
-      "✂️ CORTE NAS LINHAS TRACEJADAS E PENDURE COM FITA DUREX NO CABO DA BICICLETA",
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: "center" }
-    )
-
-    docPDF.save(`OS-Tags-Oficina-${ordem.codigo}.pdf`)
-  } catch (err) {
-    console.error("Erro ao gerar PDF das tags:", err)
-    alert("Erro ao gerar PDF das tags. Tente novamente.")
   }
+  return yy;
+}
+function drawPageFrame(doc) {
+  const m = 12;
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.8);
+  doc.setLineDash([3, 3], 0);
+  doc.rect(m, m, W - m * 2, H - m * 2);
+  doc.setLineDash([]);
+  return m + 10;
 }
 
-export default generateWorkshopTagsPDF
+// ---------- Main ----------
+export default function generateWorkshopTagsPDF(order) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  const marginX = 18;
+  const maxWidth = doc.internal.pageSize.getWidth() - marginX * 2;
+  const line = 6.2;
+  let y = drawPageFrame(doc);
+
+  // Cabeçalho (OS + bike label)
+  const codigoOS = val(order?.codigo, order?.codigoOS, order?.id, "OS");
+  const bikeLabel = "BIKE 1"; // se houver índice específico, ajuste na chamada
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.text(`${codigoOS} | ${bikeLabel}`, marginX, y);
+  y += 10;
+
+  // Cliente + Telefone
+  const cliente = val(order?.clienteNome, order?.cliente?.nome, "—");
+  const tel = val(order?.clienteTelefone, order?.cliente?.telefone, "—");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+  doc.text(String(cliente), marginX, y); y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Tel: ${String(tel)}`, marginX, y); y += 8;
+
+  // Nome/Modelo da Bike (sem barras/linhas por cima)
+  const modelo = val(order?.bicicletaModelo, order?.bike?.modelo, order?.bicicletas?.[0]?.modelo) ?? "—";
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.text(String(modelo), marginX, y);
+  // Se quiser sublinhado fino, desenhe ABAIXO do texto:
+  // doc.setDrawColor(0); doc.setLineWidth(0.5);
+  // doc.line(marginX, y + 2.5, marginX + maxWidth, y + 2.5);
+  y += 9;
+
+  // SERVIÇOS
+  doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+  doc.text("SERVIÇOS:", marginX, y); y += 7;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(12);
+  const servicos = extractServicos(order);
+  if (servicos.length) {
+    const linesServ = servicos.map(formatItemLine);
+    y = writeLines(doc, linesServ, marginX, y, maxWidth, line, doc.internal.pageSize.getHeight() - 22);
+  } else {
+    y = writeLines(doc, ["—"], marginX, y, maxWidth, line, doc.internal.pageSize.getHeight() - 22);
+  }
+  y += 2;
+
+  // PEÇAS
+  doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+  doc.text("PEÇAS:", marginX, y); y += 7;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(12);
+  const pecas = extractPecas(order);
+  if (pecas.length) {
+    const linesPecas = pecas.map(formatItemLine);
+    y = writeLines(doc, linesPecas, marginX, y, maxWidth, line, doc.internal.pageSize.getHeight() - 28);
+  } else {
+    y = writeLines(doc, ["—"], marginX, y, maxWidth, line, doc.internal.pageSize.getHeight() - 28);
+  }
+
+  // SUBTOTAL (após tudo)
+  y += 4;
+  const subtotalPecas = sum(pecas);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+  const text = `SUBTOTAL: ${brl(subtotalPecas)}`;
+  const textW = doc.getTextWidth(text);
+  const barH = 8;
+  const xBar = marginX;
+  const yBar = y - 6;
+  doc.setFillColor(220); // cinza claro
+  doc.rect(xBar, yBar, Math.max(textW + 6, 60), barH, "F");
+  doc.setTextColor(0);
+  doc.text(text, xBar + 3, yBar + barH - 2);
+
+  doc.save(`${String(codigoOS)}_tag.pdf`);
+}
