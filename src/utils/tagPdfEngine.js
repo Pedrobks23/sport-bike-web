@@ -1,244 +1,231 @@
-export function cleanSeparators(s = "") {
-  return s
+// Motor único de PDF para TAGS — jsPDF
+// - Descobre serviços/peças na OS e/ou na bicicleta
+// - Desenha 1 tag dentro de um retângulo (usa fluxo vertical e wrap)
+// - Nunca sobrepõe o nome da bike
+
+import jsPDF from "jspdf";
+
+// ------ Utils de formatação ------
+export const brl = (v) =>
+  Number(v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const clean = (s = "") =>
+  String(s)
     .replace(/,\s*/g, ", ")
     .replace(/;\s*/g, "; ")
     .replace(/\s*\/\s*/g, " / ")
     .replace(/\s{2,}/g, " ")
     .trim();
-}
 
+const normItems = (arr) =>
+  Array.isArray(arr)
+    ? arr.map((it) =>
+        typeof it === "string"
+          ? { nome: clean(it), quantidade: 1, preco: undefined }
+          : {
+              nome: clean(
+                it?.nome ?? it?.name ?? it?.titulo ?? it?.descricao ?? it?.description ?? ""
+              ),
+              quantidade: Number(it?.quantidade ?? it?.qtd ?? it?.qty ?? 1),
+              preco: it?.preco ?? it?.price ?? it?.valor ?? it?.valorUnit ?? undefined,
+            }
+      )
+    : [];
+
+// ------ Descoberta de dados (robusta) ------
 export function discoverFromOrder(order, bikeIndex = 0) {
-  const bike =
-    order?.bike ?? order?.bicicleta ?? order?.bicicletas?.[bikeIndex] ?? {};
-  const servSrc =
-    order?.servicos ??
-    order?.serviços ??
-    order?.services ??
-    order?.itensServicos ??
-    bike?.servicos ??
-    bike?.serviços ??
-    bike?.services ??
-    bike?.itensServicos ??
-    [];
-  const pecasSrc =
-    order?.pecas ??
-    order?.peças ??
-    order?.parts ??
-    order?.itensPecas ??
-    bike?.pecas ??
-    bike?.peças ??
-    bike?.parts ??
-    bike?.itensPecas ??
-    [];
+  const bikes = order?.bicicletas ?? [];
+  const bike = bikes[bikeIndex] ?? order?.bike ?? order?.bicicleta ?? {};
 
-  const norm = (arr) =>
-    Array.isArray(arr)
-      ? arr.map((it) =>
-          typeof it === "string"
-            ? { nome: cleanSeparators(it), quantidade: 1, preco: undefined }
-            : {
-                nome: cleanSeparators(
-                  it?.nome ??
-                    it?.name ??
-                    it?.titulo ??
-                    it?.descricao ??
-                    it?.description ??
-                    ""
-                ),
-                quantidade: Number(it?.quantidade ?? it?.qtd ?? it?.qty ?? 1),
-                preco: Number(
-                  it?.preco ?? it?.price ?? it?.valor ?? it?.valorUnit ?? 0
-                ),
-              }
-        )
-      : [];
+  const pick = (o, keys) =>
+    keys.map((k) => o?.[k]).find((x) => Array.isArray(x) && x.length) ?? [];
+
+  const servKeys = [
+    "servicos",
+    "serviços",
+    "services",
+    "itensServicos",
+    "itensServiços",
+    "servicosSelecionados",
+    "servicosSelecionadosLista",
+  ];
+  const pecasKeys = [
+    "pecas",
+    "peças",
+    "parts",
+    "itensPecas",
+    "pecasSelecionadas",
+    "itensPecasSelecionadas",
+  ];
+
+  const servOrder = pick(order, servKeys);
+  const servBike = pick(bike, servKeys);
+  const pecasOrder = pick(order, pecasKeys);
+  const pecasBike = pick(bike, pecasKeys);
+
+  // prioridade: bike > order, mas juntamos e removemos duplicatas por nome+preço
+  const servicos = dedupeByKey([...normItems(servOrder), ...normItems(servBike)], (it) =>
+    `${it.nome}@@${it.preco ?? "?"}`
+  );
+  const pecas = dedupeByKey([...normItems(pecasOrder), ...normItems(pecasBike)], (it) =>
+    `${it.nome}@@${it.preco ?? "?"}`
+  );
 
   return {
-    servicos: norm(servSrc),
-    pecas: norm(pecasSrc),
-    bikeModel:
-      order?.bicicletaModelo ??
-      bike?.modelo ??
-      order?.bicicletas?.[bikeIndex]?.modelo ??
-      "—",
-    cliente: order?.clienteNome ?? order?.cliente?.nome ?? "—",
-    telefone: order?.clienteTelefone ?? order?.cliente?.telefone ?? "—",
     codigoOS: String(order?.codigo ?? order?.codigoOS ?? order?.id ?? "OS"),
+    cliente: String(order?.clienteNome ?? order?.cliente?.nome ?? "—"),
+    telefone: String(order?.clienteTelefone ?? order?.cliente?.telefone ?? "—"),
+    bikeModel: String(
+      order?.bicicletaModelo ??
+        bike?.modelo ??
+        order?.bicicletas?.[bikeIndex]?.modelo ??
+        "—"
+    ),
+    servicos,
+    pecas,
   };
 }
 
-function brl(v) {
-  return Number(v ?? 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+function dedupeByKey(arr, keyFn) {
+  const seen = new Set();
+  const out = [];
+  for (const x of arr) {
+    const k = keyFn(x);
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(x);
+    }
+  }
+  return out;
 }
 
-function writeFlow(doc, lines, start, x, y, maxW, lineH, bottom) {
+// ------ Motor de escrita (fluxo vertical) ------
+function writeFlow(doc, lines, x, y, maxW, lineH, bottom) {
   let yy = y;
-  let i = start;
-  for (; i < lines.length; i++) {
-    const chunks = doc.splitTextToSize(lines[i], maxW);
+  for (const line of lines) {
+    const chunks = doc.splitTextToSize(line, maxW);
     for (const c of chunks) {
-      if (yy > bottom) {
-        return { y: yy, next: i, overflow: true };
-      }
+      if (yy > bottom) return { y: yy, overflow: true };
       doc.text(c, x, yy);
       yy += lineH;
     }
   }
-  return { y: yy, next: i, overflow: false };
+  return { y: yy, overflow: false };
 }
 
-export function renderSingleTag(doc, tag, rect, options = {}) {
+function tryAutoFit(doc, painter) {
+  // tenta 12, 11, 10, 9
+  for (const size of [12, 11, 10, 9]) {
+    doc.setFontSize(size);
+    const ok = painter(Math.max(5.2, 6.2 - (12 - size) * 0.3));
+    if (ok) return true;
+  }
+  return false;
+}
+
+// ------ API: renderiza UMA tag dentro do retângulo ------
+export function renderSingleTag(doc, tag, rect, opts = {}) {
   const { x, y, w, h } = rect;
   const PAD = 8;
   const left = x + PAD;
   const top = y + PAD;
   const bottom = y + h - PAD;
   const maxW = w - PAD * 2;
-  const baseLineH = 6.2;
 
-  const startService = options.serviceIndex ?? 0;
-  const startPart = options.partIndex ?? 0;
-
-  if (options.drawFrame) {
+  if (opts.drawFrame) {
     doc.setDrawColor(0);
-    doc.setLineDash([3, 3], 0);
     doc.setLineWidth(0.8);
+    doc.setLineDash([3, 3], 0);
     doc.rect(x, y, w, h);
     doc.setLineDash([]);
   }
 
-  const servicesLines = tag.servicos.length
-    ? tag.servicos.map(
-        (it) =>
-          `• ${it.nome}  (${it.quantidade}x)${
-            it.preco != null ? ` = ${brl(it.preco * it.quantidade)}` : ""
-          }`
-      )
-    : ["—"];
-  const partsLines = tag.pecas.length
-    ? tag.pecas.map(
-        (it) =>
-          `• ${it.nome}  (${it.quantidade}x)${
-            it.preco != null ? ` = ${brl(it.preco * it.quantidade)}` : ""
-          }`
-      )
-    : ["—"];
-
-  const sizes = [12, 11, 10, 9];
-  let chosen = sizes[sizes.length - 1];
-  let lineH = baseLineH;
-
-  for (const s of sizes) {
-    const lh = Math.max(5.2, baseLineH - (12 - s) * 0.3);
-    let yy = top;
-    yy += lh * doc.splitTextToSize(`${tag.codigoOS} | BIKE 1`, maxW).length;
-    yy += lh * doc.splitTextToSize(tag.cliente, maxW).length;
-    yy += lh * doc.splitTextToSize(`Tel: ${tag.telefone}`, maxW).length;
-    yy += lh * doc.splitTextToSize(tag.bikeModel, maxW).length;
-    if (startService < servicesLines.length) {
-      yy += lh;
-      for (let i = startService; i < servicesLines.length; i++) {
-        yy += lh * doc.splitTextToSize(servicesLines[i], maxW).length;
-      }
-      yy += 2;
-    }
-    if (startPart < partsLines.length) {
-      yy += lh;
-      for (let i = startPart; i < partsLines.length; i++) {
-        yy += lh * doc.splitTextToSize(partsLines[i], maxW).length;
-      }
-    }
-    yy += lh + 2;
-    if (yy <= bottom) {
-      chosen = s;
-      lineH = lh;
-      break;
-    }
-  }
-
-  doc.setFontSize(chosen);
-  doc.setFont("helvetica", "bold");
   let yy = top;
-  const headerChunks = doc.splitTextToSize(`${tag.codigoOS} | BIKE 1`, maxW);
-  headerChunks.forEach((t) => {
-    doc.text(t, left, yy);
-    yy += lineH;
-  });
+
+  // Cabeçalho
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text(`${tag.codigoOS} | BIKE 1`, left, yy);
+  yy += 8;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   doc.text(tag.cliente, left, yy);
-  yy += lineH;
+  yy += 5.2;
+
   doc.setFont("helvetica", "normal");
   doc.text(`Tel: ${tag.telefone}`, left, yy);
-  yy += lineH;
+  yy += 6.5;
+
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
   doc.text(tag.bikeModel, left, yy);
-  yy += lineH;
+  yy += 7.5;
 
-  doc.setFont("helvetica", "bold");
-  let nextService = startService;
-  if (startService < servicesLines.length) {
+  const serviceLines =
+    tag.servicos?.length
+      ? tag.servicos.map((it) => {
+          const q = Number(it.quantidade ?? 1);
+          const price =
+            it.preco != null ? ` = ${brl(Number(it.preco) * q)}` : "";
+          return `• ${it.nome}  (${q}x)${price}`;
+        })
+      : ["—"];
+
+  const partLines =
+    tag.pecas?.length
+      ? tag.pecas.map((it) => {
+          const q = Number(it.quantidade ?? 1);
+          const price =
+            it.preco != null ? ` = ${brl(Number(it.preco) * q)}` : "";
+          return `• ${it.nome}  (${q}x)${price}`;
+        })
+      : ["—"];
+
+  const painter = (lineH) => {
+    let overflow = false;
+
+    // SERVIÇOS
+    doc.setFont("helvetica", "bold");
     doc.text("SERVIÇOS:", left, yy);
-    yy += lineH;
-    doc.setFont("helvetica", "normal");
-    const svc = writeFlow(
-      doc,
-      servicesLines,
-      startService,
-      left,
-      yy,
-      maxW,
-      lineH,
-      bottom
-    );
-    yy = svc.y + 2;
-    nextService = svc.next;
-    if (svc.overflow) {
-      return { overflow: true, nextService, nextPart: startPart };
-    }
-    doc.setFont("helvetica", "bold");
-  }
+    yy += lineH + 0.5;
 
-  let nextPart = startPart;
-  if (startPart < partsLines.length) {
+    doc.setFont("helvetica", "normal");
+    let r = writeFlow(doc, serviceLines, left, yy, maxW, lineH, bottom);
+    yy = r.y + 2;
+    overflow = overflow || r.overflow;
+
+    // PEÇAS
+    doc.setFont("helvetica", "bold");
     doc.text("PEÇAS:", left, yy);
-    yy += lineH;
+    yy += lineH + 0.5;
+
     doc.setFont("helvetica", "normal");
-    const part = writeFlow(
-      doc,
-      partsLines,
-      startPart,
-      left,
-      yy,
-      maxW,
-      lineH,
-      bottom
+    r = writeFlow(doc, partLines, left, yy, maxW, lineH, bottom);
+    yy = r.y + 3;
+    overflow = overflow || r.overflow;
+
+    // SUBTOTAL (peças)
+    const subtotal = (tag.pecas ?? []).reduce(
+      (acc, it) => acc + Number(it.preco ?? 0) * Number(it.quantidade ?? 1),
+      0
     );
-    yy = part.y + 3;
-    nextPart = part.next;
-    if (part.overflow) {
-      return { overflow: true, nextService, nextPart };
-    }
+    const label = `SUBTOTAL: ${brl(subtotal)}`;
+
+    const barH = Math.max(6, lineH);
+    const textW = doc.getTextWidth(label);
+    const yBar = Math.min(yy - (barH - 2), bottom - barH);
+
+    doc.setFillColor(220);
+    doc.rect(left, yBar, Math.max(textW + 6, 60), barH, "F");
+    doc.setTextColor(0);
     doc.setFont("helvetica", "bold");
-  }
+    doc.text(label, left + 3, yBar + barH - 2);
 
-  const subtotal = tag.pecas.reduce(
-    (a, b) => a + Number(b.preco ?? 0) * Number(b.quantidade ?? 1),
-    0
-  );
-  const label = `SUBTOTAL: ${brl(subtotal)}`;
-  const textW = doc.getTextWidth(label);
-  const barH = Math.max(6, lineH);
-  if (yy + barH > bottom) {
-    return { overflow: true, nextService, nextPart };
-  }
-  doc.setFillColor(220);
-  doc.rect(left, yy, Math.max(textW + 6, 58), barH, "F");
-  doc.setTextColor(0);
-  doc.text(label, left + 3, yy + barH - 2);
-  yy += barH;
+    return !overflow;
+  };
 
-  return { overflow: false, nextService, nextPart, height: yy - y + PAD };
+  const ok = tryAutoFit(doc, painter);
+  return { overflow: !ok };
 }
 

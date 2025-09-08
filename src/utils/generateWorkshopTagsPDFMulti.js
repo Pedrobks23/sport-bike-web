@@ -1,61 +1,57 @@
-import { jsPDF } from "jspdf";
-import { discoverFromOrder, renderSingleTag } from "./tagPdfEngine.js";
+import jsPDF from "jspdf";
+import { discoverFromOrder, renderSingleTag } from "./tagPdfEngine";
 
-function generateWorkshopTagsPDFMulti(selections) {
+// Layout da grade (A4)
+const MARGIN = 10; // margem externa
+const COLS = 2;
+const ROWS = 3;
+const GAP = 6;     // espaçamento entre células
+
+export default function generateWorkshopTagsPDFMulti(osList /* array de OS */, opts = {}) {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-  const W = doc.internal.pageSize.getWidth();
-  const H = doc.internal.pageSize.getHeight();
 
-  const cols = 2;
-  const rows = 3;
-  const gapX = 10;
-  const gapY = 10;
-  const marginX = 10;
-  const marginY = 10;
-  const cellW = (W - marginX * 2 - gapX * (cols - 1)) / cols;
-  const cellH = (H - marginY * 2 - gapY * (rows - 1)) / rows;
-  const cellsPerPage = cols * rows;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
 
-  let slot = 0;
+  // calcula célula
+  const totalGapX = GAP * (COLS - 1) + MARGIN * 2;
+  const totalGapY = GAP * (ROWS - 1) + MARGIN * 2;
+  const cellW = (pageW - totalGapX) / COLS;
+  const cellH = (pageH - totalGapY) / ROWS;
 
-  selections.forEach((sel) => {
-    if (slot >= cellsPerPage) {
+  let i = 0;
+  for (const order of osList) {
+    const tag = discoverFromOrder(order, opts.bikeIndex ?? 0);
+
+    const col = i % COLS;
+    const row = Math.floor(i / COLS) % ROWS;
+
+    if (i > 0 && row === 0 && col === 0) {
       doc.addPage();
-      slot = 0;
     }
-    const col = slot % cols;
-    const row = Math.floor(slot / cols);
-    const rect = {
-      x: marginX + col * (cellW + gapX),
-      y: marginY + row * (cellH + gapY),
-      w: cellW,
-      h: cellH,
-    };
-    const tag = discoverFromOrder(
-      sel.ordem ?? sel.order,
-      sel.index ?? sel.bikeIndex ?? 0
+
+    const x = MARGIN + col * (cellW + GAP);
+    const y = MARGIN + row * (cellH + GAP);
+
+    // desenha a tag na célula usando o mesmo motor
+    const r = renderSingleTag(
+      doc,
+      tag,
+      { x, y, w: cellW, h: cellH },
+      { drawFrame: true }
     );
 
-    let svcIndex = 0;
-    let partIndex = 0;
-    let result;
-    do {
-      result = renderSingleTag(doc, tag, rect, {
-        drawFrame: true,
-        serviceIndex: svcIndex,
-        partIndex: partIndex,
-      });
-      svcIndex = result.nextService;
-      partIndex = result.nextPart;
-      if (result.overflow) {
-        doc.addPage();
-      }
-    } while (result.overflow);
+    // Caso MUITO raro de overflow mesmo com auto-fit:
+    // cria nova página e continua a tag na mesma posição
+    if (r.overflow) {
+      doc.addPage();
+      renderSingleTag(doc, tag, { x, y, w: cellW, h: cellH }, { drawFrame: true });
+    }
 
-    slot++;
-  });
+    i++;
+  }
 
-  doc.save(`OS-Tags-Oficina.pdf`);
+  // nome genérico
+  doc.save("multi_tags.pdf");
 }
 
-export default generateWorkshopTagsPDFMulti;
