@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { discoverArrays, renderSingleTag } from "./tagPdfEngine.js";
+import { discoverFromOrder, renderSingleTag } from "./tagPdfEngine.js";
 
 function generateWorkshopTagsPDFMulti(selections) {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
@@ -12,34 +12,47 @@ function generateWorkshopTagsPDFMulti(selections) {
   const gapY = 10;
   const marginX = 10;
   const marginY = 10;
-  const tagW = (W - marginX * 2 - gapX * (cols - 1)) / cols;
-  const tagH = (H - marginY * 2 - gapY * (rows - 1)) / rows;
-  const tagsPerPage = cols * rows;
+  const cellW = (W - marginX * 2 - gapX * (cols - 1)) / cols;
+  const cellH = (H - marginY * 2 - gapY * (rows - 1)) / rows;
+  const cellsPerPage = cols * rows;
 
   let slot = 0;
 
   selections.forEach((sel) => {
-    if (slot >= tagsPerPage) {
+    if (slot >= cellsPerPage) {
       doc.addPage();
       slot = 0;
     }
     const col = slot % cols;
     const row = Math.floor(slot / cols);
     const rect = {
-      x: marginX + col * (tagW + gapX),
-      y: marginY + row * (tagH + gapY),
-      w: tagW,
-      h: tagH,
+      x: marginX + col * (cellW + gapX),
+      y: marginY + row * (cellH + gapY),
+      w: cellW,
+      h: cellH,
     };
-    const tag = discoverArrays(sel.ordem ?? sel.order, sel.index ?? sel.bikeIndex ?? 0);
-    const startPages = doc.getNumberOfPages();
-    renderSingleTag(doc, tag, rect, { drawFrame: true });
-    const endPages = doc.getNumberOfPages();
-    if (endPages > startPages) {
-      slot = tagsPerPage; // force new page for next tag
-    } else {
-      slot++;
-    }
+    const tag = discoverFromOrder(
+      sel.ordem ?? sel.order,
+      sel.index ?? sel.bikeIndex ?? 0
+    );
+
+    let svcIndex = 0;
+    let partIndex = 0;
+    let result;
+    do {
+      result = renderSingleTag(doc, tag, rect, {
+        drawFrame: true,
+        serviceIndex: svcIndex,
+        partIndex: partIndex,
+      });
+      svcIndex = result.nextService;
+      partIndex = result.nextPart;
+      if (result.overflow) {
+        doc.addPage();
+      }
+    } while (result.overflow);
+
+    slot++;
   });
 
   doc.save(`OS-Tags-Oficina.pdf`);
