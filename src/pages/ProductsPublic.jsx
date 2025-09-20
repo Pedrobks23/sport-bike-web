@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listAllProducts } from "@/services/productsService";
 import { getHomeSettings } from "@/services/homeService";
-import { cldFill } from "@/utils/cloudinaryUrl";
+import { resolveProductImageUrl } from "@/utils/cloudinaryUrl";
 import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
 import {
   Search,
@@ -60,7 +60,11 @@ export default function ProductsPublic() {
       try {
         const [prods, s] = await Promise.all([listAllProducts(), getHomeSettings()]);
         setSettings({ showProductsSection: s?.showProductsSection !== false });
-        setItems((prods || []).filter((p) => p?.visible !== false));
+        const normalized = (prods || []).map((p) => ({
+          ...p,
+          imageUrl: resolveProductImageUrl(p, { w: 720, h: 540 }),
+        }));
+        setItems(normalized.filter((p) => p?.visible !== false));
       } catch (e) {
         console.error(e);
         setItems([]);
@@ -264,10 +268,8 @@ function Header() {
 
 /* ====== PRODUCT CARD ====== */
 function ProductCard({ product }) {
-  const url = cldFill(
-    typeof product.image === "string" ? { url: product.image } : product.image,
-    { w: 720, h: 540 }
-  );
+  const url =
+    product.imageUrl ?? resolveProductImageUrl(product, { w: 720, h: 540 });
 
   return (
     <CardContainer className="group">
@@ -333,10 +335,8 @@ function ProductCard({ product }) {
 
 /* ====== PRODUCT ROW ====== */
 function ProductRow({ product }) {
-  const url = cldFill(
-    typeof product.image === "string" ? { url: product.image } : product.image,
-    { w: 640, h: 360 }
-  );
+  const url =
+    product.imageUrl ?? resolveProductImageUrl(product, { w: 640, h: 360 });
 
   return (
     <article className="flex flex-col gap-4 rounded-2xl border bg-white p-3 shadow-sm transition hover:shadow-xl hover:border-yellow-400 sm:flex-row">

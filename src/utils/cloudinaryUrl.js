@@ -24,7 +24,7 @@ export function cldFill(img, { w = 600, h = 450, fmt = "auto", q = "auto" } = {}
   }
 
   // 2) URL Cloudinary existente → injeta transform após /upload/
-  const CLOUD_RE = /https?:\/\/res\.cloudinary\.com\/([^/]+)\/image\/upload\/(.+)/;
+  const CLOUD_RE = /https?:\/\/res\.cloudinary\.com\/([^/]+)\/image\/upload\//;
   if (rawUrl && CLOUD_RE.test(rawUrl)) {
     return rawUrl.replace(
       /\/upload\/(?!.*w_\d+)/,
@@ -34,4 +34,24 @@ export function cldFill(img, { w = 600, h = 450, fmt = "auto", q = "auto" } = {}
 
   // 3) Firebase Storage ou qualquer outra URL → retorna como está
   return rawUrl || null;
+}
+
+function firstImageCandidate(product) {
+  if (!product) return null;
+  if (product.imageUrl) return product.imageUrl;
+  if (product.image) return product.image;
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images[0];
+  }
+  return null;
+}
+
+/**
+ * Resolve uma URL de imagem para o produto fornecido utilizando `cldFill`.
+ * Mantém compatibilidade com strings simples, objetos Cloudinary e URLs já transformadas.
+ */
+export function resolveProductImageUrl(product, opts = {}) {
+  const candidate = firstImageCandidate(product);
+  if (!candidate) return null;
+  return cldFill(candidate, opts);
 }

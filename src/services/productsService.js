@@ -12,6 +12,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { destroyFromCloudinary } from "@/utils/cloudinary";
+import { resolveProductImageUrl } from "@/utils/cloudinaryUrl";
 
 // ajuste se sua collection tiver outro nome
 const COL = "products";
@@ -24,13 +25,14 @@ export async function listAllProducts() {
   try {
     const q = query(collection(db, COL), orderBy("updatedAt", "desc"));
     const snap = await getDocs(q);
-    return snap
-      .docs
-      .map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }))
-      .filter((p) => p?.visible !== false);
+    const items = snap.docs.map((d) => {
+      const data = d.data() || {};
+      const product = { id: d.id, ...data };
+      const imageUrl = resolveProductImageUrl(product, { w: 800, h: 600 });
+      return { ...product, imageUrl };
+    });
+
+    return items.filter((p) => p?.visible !== false);
   } catch (err) {
     console.warn("[listAllProducts] falha:", err?.code || err?.message || err);
     return [];
