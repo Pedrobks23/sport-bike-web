@@ -21,15 +21,20 @@ const COL = "products";
  * Mantém compatibilidade com produtos antigos (image como string).
  */
 export async function listAllProducts() {
-  const q = query(collection(db, COL), orderBy("updatedAt", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => {
-    const data = d.data();
-    return {
-      id: d.id,
-      ...data,
-    };
-  });
+  try {
+    const q = query(collection(db, COL), orderBy("updatedAt", "desc"));
+    const snap = await getDocs(q);
+    return snap
+      .docs
+      .map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }))
+      .filter((p) => p?.visible !== false);
+  } catch (err) {
+    console.warn("[listAllProducts] falha:", err?.code || err?.message || err);
+    return [];
+  }
 }
 
 /**

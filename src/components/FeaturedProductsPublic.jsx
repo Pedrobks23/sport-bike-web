@@ -21,6 +21,15 @@ export default function FeaturedProductsPublic() {
     })();
   }, []);
 
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (items === null) {
+        setItems([]);
+      }
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [items]);
+
   if (items === null) {
     return (
       <section className="container mx-auto px-4 py-16">
