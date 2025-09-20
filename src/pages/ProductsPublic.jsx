@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listAllProducts } from "@/services/productsService";
 import { getHomeSettings } from "@/services/homeService";
-import { cldFill } from "@/utils/cloudinaryUrl";
+import { resolveProductImageUrl } from "@/utils/cloudinaryUrl";
+import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
 import {
   Search,
   Star,
@@ -59,7 +60,11 @@ export default function ProductsPublic() {
       try {
         const [prods, s] = await Promise.all([listAllProducts(), getHomeSettings()]);
         setSettings({ showProductsSection: s?.showProductsSection !== false });
-        setItems((prods || []).filter((p) => p?.visible !== false));
+        const normalized = (prods || []).map((p) => ({
+          ...p,
+          imageUrl: resolveProductImageUrl(p, { w: 720, h: 540 }),
+        }));
+        setItems(normalized.filter((p) => p?.visible !== false));
       } catch (e) {
         console.error(e);
         setItems([]);
@@ -263,77 +268,75 @@ function Header() {
 
 /* ====== PRODUCT CARD ====== */
 function ProductCard({ product }) {
-  const url = cldFill(
-    typeof product.image === "string" ? { url: product.image } : product.image,
-    { w: 720, h: 540 }
-  );
+  const url =
+    product.imageUrl ?? resolveProductImageUrl(product, { w: 720, h: 540 });
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-2xl hover:border-yellow-400">
-      {/* Imagem */}
-      <div className="relative h-56 w-full overflow-hidden">
-        {url ? (
-          <img
-            src={url}
-            alt={product.name}
-            className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        ) : (
-          <div className="grid h-full place-items-center text-sm text-gray-400">Sem imagem</div>
-        )}
+    <CardContainer className="group">
+      <CardBody className="relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-2xl hover:border-yellow-400 dark:bg-gray-800">
+        {/* Imagem */}
+        <CardItem translateZ={60} className="relative h-56 w-full overflow-hidden">
+          {url ? (
+            <img
+              src={url}
+              alt={product.name}
+              className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          ) : (
+            <div className="grid h-full place-items-center text-sm text-gray-400">Sem imagem</div>
+          )}
 
-        {/* Badges */}
-        <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
-          {product.isFeatured && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-black shadow"
-              style={{ backgroundColor: BRAND_YELLOW }}
+          {/* Badges */}
+          <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
+            {product.isFeatured && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-black shadow"
+                style={{ backgroundColor: BRAND_YELLOW }}
+              >
+                <Star className="h-3.5 w-3.5" /> Destaque
+              </span>
+            )}
+            {product.category && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs text-gray-800 shadow">
+                <Tag className="h-3.5 w-3.5" /> {product.category}
+              </span>
+            )}
+          </div>
+        </CardItem>
+
+        {/* Conteúdo */}
+        <CardItem translateZ={80} className="space-y-1 p-4">
+          <h3 className="line-clamp-1 text-lg font-semibold">{product.name || "Sem nome"}</h3>
+          <div className="text-lg font-extrabold" style={{ color: BRAND_YELLOW }}>
+            {fmtBRL(product.price) || "—"}
+          </div>
+          {product.description && (
+            <p className="line-clamp-2 text-sm text-gray-700">{product.description}</p>
+          )}
+
+          {/* CTA — verde WhatsApp */}
+          <div className="pt-3">
+            <a
+              href={buildWhatsappLink(product)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
             >
-              <Star className="h-3.5 w-3.5" /> Destaque
-            </span>
-          )}
-          {product.category && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs text-gray-800 shadow">
-              <Tag className="h-3.5 w-3.5" /> {product.category}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Conteúdo */}
-      <div className="space-y-1 p-4">
-        <h3 className="line-clamp-1 text-lg font-semibold">{product.name || "Sem nome"}</h3>
-        <div className="text-lg font-extrabold" style={{ color: BRAND_YELLOW }}>
-          {fmtBRL(product.price) || "—"}
-        </div>
-        {product.description && (
-          <p className="line-clamp-2 text-sm text-gray-700">{product.description}</p>
-        )}
-
-        {/* CTA — verde WhatsApp */}
-        <div className="pt-3">
-          <a
-            href={buildWhatsappLink(product)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Tenho interesse
-          </a>
-        </div>
-      </div>
-    </article>
+              <MessageCircle className="h-4 w-4" />
+              Tenho interesse
+            </a>
+          </div>
+        </CardItem>
+      </CardBody>
+    </CardContainer>
   );
 }
 
 /* ====== PRODUCT ROW ====== */
 function ProductRow({ product }) {
-  const url = cldFill(
-    typeof product.image === "string" ? { url: product.image } : product.image,
-    { w: 640, h: 360 }
-  );
+  const url =
+    product.imageUrl ?? resolveProductImageUrl(product, { w: 640, h: 360 });
 
   return (
     <article className="flex flex-col gap-4 rounded-2xl border bg-white p-3 shadow-sm transition hover:shadow-xl hover:border-yellow-400 sm:flex-row">

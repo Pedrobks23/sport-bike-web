@@ -1,6 +1,6 @@
 // src/components/FeaturedProductsPublic.jsx
 import { useEffect, useState } from "react";
-import { cldFill } from "@/utils/cloudinaryUrl";
+import { resolveProductImageUrl } from "@/utils/cloudinaryUrl";
 import { listAllProducts } from "@/services/productsService";
 
 export default function FeaturedProductsPublic() {
@@ -10,9 +10,12 @@ export default function FeaturedProductsPublic() {
     (async () => {
       try {
         const all = await listAllProducts();
-        const featured = (all || []).filter(
-          (p) => p?.isFeatured === true && p?.visible !== false
-        );
+        const featured = (all || [])
+          .filter((p) => p?.isFeatured === true && p?.visible !== false)
+          .map((p) => ({
+            ...p,
+            imageUrl: resolveProductImageUrl(p, { w: 640, h: 480 }),
+          }));
         setItems(featured);
       } catch (e) {
         console.error(e);
@@ -20,6 +23,15 @@ export default function FeaturedProductsPublic() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (items === null) {
+        setItems([]);
+      }
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [items]);
 
   if (items === null) {
     return (
@@ -44,26 +56,26 @@ export default function FeaturedProductsPublic() {
       {/* Grid simples (pode trocar por seu carrossel depois) */}
       <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {items.map((p) => {
-          const url = cldFill(
-            typeof p.image === "string" ? { url: p.image } : p.image,
-            { w: 640, h: 480 }
-          );
+          const url = p.imageUrl ?? resolveProductImageUrl(p, { w: 640, h: 480 });
           return (
             <article key={p.id} className="bg-white rounded-xl border overflow-hidden shadow">
-              {url && (
+              {url ? (
                 <img
                   src={url}
                   alt={p.name}
                   className="w-full h-56 object-cover object-center"
                   loading="lazy"
+                  decoding="async"
                 />
+              ) : (
+                <div className="grid h-56 place-items-center bg-gray-100 text-sm text-gray-500">
+                  Sem imagem
+                </div>
               )}
               <div className="p-4">
                 <div className="text-xs text-gray-500">{p.category || "Sem categoria"}</div>
                 <h3 className="font-semibold">{p.name}</h3>
-                <div className="text-amber-600 font-bold">
-                  {p.price || "—"}
-                </div>
+                <div className="text-amber-600 font-bold">{p.price || "—"}</div>
                 {p.description && (
                   <p className="text-sm text-gray-600 line-clamp-2 mt-1">{p.description}</p>
                 )}

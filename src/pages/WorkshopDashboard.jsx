@@ -39,6 +39,8 @@ import { listMechanics } from "../services/mechanicService";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import generateWorkshopTagsPDF from "../utils/generateWorkshopTagsPDF";
+import generateWorkshopTagsPDFMulti from "../utils/generateWorkshopTagsPDFMulti";
+import { startOfToday, endOfToday } from "../utils/date";
 // ---------------------------------------------------------------------------------
 
 const PortalAwareDraggable = ({ children, ...props }) => (
@@ -93,6 +95,32 @@ const WorkshopDashboard = () => {
   const [showPartModal, setShowPartModal] = useState(false);
   const [serviceTable, setServiceTable] = useState({});
   const [mechanics, setMechanics] = useState([]);
+  const [selectedBikes, setSelectedBikes] = useState({});
+
+  const toggleBikeSelection = (orderId, bikeIndex) => {
+    setSelectedBikes((prev) => {
+      const key = `${orderId}:${bikeIndex}`;
+      const next = { ...prev };
+      if (next[key]) {
+        delete next[key];
+      } else {
+        next[key] = { orderId, bikeIndex };
+      }
+      return next;
+    });
+  };
+
+  const handlePrintTags = () => {
+    const selections = Object.values(selectedBikes).map(({ orderId, bikeIndex }) => {
+      const order = orders.inProgress.find((o) => o.id === orderId);
+      const bike = order?.bicicletas?.[bikeIndex];
+      return { ordem: order, bike, index: bikeIndex };
+    });
+    if (selections.length) {
+      generateWorkshopTagsPDFMulti(selections);
+      setSelectedBikes({});
+    }
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -217,6 +245,14 @@ const WorkshopDashboard = () => {
   };
 
   // Filtro de ordens baseado na busca
+  const todayStart = startOfToday();
+  const todayEnd = endOfToday();
+  const parseDate = (d) => {
+    if (!d) return 0;
+    if (typeof d.toDate === "function") return d.toDate();
+    if (d.seconds) return new Date(d.seconds * 1000);
+    return new Date(d);
+  };
   const filteredOrders = {
     pending: orders.pending.filter(
       (order) =>
@@ -224,12 +260,22 @@ const WorkshopDashboard = () => {
         order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.cliente?.telefone?.includes(searchTerm)
     ),
-    inProgress: orders.inProgress.filter(
-      (order) =>
-        order.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.cliente?.telefone?.includes(searchTerm)
-    ),
+    inProgress: orders.inProgress
+      .filter(
+        (order) =>
+          order.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.cliente?.telefone?.includes(searchTerm)
+      )
+      .sort((a, b) => {
+        const aDate = parseDate(a.updatedAt) || parseDate(a.dataCriacao);
+        const bDate = parseDate(b.updatedAt) || parseDate(b.dataCriacao);
+        const aToday = aDate >= todayStart && aDate <= todayEnd;
+        const bToday = bDate >= todayStart && bDate <= todayEnd;
+        if (aToday && !bToday) return -1;
+        if (!aToday && bToday) return 1;
+        return bDate - aDate;
+      }),
     done: orders.done
       .filter(
         (order) =>
@@ -647,7 +693,7 @@ const WorkshopDashboard = () => {
   // --------------------------------------------------------------------------------
 
   // Componente OrderCard
-  const OrderCard = ({ order }) => {
+  const OrderCard = ({ order, selectedBikes = {}, onToggleBike }) => {
     const [showStatusMenu, setShowStatusMenu] = useState(false);
 
     // Calcula o total dos serviços considerando descontos
@@ -802,6 +848,26 @@ const WorkshopDashboard = () => {
           <p className="text-gray-700 dark:text-gray-300 text-sm mt-3 line-clamp-2">
             {description}
           </p>
+          {onToggleBike && (
+            <div className="mt-3 space-y-1" onClick={(e) => e.stopPropagation()}>
+              {order.bicicletas?.map((bike, idx) => {
+                const key = `${order.id}:${idx}`;
+                const checked = Boolean(selectedBikes[key]);
+                const label = `Bike ${idx + 1}: ${bike.marca || ""} ${bike.modelo || ""} ${bike.cor || ""}`.trim();
+                return (
+                  <label key={key} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggleBike(order.id, idx)}
+                      className="accent-blue-600"
+                    />
+                    <span>{label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
 
           <div className="mt-3">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
@@ -1963,7 +2029,16 @@ const WorkshopDashboard = () => {
 
               <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">🔵 Em Andamento ({filteredOrders.inProgress.length})</h3>
+                  <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                    🔵 Em Andamento ({filteredOrders.inProgress.length})
+                  </h3>
+                  <button
+                    onClick={handlePrintTags}
+                    disabled={!Object.keys(selectedBikes).length}
+                    className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    Imprimir tags ({Object.keys(selectedBikes).length})
+                  </button>
                 </div>
                 <Droppable droppableId="inProgress">
                   {(provided) => (
@@ -1974,7 +2049,11 @@ const WorkshopDashboard = () => {
                           draggableId={String(order.id)}
                           index={index}
                         >
-                          <OrderCard order={order} />
+                          <OrderCard
+                            order={order}
+                            selectedBikes={selectedBikes}
+                            onToggleBike={toggleBikeSelection}
+                          />
                         </PortalAwareDraggable>
                       ))}
                       {provided.placeholder}
