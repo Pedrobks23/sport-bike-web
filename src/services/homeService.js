@@ -67,7 +67,12 @@ export async function getFeaturedProducts() {
     }
   } catch (e) {
     // se a coleção/índice não existir, caímos no fallback
-    console.warn("[homeService] Falha ao ler 'products' (isFeatured). Fallback para 'featuredProducts'.", e?.message || e);
+    const code = e?.code || e;
+    if (code && String(code).includes("permission")) {
+      console.info("[homeService] produtos destacados protegidos, usando fallback.");
+    } else {
+      console.warn("[homeService] Falha ao ler 'products' (isFeatured). Fallback para 'featuredProducts'.", code);
+    }
   }
 
   // 2) Fallback legado: coleção "featuredProducts"
