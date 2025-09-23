@@ -39,8 +39,13 @@ export async function getAllServicesOrdered() {
       return itens;
     }
   } catch (e) {
-    // se a coleção não existir, segue para o fallback
-    console.warn("[serviceService] servicosList indisponível, usando fallback.", e?.message || e);
+    // se a coleção não existir ou estiver protegida, segue para o fallback sem travar a UI
+    const code = e?.code || e?.message || e
+    if (code === "permission-denied") {
+      console.info("[serviceService] servicosList não liberada para público, usando fallback.")
+    } else {
+      console.warn("[serviceService] servicosList indisponível, usando fallback.", code)
+    }
   }
 
   // 2) Fallback coleção antiga `servicos` (um doc com pares nome->valor)
@@ -61,7 +66,12 @@ export async function getAllServicesOrdered() {
     services.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
     return services;
   } catch (e) {
-    console.warn("[serviceService] servicos fallback indisponível.", e?.message || e);
+    const code = e?.code || e?.message || e
+    if (code === "permission-denied") {
+      console.info("[serviceService] servicos protegidos no Firestore.")
+    } else {
+      console.warn("[serviceService] servicos fallback indisponível.", code)
+    }
     return [];
   }
 }
