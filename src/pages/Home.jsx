@@ -30,7 +30,8 @@ import {
 import { useNavigate } from "react-router-dom"
 import { auth } from "../config/firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
+import { getHomeSettings } from "../services/homeService"
+import { fetchFeaturedPublic } from "@/services/publicProducts"
 import { getAllServicesOrdered } from "../services/serviceService"
 import ResponsiveContainer from "../components/ResponsiveContainer"
 import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
@@ -168,21 +169,16 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const prods = await getFeaturedProducts() // pode retornar todos os 'featured'
-        const settings = await getHomeSettings()
+        const [prods, settings] = await Promise.all([fetchFeaturedPublic(), getHomeSettings()])
 
-        const normalized = (prods || [])
-          .filter((p) => p && p.visible !== false) // respeita visibilidade
-          .map((p) => {
-            // p.image pode ser objeto ({url, publicId}) ou string (legado)
-            const imgObj = typeof p.image === "string" ? { url: p.image } : p.image
-            // monta URL com foco automático (centraliza a bike em imagens verticais tbm)
-            const displayUrl = cldFill(imgObj, { w: 800, h: 600 })
-            return { ...p, displayUrl }
-          })
+        const normalized = (prods || []).map((p) => {
+          const source = p.image || p.images?.[0] || p.imageUrl
+          const displayUrl = cldFill(source, { w: 800, h: 600 })
+          return { ...p, displayUrl: displayUrl || null }
+        })
 
         setFeaturedProducts(normalized)
-        setShowFeatured(settings.showFeaturedProducts ?? true)
+        setShowFeatured(settings?.showFeaturedProducts ?? true)
       } catch (e) {
         console.error(e)
         setFeaturedProducts([])

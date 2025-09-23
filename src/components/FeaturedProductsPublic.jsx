@@ -1,27 +1,23 @@
 // src/components/FeaturedProductsPublic.jsx
 import { useEffect, useState } from "react";
-import { cldFill } from "@/utils/cloudinaryUrl";
-import { listAllProducts } from "@/services/productsService";
+import { fetchFeaturedPublic } from "@/services/publicProducts";
 
 export default function FeaturedProductsPublic() {
-  const [items, setItems] = useState(null); // null = carregando, [] = vazio
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const all = await listAllProducts();
-        const featured = (all || []).filter(
-          (p) => p?.isFeatured === true && p?.visible !== false
-        );
+        const featured = await fetchFeaturedPublic();
         setItems(featured);
-      } catch (e) {
-        console.error(e);
-        setItems([]);
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
 
-  if (items === null) {
+  if (loading) {
     return (
       <section className="container mx-auto px-4 py-16">
         <h2 className="text-4xl font-extrabold text-center">Produtos em Destaque</h2>
@@ -44,20 +40,15 @@ export default function FeaturedProductsPublic() {
       {/* Grid simples (pode trocar por seu carrossel depois) */}
       <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {items.map((p) => {
-          const url = cldFill(
-            typeof p.image === "string" ? { url: p.image } : p.image,
-            { w: 640, h: 480 }
-          );
           return (
             <article key={p.id} className="bg-white rounded-xl border overflow-hidden shadow">
-              {url && (
-                <img
-                  src={url}
-                  alt={p.name}
-                  className="w-full h-56 object-cover object-center"
-                  loading="lazy"
-                />
-              )}
+              <img
+                src={p.imageUrl || "/images/placeholder-product.png"}
+                alt={p.name}
+                className="w-full h-56 object-cover object-center"
+                loading="lazy"
+                decoding="async"
+              />
               <div className="p-4">
                 <div className="text-xs text-gray-500">{p.category || "Sem categoria"}</div>
                 <h3 className="font-semibold">{p.name}</h3>
