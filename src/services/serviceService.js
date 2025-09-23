@@ -1,6 +1,8 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
 
+const COLL = "servicos"; // regras liberam /servicos
+
 // util: normaliza preço vindo como string "R$ 100,00", "100.00", number, etc.
 function toNumber(val) {
   if (typeof val === "number") return val;
@@ -42,21 +44,26 @@ export async function getAllServicesOrdered() {
   }
 
   // 2) Fallback coleção antiga `servicos` (um doc com pares nome->valor)
-  const legacySnap = await getDocs(collection(db, "servicos"));
-  const services = [];
-  legacySnap.forEach((doc) => {
-    const data = doc.data() || {};
-    Object.entries(data).forEach(([nome, valor]) => {
-      services.push({
-        id: `${doc.id}_${nome}`,
-        nome,
-        descricao: "", // sem descrição no legado
-        valor: toNumber(valor),
+  try {
+    const legacySnap = await getDocs(collection(db, COLL));
+    const services = [];
+    legacySnap.forEach((doc) => {
+      const data = doc.data() || {};
+      Object.entries(data).forEach(([nome, valor]) => {
+        services.push({
+          id: `${doc.id}_${nome}`,
+          nome,
+          descricao: "", // sem descrição no legado
+          valor: toNumber(valor),
+        });
       });
     });
-  });
-  services.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  return services;
+    services.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    return services;
+  } catch (e) {
+    console.warn("[serviceService] servicos fallback indisponível.", e?.message || e);
+    return [];
+  }
 }
 
 // (opcional, se quiser usar em outras telas com descrição)

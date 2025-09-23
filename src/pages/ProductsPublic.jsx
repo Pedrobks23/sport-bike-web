@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listAllProducts } from "@/services/productsService";
+import { fetchAllPublic } from "@/services/publicProducts";
 import { getHomeSettings } from "@/services/homeService";
-import { cldFill } from "@/utils/cloudinaryUrl";
 import {
   Search,
   Star,
@@ -57,9 +56,9 @@ export default function ProductsPublic() {
   useEffect(() => {
     (async () => {
       try {
-        const [prods, s] = await Promise.all([listAllProducts(), getHomeSettings()]);
+        const [prods, s] = await Promise.all([fetchAllPublic(), getHomeSettings()]);
         setSettings({ showProductsSection: s?.showProductsSection !== false });
-        setItems((prods || []).filter((p) => p?.visible !== false));
+        setItems(prods || []);
       } catch (e) {
         console.error(e);
         setItems([]);
@@ -263,25 +262,19 @@ function Header() {
 
 /* ====== PRODUCT CARD ====== */
 function ProductCard({ product }) {
-  const url = cldFill(
-    typeof product.image === "string" ? { url: product.image } : product.image,
-    { w: 720, h: 540 }
-  );
+  const url = product.imageUrl || "/images/placeholder-product.png";
 
   return (
     <article className="group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-2xl hover:border-yellow-400">
       {/* Imagem */}
       <div className="relative h-56 w-full overflow-hidden">
-        {url ? (
-          <img
-            src={url}
-            alt={product.name}
-            className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        ) : (
-          <div className="grid h-full place-items-center text-sm text-gray-400">Sem imagem</div>
-        )}
+        <img
+          src={url}
+          alt={product.name}
+          className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
+          loading="lazy"
+          decoding="async"
+        />
 
         {/* Badges */}
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
@@ -330,19 +323,18 @@ function ProductCard({ product }) {
 
 /* ====== PRODUCT ROW ====== */
 function ProductRow({ product }) {
-  const url = cldFill(
-    typeof product.image === "string" ? { url: product.image } : product.image,
-    { w: 640, h: 360 }
-  );
+  const url = product.imageUrl || "/images/placeholder-product.png";
 
   return (
     <article className="flex flex-col gap-4 rounded-2xl border bg-white p-3 shadow-sm transition hover:shadow-xl hover:border-yellow-400 sm:flex-row">
       <div className="relative h-44 w-full overflow-hidden rounded-xl sm:h-40 sm:w-64">
-        {url ? (
-          <img src={url} alt={product.name} className="h-full w-full object-cover object-center" />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-sm text-gray-400">Sem imagem</div>
-        )}
+        <img
+          src={url}
+          alt={product.name}
+          className="h-full w-full object-cover object-center"
+          loading="lazy"
+          decoding="async"
+        />
         {product.isFeatured && (
           <span
             className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-black shadow"
