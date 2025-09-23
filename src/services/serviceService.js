@@ -41,9 +41,7 @@ export async function getAllServicesOrdered() {
   } catch (e) {
     // se a coleção não existir ou estiver protegida, segue para o fallback sem travar a UI
     const code = e?.code || e?.message || e
-    if (code === "permission-denied") {
-      console.info("[serviceService] servicosList não liberada para público, usando fallback.")
-    } else {
+    if (code !== "permission-denied") {
       console.warn("[serviceService] servicosList indisponível, usando fallback.", code)
     }
   }
