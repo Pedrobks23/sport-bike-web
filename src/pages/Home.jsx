@@ -35,7 +35,6 @@ import { getAllServicesOrdered } from "../services/serviceService"
 import ResponsiveContainer from "../components/ResponsiveContainer"
 import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
 import { Link } from "react-router-dom"
-import { fallbackFeaturedProducts } from "@/constants/fallbackData"
 
 
 export default function Home() {
@@ -182,11 +181,11 @@ export default function Home() {
         const settings = await getHomeSettings()
 
         const normalized = normalizeProducts(prods)
-        setFeaturedProducts(normalized.length > 0 ? normalized : normalizeProducts(fallbackFeaturedProducts))
+        setFeaturedProducts(normalized)
         setShowFeatured(settings.showFeaturedProducts ?? true)
       } catch (e) {
         console.error(e)
-        setFeaturedProducts(normalizeProducts(fallbackFeaturedProducts))
+        setFeaturedProducts([])
         setShowFeatured(true)
       }
     }

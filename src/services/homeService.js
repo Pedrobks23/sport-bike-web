@@ -16,7 +16,6 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
-import { fallbackFeaturedProducts } from "@/constants/fallbackData";
 
 // ---------- SETTINGS DA HOME ----------
 export async function getHomeSettings() {
@@ -49,7 +48,8 @@ export async function getFeaturedProducts() {
   try {
     const q = query(
       collection(db, "products"),
-      where("isFeatured", "==", true)
+      where("isFeatured", "==", true),
+      where("visible", "==", true)
       // orderBy opcional, só se você tiver o índice criado:
       // orderBy("createdAt", "desc")
     );
@@ -102,6 +102,6 @@ export async function getFeaturedProducts() {
     console.error("[homeService] Erro ao ler 'featuredProducts':", e);
   }
 
-  // 3) Fallback final: dados estáticos para visitantes sem permissão
-  return fallbackFeaturedProducts;
+  // Sem fallback estático: se nada for encontrado, devolve lista vazia
+  return [];
 }
