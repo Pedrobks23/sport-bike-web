@@ -96,7 +96,8 @@ export async function getFeaturedProducts() {
     });
 
     // alguns projetos armazenavam "featureds" já filtrados
-    return items.filter((p) => p.visible !== false);
+    const visibleItems = items.filter((p) => p.visible !== false);
+    if (visibleItems.length > 0) return visibleItems;
   } catch (e) {
     console.error("[homeService] Erro ao ler 'featuredProducts':", e);
   }

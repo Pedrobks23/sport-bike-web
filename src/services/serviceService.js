@@ -58,7 +58,7 @@ export async function getAllServicesOrdered() {
       });
     });
     services.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-    return services;
+    if (services.length > 0) return services;
   } catch (e) {
     console.error("[serviceService] Erro ao ler 'servicos':", e?.message || e);
   }
