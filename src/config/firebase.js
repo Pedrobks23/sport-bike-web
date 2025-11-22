@@ -10,6 +10,7 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
+  addDoc,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
@@ -29,6 +30,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
+// ============ FUNÇÕES EXISTENTES (mantidas) ============
 export const updateOrderStatus = async (orderId, newStatus) => {
   try {
     const orderRef = doc(db, "ordens", orderId);
@@ -36,12 +38,9 @@ export const updateOrderStatus = async (orderId, newStatus) => {
       status: newStatus,
       dataAtualizacao: serverTimestamp(),
     };
-
-    // Registra a data de conclusão quando a ordem é marcada como pronta
     if (newStatus === "Pronto") {
       updateData.dataConclusao = serverTimestamp();
     }
-
     await updateDoc(orderRef, updateData);
     return true;
   } catch (error) {
@@ -53,33 +52,25 @@ export const updateOrderStatus = async (orderId, newStatus) => {
 export const updateOrdemURL = async (osCode, customURL) => {
   try {
     const ordensRef = collection(db, "ordens");
-    const q = query(ordensRef, where("codigo", "==", osCode));
-    const querySnapshot = await getDocs(q);
+    const qRef = query(ordensRef, where("codigo", "==", osCode));
+    const querySnapshot = await getDocs(qRef);
 
     if (!querySnapshot.empty) {
       const docRef = doc(db, "ordens", querySnapshot.docs[0].id);
       const baseURL = window.location.origin;
-      const newURL =
-        customURL || `${baseURL}/consulta?os=${osCode}`;
-
-      await updateDoc(docRef, {
-        urlOS: newURL,
-      });
+      const newURL = customURL || `${baseURL}/consulta?os=${osCode}`;
+      await updateDoc(docRef, { urlOS: newURL });
     }
   } catch (error) {
     console.error("Erro ao atualizar URL:", error);
   }
 };
 
-// Função para escutar mudanças em tempo real
-export const listenToOrders = (q, setOrdens) => {
-  return onSnapshot(q, (snapshot) => {
+export const listenToOrders = (qRef, setOrdens) => {
+  return onSnapshot(qRef, (snapshot) => {
     const ordensAtualizadas = [];
-    snapshot.forEach((doc) => {
-      ordensAtualizadas.push({
-        id: doc.id,
-        ...doc.data(),
-      });
+    snapshot.forEach((docSnap) => {
+      ordensAtualizadas.push({ id: docSnap.id, ...docSnap.data() });
     });
     setOrdens(ordensAtualizadas);
   });
@@ -88,91 +79,105 @@ export const listenToOrders = (q, setOrdens) => {
 export const consultarOS = async (tipo, valor) => {
   try {
     const osRef = collection(db, "ordens");
-    let q;
+    let qRef;
     const ordens = [];
 
     if (tipo === "telefone") {
-      if (!valor) {
-        return [];
-      }
-
+      if (!valor) return [];
       const telefoneNumerico = valor.replace(/\D/g, "");
       console.log("Buscando pelo telefone:", telefoneNumerico);
 
-      // Filtra por telefone completo ou sem DDD
-      q = telefoneNumerico.length === 9
-        ? query(
-            osRef,
-            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          )
-        : query(
-            osRef,
-            where("cliente.telefone", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          );
+      qRef =
+        telefoneNumerico.length === 9
+          ? query(
+              osRef,
+              where("cliente.telefoneSemDDD", "==", telefoneNumerico),
+              orderBy("dataCriacao", "desc")
+            )
+          : query(
+              osRef,
+              where("cliente.telefone", "==", telefoneNumerico),
+              orderBy("dataCriacao", "desc")
+            );
 
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        ordens.push({
-          id: doc.id,
-          ...doc.data(),
-        });
+      const querySnapshot = await getDocs(qRef);
+      querySnapshot.forEach((docSnap) => {
+        ordens.push({ id: docSnap.id, ...docSnap.data() });
       });
-
-      // Limita a 3 para consulta normal
       return ordens.slice(0, 3);
     } else if (tipo === "historico") {
-      if (!valor) {
-        return [];
-      }
-
+      if (!valor) return [];
       const telefoneNumerico = valor.replace(/\D/g, "");
-      q = telefoneNumerico.length === 9
-        ? query(
-            osRef,
-            where("cliente.telefoneSemDDD", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          )
-        : query(
-            osRef,
-            where("cliente.telefone", "==", telefoneNumerico),
-            orderBy("dataCriacao", "desc"),
-          );
+      qRef =
+        telefoneNumerico.length === 9
+          ? query(
+              osRef,
+              where("cliente.telefoneSemDDD", "==", telefoneNumerico),
+              orderBy("dataCriacao", "desc")
+            )
+          : query(
+              osRef,
+              where("cliente.telefone", "==", telefoneNumerico),
+              orderBy("dataCriacao", "desc")
+            );
 
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        ordens.push({
-          id: doc.id,
-          ...doc.data(),
-        });
+      const querySnapshot = await getDocs(qRef);
+      querySnapshot.forEach((docSnap) => {
+        ordens.push({ id: docSnap.id, ...docSnap.data() });
       });
-
-      if (ordens.length === 0) {
-        return [];
-      }
-
+      if (ordens.length === 0) return [];
       return ordens;
     } else {
-      if (!valor) {
-        return [];
-      }
-
-      q = query(osRef, where("codigo", "==", valor));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        ordens.push({
-          id: doc.id,
-          ...doc.data(),
-        });
+      if (!valor) return [];
+      qRef = query(osRef, where("codigo", "==", valor));
+      const querySnapshot = await getDocs(qRef);
+      querySnapshot.forEach((docSnap) => {
+        ordens.push({ id: docSnap.id, ...docSnap.data() });
       });
-
       return ordens;
     }
   } catch (error) {
     console.error("Erro ao consultar OS:", error);
     return [];
   }
+};
+
+// ============ NOVO: helpers da EXTENSÃO (coleção "generate") ============
+const GENERATE_COL = "generate";
+const SYSTEM_CONTEXT =
+  "Você é um assistente administrativo especializado em ciclismo e bicicletas da loja Sport Bike. Responda curto e direto.";
+
+export const extSendPrompt = async (text, threadId, extraContext) => {
+  const prompt = [
+    SYSTEM_CONTEXT,
+    extraContext ? `Contexto: ${extraContext}` : "",
+    `Usuário: ${text}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const ref = await addDoc(collection(db, GENERATE_COL), {
+    prompt,
+    threadId,
+    createTime: serverTimestamp(),
+  });
+  return { id: ref.id };
+};
+
+export const extWatchGenerateOnce = (docId, onDone) => {
+  const unsub = onSnapshot(doc(db, GENERATE_COL, docId), (snap) => {
+    const d = snap.data();
+    if (!d) return;
+    if (d.response || d?.status?.state === "ERROR") {
+      const err =
+        d?.status?.message ||
+        d?.status?.error ||
+        (typeof d?.status === "string" ? d.status : "");
+      onDone({ response: d.response, status: d.status, errorText: err });
+      unsub();
+    }
+  });
+  return unsub;
 };
 
 export { db, auth, storage };

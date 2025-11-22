@@ -23,6 +23,7 @@ import {
 } from "../services/dashboardService";
 import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
+import AssistantSidebar from "@/components/AssistantSidebar";
 
 export default function Admin() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -297,6 +298,7 @@ export default function Admin() {
             </div>
           </div>
         </footer>
+        <AssistantSidebar />
       </div>
     </div>
   );
