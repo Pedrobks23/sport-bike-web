@@ -20,8 +20,6 @@ import { db } from "@/config/firebase";
 // ---------- SETTINGS DA HOME ----------
 export async function getHomeSettings() {
   const ref = doc(db, "home", "settings");
-  const snap = await getDoc(ref);
-
   const defaults = {
     showFeaturedProducts: true,
     showProductsSection: true,
@@ -29,7 +27,13 @@ export async function getHomeSettings() {
     whatsappPhone: "", // opcional
   };
 
-  return snap.exists() ? { ...defaults, ...snap.data() } : defaults;
+  try {
+    const snap = await getDoc(ref);
+    return snap.exists() ? { ...defaults, ...snap.data() } : defaults;
+  } catch (e) {
+    console.warn("[homeService] Falha ao ler 'home/settings'. Usando defaults.", e?.message || e);
+    return defaults;
+  }
 }
 
 export async function updateHomeSettings(data) {
@@ -44,7 +48,8 @@ export async function getFeaturedProducts() {
   try {
     const q = query(
       collection(db, "products"),
-      where("isFeatured", "==", true)
+      where("isFeatured", "==", true),
+      where("visible", "==", true)
       // orderBy opcional, só se você tiver o índice criado:
       // orderBy("createdAt", "desc")
     );
@@ -66,8 +71,11 @@ export async function getFeaturedProducts() {
       }));
     }
   } catch (e) {
-    // se a coleção/índice não existir, caímos no fallback
-    console.warn("[homeService] Falha ao ler 'products' (isFeatured). Fallback para 'featuredProducts'.", e?.message || e);
+    // se a coleção/índice não existir ou der permissão negada, caímos no fallback
+    console.warn(
+      "[homeService] Falha ao ler 'products' (isFeatured). Fallback para 'featuredProducts'.",
+      e?.message || e
+    );
   }
 
   // 2) Fallback legado: coleção "featuredProducts"
@@ -88,9 +96,12 @@ export async function getFeaturedProducts() {
     });
 
     // alguns projetos armazenavam "featureds" já filtrados
-    return items.filter((p) => p.visible !== false);
+    const visibleItems = items.filter((p) => p.visible !== false);
+    if (visibleItems.length > 0) return visibleItems;
   } catch (e) {
     console.error("[homeService] Erro ao ler 'featuredProducts':", e);
-    return [];
   }
+
+  // Sem fallback estático: se nada for encontrado, devolve lista vazia
+  return [];
 }

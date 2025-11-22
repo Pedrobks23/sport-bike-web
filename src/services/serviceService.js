@@ -1,5 +1,6 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
+import { fallbackServices } from "@/constants/fallbackData";
 
 // util: normaliza preço vindo como string "R$ 100,00", "100.00", number, etc.
 function toNumber(val) {
@@ -42,21 +43,28 @@ export async function getAllServicesOrdered() {
   }
 
   // 2) Fallback coleção antiga `servicos` (um doc com pares nome->valor)
-  const legacySnap = await getDocs(collection(db, "servicos"));
-  const services = [];
-  legacySnap.forEach((doc) => {
-    const data = doc.data() || {};
-    Object.entries(data).forEach(([nome, valor]) => {
-      services.push({
-        id: `${doc.id}_${nome}`,
-        nome,
-        descricao: "", // sem descrição no legado
-        valor: toNumber(valor),
+  try {
+    const legacySnap = await getDocs(collection(db, "servicos"));
+    const services = [];
+    legacySnap.forEach((doc) => {
+      const data = doc.data() || {};
+      Object.entries(data).forEach(([nome, valor]) => {
+        services.push({
+          id: `${doc.id}_${nome}`,
+          nome,
+          descricao: "", // sem descrição no legado
+          valor: toNumber(valor),
+        });
       });
     });
-  });
-  services.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  return services;
+    services.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    if (services.length > 0) return services;
+  } catch (e) {
+    console.error("[serviceService] Erro ao ler 'servicos':", e?.message || e);
+  }
+
+  // 3) Fallback final para visitantes sem acesso ao Firestore
+  return fallbackServices;
 }
 
 // (opcional, se quiser usar em outras telas com descrição)

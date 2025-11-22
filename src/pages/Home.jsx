@@ -34,7 +34,7 @@ import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
 import ResponsiveContainer from "../components/ResponsiveContainer"
 import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"
 
 
 export default function Home() {
@@ -167,20 +167,20 @@ export default function Home() {
   // carrega destaques (usa Cloudinary quando houver)
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const prods = await getFeaturedProducts() // pode retornar todos os 'featured'
-        const settings = await getHomeSettings()
-
-        const normalized = (prods || [])
+      const normalizeProducts = (list = []) =>
+        (list || [])
           .filter((p) => p && p.visible !== false) // respeita visibilidade
           .map((p) => {
-            // p.image pode ser objeto ({url, publicId}) ou string (legado)
             const imgObj = typeof p.image === "string" ? { url: p.image } : p.image
-            // monta URL com foco automático (centraliza a bike em imagens verticais tbm)
             const displayUrl = cldFill(imgObj, { w: 800, h: 600 })
             return { ...p, displayUrl }
           })
 
+      try {
+        const prods = await getFeaturedProducts() // pode retornar todos os 'featured'
+        const settings = await getHomeSettings()
+
+        const normalized = normalizeProducts(prods)
         setFeaturedProducts(normalized)
         setShowFeatured(settings.showFeaturedProducts ?? true)
       } catch (e) {

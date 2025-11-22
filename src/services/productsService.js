@@ -10,6 +10,7 @@ import {
   getDoc,
   query,
   orderBy,
+  where,
 } from "firebase/firestore";
 import { destroyFromCloudinary } from "@/utils/cloudinary";
 
@@ -30,6 +31,27 @@ export async function listAllProducts() {
       ...data,
     };
   });
+}
+
+/**
+ * Lista apenas produtos públicos (visíveis) para a vitrine.
+ */
+export async function listPublicProducts() {
+  try {
+    const q = query(
+      collection(db, COL),
+      where("visible", "==", true),
+      orderBy("updatedAt", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn(
+      "[productsService] Falha ao listar produtos públicos:",
+      err?.message || err
+    );
+    return [];
+  }
 }
 
 /**
