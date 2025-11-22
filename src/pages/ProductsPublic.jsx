@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listAllProducts } from "@/services/productsService";
+import { listPublicProducts } from "@/services/productsService";
 import { getHomeSettings } from "@/services/homeService";
 import { cldFill } from "@/utils/cloudinaryUrl";
 import {
@@ -57,9 +57,9 @@ export default function ProductsPublic() {
   useEffect(() => {
     (async () => {
       try {
-        const [prods, s] = await Promise.all([listAllProducts(), getHomeSettings()]);
+        const [prods, s] = await Promise.all([listPublicProducts(), getHomeSettings()]);
         setSettings({ showProductsSection: s?.showProductsSection !== false });
-        setItems((prods || []).filter((p) => p?.visible !== false));
+        setItems(prods || []);
       } catch (e) {
         console.error(e);
         setItems([]);

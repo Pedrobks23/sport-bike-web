@@ -1,7 +1,7 @@
 // src/components/FeaturedProductsPublic.jsx
 import { useEffect, useState } from "react";
 import { cldFill } from "@/utils/cloudinaryUrl";
-import { listAllProducts } from "@/services/productsService";
+import { listPublicProducts } from "@/services/productsService";
 
 export default function FeaturedProductsPublic() {
   const [items, setItems] = useState(null); // null = carregando, [] = vazio
@@ -9,7 +9,7 @@ export default function FeaturedProductsPublic() {
   useEffect(() => {
     (async () => {
       try {
-        const all = await listAllProducts();
+        const all = await listPublicProducts();
         const featured = (all || []).filter(
           (p) => p?.isFeatured === true && p?.visible !== false
         );
