@@ -16,6 +16,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
+import { fallbackFeaturedProducts } from "@/constants/fallbackData";
 
 // ---------- SETTINGS DA HOME ----------
 export async function getHomeSettings() {
@@ -70,8 +71,11 @@ export async function getFeaturedProducts() {
       }));
     }
   } catch (e) {
-    // se a coleção/índice não existir, caímos no fallback
-    console.warn("[homeService] Falha ao ler 'products' (isFeatured). Fallback para 'featuredProducts'.", e?.message || e);
+    // se a coleção/índice não existir ou der permissão negada, caímos no fallback
+    console.warn(
+      "[homeService] Falha ao ler 'products' (isFeatured). Fallback para 'featuredProducts'.",
+      e?.message || e
+    );
   }
 
   // 2) Fallback legado: coleção "featuredProducts"
@@ -95,6 +99,8 @@ export async function getFeaturedProducts() {
     return items.filter((p) => p.visible !== false);
   } catch (e) {
     console.error("[homeService] Erro ao ler 'featuredProducts':", e);
-    return [];
   }
+
+  // 3) Fallback final: dados estáticos para visitantes sem permissão
+  return fallbackFeaturedProducts;
 }
