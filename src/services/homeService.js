@@ -20,8 +20,6 @@ import { db } from "@/config/firebase";
 // ---------- SETTINGS DA HOME ----------
 export async function getHomeSettings() {
   const ref = doc(db, "home", "settings");
-  const snap = await getDoc(ref);
-
   const defaults = {
     showFeaturedProducts: true,
     showProductsSection: true,
@@ -29,7 +27,13 @@ export async function getHomeSettings() {
     whatsappPhone: "", // opcional
   };
 
-  return snap.exists() ? { ...defaults, ...snap.data() } : defaults;
+  try {
+    const snap = await getDoc(ref);
+    return snap.exists() ? { ...defaults, ...snap.data() } : defaults;
+  } catch (e) {
+    console.warn("[homeService] Falha ao ler 'home/settings'. Usando defaults.", e?.message || e);
+    return defaults;
+  }
 }
 
 export async function updateHomeSettings(data) {
