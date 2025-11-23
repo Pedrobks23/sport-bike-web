@@ -25,7 +25,6 @@ import {
   getNextReceiptNumber,
 } from "../services/receiptService";
 import { getLatestCompletedOrderByPhone } from "../services/orderService";
-import Silk from "../components/Silk";
 const storeInfo = {
   name: "Sport & Bike",
   company: "Pereira Comércio LTDA",
@@ -346,16 +345,6 @@ const ReceiptsManagement = () => {
     <div
       className={`relative min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}
     >
-      <div className="pointer-events-none fixed inset-0 -z-10 opacity-60 print:opacity-100">
-        <Silk
-          className="h-full w-full"
-          color="#c88c09"
-          noiseIntensity={1.2}
-          rotation={0.1}
-          scale={1.1}
-          speed={3.5}
-        />
-      </div>
       <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen relative">
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">

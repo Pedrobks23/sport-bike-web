@@ -33,6 +33,7 @@ import { onAuthStateChanged } from "firebase/auth"
 import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
 import ResponsiveContainer from "../components/ResponsiveContainer"
+import Silk from "../components/Silk"
 import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
 import { Link } from "react-router-dom"
 
@@ -283,6 +284,16 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-60">
+        <Silk
+          className="h-full w-full"
+          color="#f59e0b"
+          noiseIntensity={0}
+          rotation={0}
+          scale={1.05}
+          speed={0.75}
+        />
+      </div>
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
