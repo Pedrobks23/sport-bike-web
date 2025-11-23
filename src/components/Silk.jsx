@@ -109,7 +109,7 @@ SilkPlane.propTypes = {
 };
 
 const Silk = ({
-  speed = 1,
+  speed = 20,
   scale = 0.5,
   color = "#7B7481",
   noiseIntensity = 0,
