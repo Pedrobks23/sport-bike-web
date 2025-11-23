@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import {
   Phone,
   MapPin,
@@ -17,8 +17,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  Play,
-  Pause,
   ShoppingCart,
   Award,
   Truck,
@@ -45,14 +43,12 @@ export default function Home() {
   const [currentProduct, setCurrentProduct] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
-  const [isVideoPlaying, setIsVideoPlaying] = useState(true)
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [showFeatured, setShowFeatured] = useState(true)
-  const videoRef = useRef(null)
 
   const services = [
     {
@@ -203,17 +199,6 @@ export default function Home() {
     })
   }, [featuredProducts])
 
-  // sync video playback state
-  useEffect(() => {
-    const vid = videoRef.current
-    if (!vid) return
-    if (isVideoPlaying) {
-      vid.play().catch(() => {})
-    } else {
-      vid.pause()
-    }
-  }, [isVideoPlaying])
-
   // header scroll effect
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -284,16 +269,6 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
-      <div className="pointer-events-none fixed inset-0 -z-10 opacity-60">
-        <Silk
-          className="h-full w-full"
-          color="#f59e0b"
-          noiseIntensity={0}
-          rotation={0}
-          scale={1.05}
-          speed={0.75}
-        />
-      </div>
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
@@ -426,24 +401,18 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0">
+            <div className="absolute inset-0 pointer-events-none">
+              <Silk
+                className="h-full w-full"
+                color="#f59e0b"
+                noiseIntensity={0}
+                rotation={0}
+                scale={1.05}
+                speed={0.75}
+              />
+            </div>
             <div className="absolute inset-0 bg-gradient-to-br from-amber-400/90 via-amber-500/90 to-amber-600/90 z-10"></div>
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-              poster=""
-            >
-            </video>
           </div>
-          <button
-            onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-            className="absolute top-24 right-8 z-20 bg-white/20 backdrop-blur-sm rounded-full p-3 text-white hover:bg-white/30 transition-colors"
-          >
-            {isVideoPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-          </button>
           <div className="absolute top-20 right-10 sm:right-20 w-48 h-48 sm:w-72 sm:h-72 bg-white/20 rounded-full blur-xl animate-pulse z-10"></div>
           <div className="absolute bottom-20 left-10 sm:left-20 w-64 h-64 sm:w-96 sm:h-96 bg-white/10 rounded-full blur-2xl animate-bounce z-10"></div>
           <div className="relative z-20 container mx-auto px-4 text-center text-white">
