@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { listPublicProducts } from "@/services/productsService";
 import { getHomeSettings } from "@/services/homeService";
 import { cldFill } from "@/utils/cloudinaryUrl";
+import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 import {
   Search,
   Star,
@@ -269,62 +270,69 @@ function ProductCard({ product }) {
   );
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-2xl hover:border-yellow-400">
-      {/* Imagem */}
-      <div className="relative h-56 w-full overflow-hidden">
-        {url ? (
-          <img
-            src={url}
-            alt={product.name}
-            className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        ) : (
-          <div className="grid h-full place-items-center text-sm text-gray-400">Sem imagem</div>
-        )}
+    <CardContainer className="h-full w-full">
+      <CardBody className="border border-black/10 bg-white/90 p-4 shadow-sm transition duration-300 hover:shadow-2xl">
+        <div className="relative">
+          <CardItem translateZ="80" className="relative h-52 w-full overflow-hidden rounded-xl">
+            {url ? (
+              <img
+                src={url}
+                alt={product.name}
+                className="h-full w-full object-cover object-center transition duration-300 group-hover/card:scale-[1.03]"
+                loading="lazy"
+              />
+            ) : (
+              <div className="grid h-full place-items-center text-sm text-gray-400">Sem imagem</div>
+            )}
 
-        {/* Badges */}
-        <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
-          {product.isFeatured && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-black shadow"
-              style={{ backgroundColor: BRAND_YELLOW }}
+            <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
+              {product.isFeatured && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-black shadow"
+                  style={{ backgroundColor: BRAND_YELLOW }}
+                >
+                  <Star className="h-3.5 w-3.5" /> Destaque
+                </span>
+              )}
+              {product.category && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs text-gray-800 shadow">
+                  <Tag className="h-3.5 w-3.5" /> {product.category}
+                </span>
+              )}
+            </div>
+          </CardItem>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <CardItem translateZ="50" className="flex items-start justify-between gap-3">
+            <h3 className="line-clamp-1 text-lg font-semibold text-neutral-800">
+              {product.name || "Sem nome"}
+            </h3>
+            <span className="rounded-full px-3 py-1 text-xs font-semibold text-black shadow-sm" style={{ backgroundColor: BRAND_YELLOW }}>
+              {fmtBRL(product.price) || "—"}
+            </span>
+          </CardItem>
+
+          {product.description && (
+            <CardItem translateZ="35" as="p" className="line-clamp-2 text-sm text-gray-700">
+              {product.description}
+            </CardItem>
+          )}
+
+          <CardItem translateZ="25" className="pt-2">
+            <a
+              href={buildWhatsappLink(product)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
             >
-              <Star className="h-3.5 w-3.5" /> Destaque
-            </span>
-          )}
-          {product.category && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs text-gray-800 shadow">
-              <Tag className="h-3.5 w-3.5" /> {product.category}
-            </span>
-          )}
+              <MessageCircle className="h-4 w-4" />
+              Tenho interesse
+            </a>
+          </CardItem>
         </div>
-      </div>
-
-      {/* Conteúdo */}
-      <div className="space-y-1 p-4">
-        <h3 className="line-clamp-1 text-lg font-semibold">{product.name || "Sem nome"}</h3>
-        <div className="text-lg font-extrabold" style={{ color: BRAND_YELLOW }}>
-          {fmtBRL(product.price) || "—"}
-        </div>
-        {product.description && (
-          <p className="line-clamp-2 text-sm text-gray-700">{product.description}</p>
-        )}
-
-        {/* CTA — verde WhatsApp */}
-        <div className="pt-3">
-          <a
-            href={buildWhatsappLink(product)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Tenho interesse
-          </a>
-        </div>
-      </div>
-    </article>
+      </CardBody>
+    </CardContainer>
   );
 }
 
