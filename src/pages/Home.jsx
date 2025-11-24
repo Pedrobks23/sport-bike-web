@@ -34,6 +34,7 @@ import ResponsiveContainer from "../components/ResponsiveContainer"
 import Silk from "../components/Silk"
 import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
 import { Link } from "react-router-dom"
+import Snowfall from "react-snowfall"
 
 
 export default function Home() {
@@ -45,6 +46,7 @@ export default function Home() {
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isSnowing, setIsSnowing] = useState(false)
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -269,6 +271,12 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+      {isSnowing && (
+        <Snowfall
+          style={{ position: "fixed", width: "100vw", height: "100vh", zIndex: 60, pointerEvents: "none" }}
+          snowflakeCount={180}
+        />
+      )}
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
@@ -326,6 +334,17 @@ export default function Home() {
                   </button>
                 </div>
                 <button
+                  onClick={() => setIsSnowing((prev) => !prev)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
+                    isSnowing
+                      ? "bg-white text-amber-600 shadow-amber-200/60"
+                      : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                  }`}
+                >
+                  <span>Clima natalina</span>
+                  <span>{isSnowing ? "❄️" : ""}</span>
+                </button>
+                <button
                   onClick={toggleDarkMode}
                   className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   title="Alternar tema"
@@ -378,6 +397,17 @@ export default function Home() {
                       className="text-pink-500 hover:text-pink-600 transition-colors"
                     >
                       <Instagram className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setIsSnowing((prev) => !prev)}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
+                        isSnowing
+                          ? "bg-white text-amber-600 shadow-amber-200/60"
+                          : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                      }`}
+                    >
+                      <span>Clima natalina</span>
+                      <span>{isSnowing ? "❄️" : ""}</span>
                     </button>
                     <button
                       onClick={toggleDarkMode}
