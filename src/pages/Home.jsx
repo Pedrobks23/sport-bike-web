@@ -277,6 +277,15 @@ export default function Home() {
           snowflakeCount={180}
         />
       )}
+      {isSnowing && (
+        <div
+          className="fixed bottom-0 left-0 w-full h-20 pointer-events-none z-40"
+          aria-hidden
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-100 dark:via-gray-200/90 dark:to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-[radial-gradient(circle_at_20%_100%,rgba(255,255,255,0.95),transparent_45%),radial-gradient(circle_at_50%_100%,rgba(255,255,255,0.92),transparent_50%),radial-gradient(circle_at_80%_100%,rgba(255,255,255,0.9),transparent_45%)] dark:bg-[radial-gradient(circle_at_20%_100%,rgba(243,244,246,0.95),transparent_45%),radial-gradient(circle_at_50%_100%,rgba(243,244,246,0.92),transparent_50%),radial-gradient(circle_at_80%_100%,rgba(243,244,246,0.9),transparent_45%)]" />
+        </div>
+      )}
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
