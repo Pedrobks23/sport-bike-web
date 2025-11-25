@@ -522,13 +522,15 @@ export default function Home() {
                       </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                      <div>
-                        <img
-                          src={featuredProducts[currentProduct].displayUrl || ""}
-                          alt={featuredProducts[currentProduct].name}
-                          className="w-full h-[320px] sm:h-[380px] md:h-[460px] lg:h-[520px] object-contain object-center rounded-xl bg-white/20 shadow-inner"
-                          loading="lazy"
-                        />
+                      <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20">
+                        <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9]">
+                          <img
+                            src={featuredProducts[currentProduct].displayUrl || ""}
+                            alt={featuredProducts[currentProduct].name}
+                            className="w-full h-full object-cover object-center"
+                            loading="lazy"
+                          />
+                        </div>
                       </div>
                       <div className="text-white">
                         {featuredProducts[currentProduct].category && (
