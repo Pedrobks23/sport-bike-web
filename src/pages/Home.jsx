@@ -521,13 +521,13 @@ export default function Home() {
                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-4xl">🎁</div>
                       </div>
                     )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                      <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20">
-                        <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center md:items-stretch">
+                      <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20 h-full flex">
+                        <div className="relative w-full h-72 sm:h-96 md:h-full">
                           <img
                             src={featuredProducts[currentProduct].displayUrl || ""}
                             alt={featuredProducts[currentProduct].name}
-                            className="w-full h-full object-cover object-center"
+                            className="absolute inset-0 w-full h-full object-cover object-center"
                             loading="lazy"
                           />
                         </div>
