@@ -341,7 +341,7 @@ export default function Home() {
                       : "bg-amber-100 text-amber-700 hover:bg-amber-200"
                   }`}
                 >
-                  <span>Clima natalina</span>
+                  <span>Clima natalino</span>
                   <span>{isSnowing ? "❄️" : ""}</span>
                 </button>
                 <button
@@ -406,7 +406,7 @@ export default function Home() {
                           : "bg-amber-100 text-amber-700 hover:bg-amber-200"
                       }`}
                     >
-                      <span>Clima natalina</span>
+                      <span>Clima natalino</span>
                       <span>{isSnowing ? "❄️" : ""}</span>
                     </button>
                     <button
