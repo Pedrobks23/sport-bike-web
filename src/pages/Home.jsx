@@ -47,6 +47,7 @@ export default function Home() {
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isSnowing, setIsSnowing] = useState(false)
+  const [snowPileHeight, setSnowPileHeight] = useState(0)
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -208,6 +209,21 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Simula acúmulo gradual da neve na base da página
+  useEffect(() => {
+    const targetHeight = isSnowing ? 120 : 0
+    const step = isSnowing ? 3 : 4
+
+    const interval = setInterval(() => {
+      setSnowPileHeight((prev) => {
+        if (Math.abs(prev - targetHeight) < step) return targetHeight
+        return prev + (prev < targetHeight ? step : -step)
+      })
+    }, 180)
+
+    return () => clearInterval(interval)
+  }, [isSnowing])
+
   // auto rotate testimonials and products
   useEffect(() => {
     const interval = setInterval(() => {
@@ -277,13 +293,19 @@ export default function Home() {
           snowflakeCount={180}
         />
       )}
-      {isSnowing && (
+      {(snowPileHeight > 0 || isSnowing) && (
         <div
-          className="fixed bottom-0 left-0 w-full h-20 pointer-events-none z-40"
+          className="fixed bottom-0 left-0 w-full pointer-events-none z-40"
+          style={{ height: `${Math.max(snowPileHeight, 8)}px` }}
           aria-hidden
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-gray-100 dark:via-gray-200/90 dark:to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-[radial-gradient(circle_at_20%_100%,rgba(255,255,255,0.95),transparent_45%),radial-gradient(circle_at_50%_100%,rgba(255,255,255,0.92),transparent_50%),radial-gradient(circle_at_80%_100%,rgba(255,255,255,0.9),transparent_45%)] dark:bg-[radial-gradient(circle_at_20%_100%,rgba(243,244,246,0.95),transparent_45%),radial-gradient(circle_at_50%_100%,rgba(243,244,246,0.92),transparent_50%),radial-gradient(circle_at_80%_100%,rgba(243,244,246,0.9),transparent_45%)]" />
+          <div className="absolute inset-0 flex flex-col justify-end">
+            <div className="relative w-full" style={{ height: `${Math.max(snowPileHeight, 8)}px` }}>
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 to-white/60 dark:from-gray-100 dark:via-gray-100/90 dark:to-gray-50/60" />
+              <div className="absolute inset-0 opacity-90 bg-[radial-gradient(circle_at_12%_100%,rgba(255,255,255,0.98),transparent_36%),radial-gradient(circle_at_35%_102%,rgba(255,255,255,0.96),transparent_40%),radial-gradient(circle_at_58%_100%,rgba(255,255,255,0.95),transparent_42%),radial-gradient(circle_at_82%_98%,rgba(255,255,255,0.94),transparent_36%)] dark:bg-[radial-gradient(circle_at_12%_100%,rgba(243,244,246,0.98),transparent_36%),radial-gradient(circle_at_35%_102%,rgba(243,244,246,0.96),transparent_40%),radial-gradient(circle_at_58%_100%,rgba(243,244,246,0.95),transparent_42%),radial-gradient(circle_at_82%_98%,rgba(243,244,246,0.94),transparent_36%)]" />
+              <div className="absolute inset-x-0 bottom-0 h-4 sm:h-6 bg-white/80 dark:bg-gray-100/80 blur-md" />
+            </div>
+          </div>
         </div>
       )}
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
