@@ -34,6 +34,7 @@ import ResponsiveContainer from "../components/ResponsiveContainer"
 import Silk from "../components/Silk"
 import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
 import { Link } from "react-router-dom"
+import Snowfall from "react-snowfall"
 
 
 export default function Home() {
@@ -45,6 +46,8 @@ export default function Home() {
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isSnowing, setIsSnowing] = useState(false)
+  const [snowPileHeight, setSnowPileHeight] = useState(0)
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -206,6 +209,21 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Simula acúmulo gradual da neve na base da página
+  useEffect(() => {
+    const targetHeight = isSnowing ? 120 : 0
+    const step = isSnowing ? 3 : 4
+
+    const interval = setInterval(() => {
+      setSnowPileHeight((prev) => {
+        if (Math.abs(prev - targetHeight) < step) return targetHeight
+        return prev + (prev < targetHeight ? step : -step)
+      })
+    }, 180)
+
+    return () => clearInterval(interval)
+  }, [isSnowing])
+
   // auto rotate testimonials and products
   useEffect(() => {
     const interval = setInterval(() => {
@@ -269,6 +287,27 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+      {isSnowing && (
+        <Snowfall
+          style={{ position: "fixed", width: "100vw", height: "100vh", zIndex: 60, pointerEvents: "none" }}
+          snowflakeCount={180}
+        />
+      )}
+      {(snowPileHeight > 0 || isSnowing) && (
+        <div
+          className="fixed bottom-0 left-0 w-full pointer-events-none z-40"
+          style={{ height: `${Math.max(snowPileHeight, 8)}px` }}
+          aria-hidden
+        >
+          <div className="absolute inset-0 flex flex-col justify-end">
+            <div className="relative w-full" style={{ height: `${Math.max(snowPileHeight, 8)}px` }}>
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 to-white/60 dark:from-gray-100 dark:via-gray-100/90 dark:to-gray-50/60" />
+              <div className="absolute inset-0 opacity-90 bg-[radial-gradient(circle_at_12%_100%,rgba(255,255,255,0.98),transparent_36%),radial-gradient(circle_at_35%_102%,rgba(255,255,255,0.96),transparent_40%),radial-gradient(circle_at_58%_100%,rgba(255,255,255,0.95),transparent_42%),radial-gradient(circle_at_82%_98%,rgba(255,255,255,0.94),transparent_36%)] dark:bg-[radial-gradient(circle_at_12%_100%,rgba(243,244,246,0.98),transparent_36%),radial-gradient(circle_at_35%_102%,rgba(243,244,246,0.96),transparent_40%),radial-gradient(circle_at_58%_100%,rgba(243,244,246,0.95),transparent_42%),radial-gradient(circle_at_82%_98%,rgba(243,244,246,0.94),transparent_36%)]" />
+              <div className="absolute inset-x-0 bottom-0 h-4 sm:h-6 bg-white/80 dark:bg-gray-100/80 blur-md" />
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
@@ -326,6 +365,17 @@ export default function Home() {
                   </button>
                 </div>
                 <button
+                  onClick={() => setIsSnowing((prev) => !prev)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
+                    isSnowing
+                      ? "bg-white text-amber-600 shadow-amber-200/60"
+                      : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                  }`}
+                >
+                  <span>Clima natalino</span>
+                  <span>{isSnowing ? "❄️" : ""}</span>
+                </button>
+                <button
                   onClick={toggleDarkMode}
                   className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   title="Alternar tema"
@@ -348,6 +398,15 @@ export default function Home() {
                 )}
               </button>
             </div>
+            {isSnowing && (
+              <div className="mt-3 hidden md:block">
+                <div className="flex items-center gap-3 rounded-full bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 dark:ring-white/10">
+                  <span className="text-lg">🎄</span>
+                  <span className="tracking-wide">Clima natalino ativado! Luzes, neve e boas festas.</span>
+                  <span className="text-lg">✨</span>
+                </div>
+              </div>
+            )}
             {isMenuOpen && (
               <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col space-y-4 pt-4">
@@ -378,6 +437,17 @@ export default function Home() {
                       className="text-pink-500 hover:text-pink-600 transition-colors"
                     >
                       <Instagram className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setIsSnowing((prev) => !prev)}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
+                        isSnowing
+                          ? "bg-white text-amber-600 shadow-amber-200/60"
+                          : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                      }`}
+                    >
+                      <span>Clima natalino</span>
+                      <span>{isSnowing ? "❄️" : ""}</span>
                     </button>
                     <button
                       onClick={toggleDarkMode}
@@ -429,13 +499,21 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
                 onClick={handleConsultarOS}
-                className="bg-white text-gray-800 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl"
+                className={`px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-xl ${
+                  isSnowing
+                    ? "bg-red-600 text-white hover:bg-red-500 shadow-red-200/60"
+                    : "bg-white text-gray-800 hover:bg-gray-100"
+                }`}
               >
                 Consultar Ordem de Serviço
               </button>
               <button
                 onClick={() => handleWhatsApp("Olá! Gostaria de alugar uma bike.")}
-                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105"
+                className={`px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 border-2 ${
+                  isSnowing
+                    ? "bg-green-600 text-white border-green-500 hover:bg-green-500 shadow-green-200/60"
+                    : "bg-transparent border-white text-white hover:bg-white hover:text-gray-800"
+                }`}
               >
                 Alugue sua Bike Hoje
               </button>
@@ -459,17 +537,31 @@ export default function Home() {
                   Confira nossa seleção especial de bikes e acessórios
                 </p>
               </div>
-              <div className="relative max-w-4xl mx-auto">
+              <div className="relative max-w-5xl mx-auto">
                 {featuredProducts.length > 0 ? (
-                  <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 shadow-2xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                      <div>
-                        <img
-                          src={featuredProducts[currentProduct].displayUrl || ""}
-                          alt={featuredProducts[currentProduct].name}
-                          className="w-full h-64 object-cover object-center rounded-lg"
-                          loading="lazy"
-                        />
+                  <div
+                    className={`relative overflow-hidden rounded-3xl p-8 shadow-2xl border-2 ${
+                      isSnowing
+                        ? "bg-gradient-to-r from-red-600 via-amber-400 to-green-600 border-white/60"
+                        : "bg-gradient-to-r from-amber-400 to-amber-500 border-transparent"
+                    }`}
+                  >
+                    {isSnowing && (
+                      <div className="absolute inset-0 pointer-events-none opacity-70">
+                        <div className="absolute top-4 left-6 right-6 h-2 rounded-full bg-gradient-to-r from-green-300 via-red-200 to-green-300 blur-sm"></div>
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-4xl">🎁</div>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center md:items-stretch">
+                      <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20 h-full flex">
+                        <div className="relative w-full h-72 sm:h-96 md:h-full">
+                          <img
+                            src={featuredProducts[currentProduct].displayUrl || ""}
+                            alt={featuredProducts[currentProduct].name}
+                            className="absolute inset-0 w-full h-full object-cover object-center"
+                            loading="lazy"
+                          />
+                        </div>
                       </div>
                       <div className="text-white">
                         {featuredProducts[currentProduct].category && (
@@ -494,7 +586,11 @@ export default function Home() {
                               `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`,
                             )
                           }
-                          className="bg-white text-amber-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
+                          className={`px-6 py-3 rounded-full font-bold transition-colors inline-flex items-center space-x-2 shadow-lg ${
+                            isSnowing
+                              ? "bg-green-100 text-green-800 hover:bg-green-50"
+                              : "bg-white text-amber-600 hover:bg-gray-100"
+                          }`}
                         >
                           <ShoppingCart className="w-5 h-5" />
                           <span>Tenho Interesse</span>
@@ -540,7 +636,11 @@ export default function Home() {
               <div className="mt-12 flex justify-center">
                 <Link
                   to="/produtos"
-                  className="inline-flex items-center gap-3 rounded-full bg-amber-500 text-white px-6 py-3 font-semibold shadow-lg hover:bg-amber-600 hover:scale-105 transform transition-all duration-300 animate-pulse"
+                  className={`inline-flex items-center gap-3 rounded-full px-6 py-3 font-semibold shadow-lg hover:scale-105 transform transition-all duration-300 ${
+                    isSnowing
+                      ? "bg-red-600 text-white hover:bg-red-500 ring-2 ring-green-300/60"
+                      : "bg-amber-500 text-white hover:bg-amber-600 animate-pulse"
+                  }`}
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Ver todos os produtos
