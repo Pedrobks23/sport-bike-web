@@ -21,6 +21,7 @@ type AdminMetrics = {
   series: Array<{ date: string; value: number }>;
   recentOrders: Array<{
     id: string;
+    osName: string;
     cliente: string;
     bike?: string;
     status: string;
@@ -176,6 +177,13 @@ export function useAdminMetrics() {
 
             return {
               id: order.id,
+              osName:
+                String(
+                  (order as Record<string, unknown>).codigo ||
+                    (order as Record<string, unknown>).nome ||
+                    (order as Record<string, unknown>).titulo ||
+                    order.id,
+                ) || order.id,
               cliente: (order as Record<string, unknown>).cliente?.nome as string || "Cliente",
               bike: bike || undefined,
               status: String(order.status || "Pendente"),

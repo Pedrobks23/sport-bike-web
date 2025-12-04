@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import {
   ArrowLeft,
@@ -65,6 +65,7 @@ const PortalAwareDraggable = ({ children, ...props }) => (
 
 const WorkshopDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Estados principais
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -136,6 +137,25 @@ const WorkshopDashboard = () => {
 
     initialize();
   }, []);
+
+  useEffect(() => {
+    const orderId = searchParams.get("orderId");
+    if (!orderId) return;
+
+    const openOrderFromParam = async () => {
+      try {
+        const order = await getOrder(orderId);
+        if (order) {
+          setSelectedOrder(order);
+          setShowModal(true);
+        }
+      } catch (err) {
+        console.error("Erro ao abrir ordem via parâmetro:", err);
+      }
+    };
+
+    openOrderFromParam();
+  }, [searchParams]);
 
   const loadOrders = async () => {
     try {

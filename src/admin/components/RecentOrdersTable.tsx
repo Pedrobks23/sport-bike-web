@@ -1,8 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 interface RecentOrderItem {
   id: string;
+  osName: string;
   cliente: string;
   bike?: string;
   status: string;
@@ -18,6 +20,12 @@ const statusStyles: Record<string, string> = {
 };
 
 export default function RecentOrdersTable({ items }: { items: RecentOrderItem[] }) {
+  const navigate = useNavigate();
+
+  const handleOpenOrder = (orderId: string) => {
+    navigate(`/workshop?orderId=${orderId}`);
+  };
+
   return (
     <div className="w-full rounded-2xl border border-black/5 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-neutral-900">
       <div className="flex items-center justify-between pb-4">
@@ -30,6 +38,7 @@ export default function RecentOrdersTable({ items }: { items: RecentOrderItem[] 
         <table className="min-w-full text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             <tr>
+              <th className="px-3 py-2">OS</th>
               <th className="px-3 py-2">Cliente</th>
               <th className="px-3 py-2">Bike</th>
               <th className="px-3 py-2">Status</th>
@@ -40,13 +49,26 @@ export default function RecentOrdersTable({ items }: { items: RecentOrderItem[] 
           <tbody className="divide-y divide-black/5 dark:divide-white/10">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-4 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={6} className="px-3 py-4 text-center text-slate-500 dark:text-slate-400">
                   Nenhuma ordem encontrada.
                 </td>
               </tr>
             ) : (
               items.map((item) => (
-                <tr key={item.id} className="hover:bg-amber-500/5 dark:hover:bg-amber-500/10">
+                <tr
+                  key={item.id}
+                  tabIndex={0}
+                  role="button"
+                  onClick={() => handleOpenOrder(item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleOpenOrder(item.id);
+                    }
+                  }}
+                  className="cursor-pointer hover:bg-amber-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:hover:bg-amber-500/10"
+                >
+                  <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{item.osName}</td>
                   <td className="px-3 py-3 font-medium text-slate-900 dark:text-white">{item.cliente}</td>
                   <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{item.bike || "-"}</td>
                   <td className="px-3 py-3">

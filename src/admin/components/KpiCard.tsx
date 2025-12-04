@@ -9,8 +9,8 @@ interface KpiCardProps {
 
 export default function KpiCard({ title, value, helper, icon }: KpiCardProps) {
   return (
-    <div className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-900">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex min-h-[148px] flex-col justify-between rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-neutral-900">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm text-slate-500 dark:text-slate-400">{title}</p>
           <p className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</p>
