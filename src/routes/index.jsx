@@ -2,7 +2,6 @@ import { createBrowserRouter } from "react-router-dom";
 import Home from "../pages/Home";
 import ConsultaOS from "../pages/ConsultaOS";
 import AdminLogin from "../pages/AdminLogin";
-import Admin from "../pages/Admin";
 import WorkshopDashboard from "../pages/WorkshopDashboard";
 import CustomerList from "../pages/CustomerList";
 import ServicesManagement from "../pages/ServicesManagement";
@@ -10,7 +9,7 @@ import ReportsManagement from "../pages/ReportsManagement";
 import ReceiptsManagement from "../pages/ReceiptsManagement";
 import ServiceOrdersPage from "../pages/ServiceOrdersPage";
 import ManageReceiptsPage from "../pages/ManageReceiptsPage";
-import NewOrder from "../pages/NewOrder"; // Adicione esta importação
+import NewOrder from "../pages/NewOrder";
 import HomeManagement from "../pages/HomeManagement";
 import NewCustomer from "../pages/NewCustomer";
 import ServicoRapido from "../pages/ServicoRapido";
@@ -18,12 +17,9 @@ import MechanicsManagement from "../pages/MechanicsManagement";
 import HistoricoMecanico from "../pages/HistoricoMecanico";
 import PrivateRoute from "../components/PrivateRoute";
 import Mecanicos from "../pages/Mecanicos";
-// import
 import ProductsPublic from "@/pages/ProductsPublic";
-
-
-
-
+import AdminLayout from "@/admin/layout/AdminLayout";
+import AdminHome from "@/admin/pages/AdminHome";
 
 export const router = createBrowserRouter([
   {
@@ -35,19 +31,15 @@ export const router = createBrowserRouter([
     element: <ConsultaOS />,
   },
   {
+    path: "/produtos",
+    element: <ProductsPublic />,
+  },
+  {
     path: "/admin/login",
     element: <AdminLogin />,
   },
   {
-    path: "/admin",
-    element: (
-      <PrivateRoute>
-        <Admin />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/orders",
+    path: "/workshop",
     element: (
       <PrivateRoute>
         <WorkshopDashboard />
@@ -55,118 +47,30 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/admin/orders/new", // Adicione esta nova rota
+    path: "/admin",
     element: (
       <PrivateRoute>
-        <NewOrder />
+        <AdminLayout />
       </PrivateRoute>
     ),
+    children: [
+      { index: true, element: <AdminHome /> },
+      { path: "orders", element: <WorkshopDashboard /> },
+      { path: "orders/new", element: <NewOrder /> },
+      { path: "ordens/nova", element: <NewOrder /> },
+      { path: "customers", element: <CustomerList /> },
+      { path: "customers/new", element: <NewCustomer /> },
+      { path: "services", element: <ServicesManagement /> },
+      { path: "servico-rapido", element: <ServicoRapido /> },
+      { path: "mecanicos", element: <MechanicsManagement /> },
+      { path: "mecanicos/:id", element: <HistoricoMecanico /> },
+      { path: "historico-mecanico/:mecanicoId", element: <HistoricoMecanico /> },
+      { path: "home", element: <HomeManagement /> },
+      { path: "reports", element: <ReportsManagement /> },
+      { path: "receipts", element: <ReceiptsManagement /> },
+      { path: "service-orders", element: <ServiceOrdersPage /> },
+      { path: "manage-receipts", element: <ManageReceiptsPage /> },
+      { path: "mecanicos/lista", element: <Mecanicos /> },
+    ],
   },
-  {
-    path: "/admin/customers",
-    element: (
-      <PrivateRoute>
-        <CustomerList />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/customers/new",
-    element: (
-      <PrivateRoute>
-        <NewCustomer />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/services",
-    element: (
-      <PrivateRoute>
-        <ServicesManagement />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/servico-rapido",
-    element: (
-      <PrivateRoute>
-        <ServicoRapido />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/mecanicos",
-    element: (
-      <PrivateRoute>
-        <MechanicsManagement />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/mecanicos/:id",
-    element: (
-      <PrivateRoute>
-        <HistoricoMecanico />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/reports",
-    element: (
-      <PrivateRoute>
-        <ReportsManagement />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/receipts",
-    element: (
-      <PrivateRoute>
-        <ReceiptsManagement />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/home",
-    element: (
-      <PrivateRoute>
-        <HomeManagement />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/service-orders",
-    element: (
-      <PrivateRoute>
-        <ServiceOrdersPage />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/manage-receipts",
-    element: (
-      <PrivateRoute>
-        <ManageReceiptsPage />
-      </PrivateRoute>
-    ),
-  },
-  {
-  path: "/admin/mecanicos",
-  element: (
-    <PrivateRoute>
-      <Mecanicos />
-    </PrivateRoute>
-  ),
-},
-{
-  path: "/admin/historico-mecanico/:mecanicoId",
-  element: (
-    <PrivateRoute>
-      <HistoricoMecanico />
-    </PrivateRoute>
-  ),
-},
-{ path: "/produtos", 
-  element: <ProductsPublic /> },
-
 ]);
