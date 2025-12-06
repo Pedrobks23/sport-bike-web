@@ -44,17 +44,16 @@ export default function XmasPromoCard({
     if (resolver) {
       resolver()
     }
-    if (onClose) {
-      onClose()
-    }
   }
 
   const handleSeeDeals = () => {
     if (onSeeDeals) {
       onSeeDeals()
+      if (onClose) onClose()
       return
     }
     navigate("/produtos?natal=1")
+    if (onClose) onClose()
   }
 
   return (
