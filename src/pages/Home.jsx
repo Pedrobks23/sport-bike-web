@@ -518,7 +518,6 @@ export default function Home() {
                     {isSnowing && (
                       <div className="absolute inset-0 pointer-events-none opacity-70">
                         <div className="absolute top-4 left-6 right-6 h-2 rounded-full bg-gradient-to-r from-green-300 via-red-200 to-green-300 blur-sm"></div>
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-4xl">🎁</div>
                       </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center md:items-stretch">
