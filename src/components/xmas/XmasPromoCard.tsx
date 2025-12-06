@@ -25,7 +25,7 @@ const buildSantaUrl = (publicId?: string) => {
   if (!cloudName || !santaId) return null
 
   const sanitizedId = String(santaId).replace(/^\/+/, "")
-  const transformations = "f_auto,q_auto,c_fill,g_auto,w_640,h_420"
+  const transformations = "f_auto,q_auto,c_fit,w_640"
   return `https://res.cloudinary.com/${cloudName}/image/upload/${transformations}/${sanitizedId}.png`
 }
 
@@ -67,12 +67,12 @@ export default function XmasPromoCard({
         <X className="h-4 w-4" />
       </button>
       <div className="grid grid-cols-1 md:grid-cols-2 items-stretch">
-        <div className="relative overflow-hidden bg-white/10">
+        <div className="relative overflow-hidden bg-white/10 md:min-h-[320px]">
           {santaImageUrl ? (
             <img
               src={santaImageUrl}
               alt="Papai Noel pedalando uma bicicleta"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               loading="lazy"
             />
           ) : (
