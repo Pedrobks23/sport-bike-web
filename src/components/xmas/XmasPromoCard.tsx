@@ -57,7 +57,7 @@ export default function XmasPromoCard({
   }
 
   return (
-    <div className="relative w-full max-w-5xl overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 via-amber-400 to-green-600 shadow-2xl">
+    <div className="relative w-full max-w-4xl md:max-h-[80vh] overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 via-amber-400 to-green-600 shadow-2xl">
       <button
         type="button"
         aria-label="Fechar"

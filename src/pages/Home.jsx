@@ -294,7 +294,7 @@ export default function Home() {
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {showXmasPromo && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 px-4 py-8 backdrop-blur-sm">
-            <div className="max-w-6xl w-full">
+            <div className="max-w-4xl w-full">
               <XmasPromoCard onClose={handleClosePromo} onActivateXmas={handleActivateXmas} />
             </div>
           </div>
