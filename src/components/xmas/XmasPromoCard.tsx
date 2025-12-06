@@ -16,9 +16,12 @@ const getGlobalXmasToggle = () => {
   return undefined
 }
 
+const DEFAULT_SANTA_PUBLIC_ID = "v1765044688/c7885ae2-3518-43cd-91b7-eb8f42a45afb"
+const DEFAULT_CLOUD_NAME = "dnep0wko7"
+
 const buildSantaUrl = (publicId?: string) => {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-  const santaId = publicId || import.meta.env.VITE_XMAS_SANTA_ID
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || DEFAULT_CLOUD_NAME
+  const santaId = publicId || import.meta.env.VITE_XMAS_SANTA_ID || DEFAULT_SANTA_PUBLIC_ID
   if (!cloudName || !santaId) return null
 
   const sanitizedId = String(santaId).replace(/^\/+/, "")
