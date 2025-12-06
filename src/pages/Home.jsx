@@ -394,22 +394,30 @@ export default function Home() {
                   >
                     Contato
                   </a>
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => handleWhatsApp("Olá! Vim através do site.")}
-                      className="text-green-500 hover:text-green-600 transition-colors"
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
-                      className="text-pink-500 hover:text-pink-600 transition-colors"
-                    >
-                      <Instagram className="w-5 h-5" />
-                    </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleWhatsApp("Olá! Vim através do site.")}
+                        className="text-green-500 hover:text-green-600 transition-colors"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
+                        className="text-pink-500 hover:text-pink-600 transition-colors"
+                      >
+                        <Instagram className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={toggleDarkMode}
+                        className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      >
+                        {isDarkMode ? "🌞" : "🌙"}
+                      </button>
+                    </div>
                     <button
                       onClick={() => setIsSnowing((prev) => !prev)}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
+                      className={`flex w-full items-center justify-center gap-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
                         isSnowing
                           ? "bg-white text-amber-600 shadow-amber-200/60"
                           : "bg-amber-100 text-amber-700 hover:bg-amber-200"
@@ -417,12 +425,6 @@ export default function Home() {
                     >
                       <span>Clima natalino</span>
                       <span>{isSnowing ? "❄️" : ""}</span>
-                    </button>
-                    <button
-                      onClick={toggleDarkMode}
-                      className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                    >
-                      {isDarkMode ? "🌞" : "🌙"}
                     </button>
                   </div>
                   <button
