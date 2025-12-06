@@ -35,6 +35,7 @@ import Silk from "../components/Silk"
 import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
 import { Link } from "react-router-dom"
 import Snowfall from "react-snowfall"
+import XmasPromoCard from "@/components/xmas/XmasPromoCard"
 
 
 export default function Home() {
@@ -47,6 +48,7 @@ export default function Home() {
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isSnowing, setIsSnowing] = useState(false)
+  const [showXmasPromo, setShowXmasPromo] = useState(false)
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -201,6 +203,12 @@ export default function Home() {
     })
   }, [featuredProducts])
 
+  useEffect(() => {
+    const today = new Date()
+    const cutoff = new Date(today.getFullYear(), 11, 30, 23, 59, 59, 999)
+    setShowXmasPromo(today <= cutoff)
+  }, [])
+
   // header scroll effect
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -269,6 +277,12 @@ export default function Home() {
     setExpandedFaq(expandedFaq === index ? null : index)
   }
 
+  const handleActivateXmas = () => {
+    setIsSnowing(true)
+  }
+
+  const handleClosePromo = () => setShowXmasPromo(false)
+
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
       {isSnowing && (
@@ -278,6 +292,13 @@ export default function Home() {
         />
       )}
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        {showXmasPromo && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 px-4 py-8 backdrop-blur-sm">
+            <div className="max-w-6xl w-full">
+              <XmasPromoCard onClose={handleClosePromo} onActivateXmas={handleActivateXmas} />
+            </div>
+          </div>
+        )}
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
           <ResponsiveContainer>
