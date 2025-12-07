@@ -57,7 +57,7 @@ export default function XmasPromoCard({
   }
 
   return (
-    <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 via-amber-400 to-green-600 shadow-2xl">
+    <div className="relative w-full max-w-4xl overflow-y-auto md:overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 via-amber-400 to-green-600 shadow-2xl max-h-[calc(100vh-2rem)] md:max-h-none">
       <button
         type="button"
         aria-label="Fechar"
@@ -88,7 +88,7 @@ export default function XmasPromoCard({
               Ative o clima natalino, para entrar no clima de natal e aproveitar com um toque especial nossas ofertas.
             </p>
           </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4">
+          <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
               onClick={handleActivate}
@@ -96,13 +96,22 @@ export default function XmasPromoCard({
             >
               Ativar clima natalino
             </button>
-            <button
-              type="button"
-              onClick={handleSeeDeals}
-              className="inline-flex w-full items-center justify-center rounded-xl border-2 border-red-500 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 sm:text-base"
-            >
-              Ver ofertas de Natal
-            </button>
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <button
+                type="button"
+                onClick={handleSeeDeals}
+                className="inline-flex w-full items-center justify-center rounded-xl border-2 border-red-500 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 sm:text-base"
+              >
+                Ver ofertas de Natal
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex w-full items-center justify-center rounded-xl bg-white/70 px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-300 sm:text-base"
+              >
+                Continuar na home normal
+              </button>
+            </div>
           </div>
         </div>
       </div>
