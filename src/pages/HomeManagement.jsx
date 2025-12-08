@@ -234,6 +234,7 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
               </div>
             </div>
           </div>
+          </div>
 
           <div
             data-slot="modal-footer"
