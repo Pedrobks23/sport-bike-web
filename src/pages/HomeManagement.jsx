@@ -17,7 +17,7 @@ import {
   Wrench,
 } from "lucide-react";
 
-import CloudinaryUploader from "@/components/CloudinaryUploader";
+import ProductImagesManager from "@/components/products/ProductImagesManager";
 
 import {
   listAllProducts,
@@ -33,8 +33,9 @@ const emptyProduct = {
   category: "",
   price: "",
   description: "",
-  // NOVO: objeto Cloudinary
-  image: null, // { url, publicId, width, height }
+  // suporte a múltiplas imagens
+  images: [],
+  image: null,
   isFeatured: false,
   visible: true,
 };
@@ -44,7 +45,17 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     ...emptyProduct,
     ...product,
     visible: product?.visible ?? true,
-    // fallback: se produto antigo tiver string em image, converte para objeto simples
+    // normaliza imagens antigas
+    images:
+      Array.isArray(product?.images) && product.images.length
+        ? product.images
+        : product?.image
+          ? [
+              typeof product.image === "string"
+                ? { id: "legacy", url: product.image, publicId: null }
+                : { id: "legacy", ...product.image },
+            ]
+          : [],
     image:
       product?.image && typeof product.image === "string"
         ? { url: product.image, publicId: null }
@@ -62,8 +73,11 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Apenas envia o objeto com image já definido pelo CloudinaryUploader
-      await onSave({ ...formData });
+      const payload = {
+        ...formData,
+        image: formData.images?.[0] || formData.image || null,
+      };
+      await onSave(payload);
       onClose();
     } catch (err) {
       console.error(err);
@@ -154,15 +168,19 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
 
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Imagem</label>
-              {/* Uploader do Cloudinary (sem URL) */}
-              <CloudinaryUploader
-                value={formData.image}
-                onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
-                folder="sportbike/featured"
+              <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
+              <ProductImagesManager
+                value={formData.images}
+                onChange={(imgs) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    images: imgs,
+                    image: imgs?.[0] || prev.image || null,
+                  }))
+                }
               />
               <p className="text-xs text-gray-500 mt-1">
-                A imagem é enviada ao Cloudinary e salva em <code>image: {"{ url, publicId, width, height }"}</code>.
+                Envie várias imagens, reordene para definir a capa (primeira posição) e preencha o texto alternativo.
               </p>
             </div>
           </div>

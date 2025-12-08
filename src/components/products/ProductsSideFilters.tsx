@@ -23,6 +23,16 @@ export default function ProductsSideFilters({
       currency: "BRL",
     })
 
+  const parsePrice = (value) => {
+    if (typeof value === "number") return value
+    const cleaned = String(value || "")
+      .replace(/R\$/gi, "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+    const num = Number(cleaned)
+    return Number.isNaN(num) ? 0 : num
+  }
+
   const minPrice = priceRange?.min ?? 0
   const maxPrice = priceRange?.max ?? 0
 
@@ -79,7 +89,7 @@ export default function ProductsSideFilters({
           <input
             type="number"
             value={minPrice}
-            onChange={(e) => onPriceChange({ ...priceRange, min: Number(e.target.value) })}
+            onChange={(e) => onPriceChange({ ...priceRange, min: parsePrice(e.target.value) })}
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
             aria-label="Preço mínimo"
           />
@@ -87,7 +97,7 @@ export default function ProductsSideFilters({
           <input
             type="number"
             value={maxPrice}
-            onChange={(e) => onPriceChange({ ...priceRange, max: Number(e.target.value) })}
+            onChange={(e) => onPriceChange({ ...priceRange, max: parsePrice(e.target.value) })}
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
             aria-label="Preço máximo"
           />

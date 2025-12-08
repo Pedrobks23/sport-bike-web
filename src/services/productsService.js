@@ -60,6 +60,7 @@ export async function listPublicProducts() {
  */
 export async function createProduct(data) {
   const now = new Date();
+  const coverImage = data.images?.[0] || data.image || null;
   const payload = {
     name: data.name ?? "",
     category: data.category ?? "",
@@ -68,7 +69,8 @@ export async function createProduct(data) {
     isFeatured: !!data.isFeatured,
     visible: data.visible !== false,
     // image: { url, publicId, width, height } | null
-    image: data.image || null,
+    image: coverImage,
+    images: Array.isArray(data.images) ? data.images : coverImage ? [coverImage] : [],
     createdAt: now,
     updatedAt: now,
   };
@@ -82,8 +84,15 @@ export async function createProduct(data) {
  */
 export async function updateProduct(id, partial) {
   const ref = doc(db, COL, id);
+  const coverImage = partial.images?.[0] || partial.image || null;
   await updateDoc(ref, {
     ...partial,
+    image: coverImage ?? null,
+    images: Array.isArray(partial.images)
+      ? partial.images
+      : coverImage
+        ? [coverImage]
+        : [],
     updatedAt: new Date(),
   });
 }

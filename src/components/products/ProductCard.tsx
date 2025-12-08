@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { useMemo, useState } from "react"
-import { Star, Tag, MessageCircle } from "lucide-react"
-import { cldFill } from "@/utils/cloudinaryUrl"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Star, Tag, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { productImgUrl } from "@/utils/productImage"
 
 const WHATSAPP_PHONE = import.meta.env.VITE_WHATSAPP_PHONE || "558532677425"
 
@@ -22,13 +22,31 @@ function buildWhatsappLink(product) {
   )}&type=phone_number&app_absent=0`
 }
 
-export default function ProductCard({ product, isXmas = false }) {
+export default function ProductCard({ product, isXmas = false, prefersReducedMotion = false, onOpenQuickView }) {
+  const [activeIndex, setActiveIndex] = useState(0)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
+  const cardRef = useRef(null)
 
-  const imgUrl = useMemo(() => {
-    const img = typeof product?.image === "string" ? { url: product.image } : product?.image
-    return cldFill(img, { w: 600, h: 600 })
+  const images = useMemo(() => {
+    const base = Array.isArray(product?.images) ? product.images : []
+    const legacy = product?.image ? [product.image] : []
+    const merged = [...base, ...legacy].filter(Boolean)
+    if (!merged.length) return []
+    return merged.map((img, idx) => {
+      if (typeof img === "string") return { id: `img-${idx}`, url: img }
+      return { id: img.id || `img-${idx}`, ...img }
+    })
   }, [product])
+
+  const activeImage = images[activeIndex] || images[0]
+
+  const cardImgUrl = useMemo(() => {
+    if (!activeImage) return null
+    if (activeImage.publicId) return productImgUrl(activeImage.publicId, "card")
+    return activeImage.url || null
+  }, [activeImage])
 
   const promoPrice = product?.promoPrice ?? product?.salePrice
   const hasPromoFlag = product?.promo === true || product?.promoNatal === true || product?.tags?.includes?.("natal")
@@ -44,17 +62,62 @@ export default function ProductCard({ product, isXmas = false }) {
 
   const rating = Number(product?.rating || product?.stars || 0)
 
+  useEffect(() => {
+    if (!cardRef.current) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry?.isIntersecting !== false)
+      },
+      { threshold: 0.25 }
+    )
+    obs.observe(cardRef.current)
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (prefersReducedMotion) return
+    if (!images.length || images.length < 2) return
+    if (!isVisible || isHovered) return
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % images.length)
+      setIsImageLoaded(false)
+    }, 3500)
+    return () => clearInterval(timer)
+  }, [images.length, isHovered, isVisible, prefersReducedMotion])
+
+  useEffect(() => {
+    if (activeIndex >= images.length) setActiveIndex(0)
+  }, [images.length, activeIndex])
+
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100" style={{ minHeight: 240 }}>
-        {imgUrl ? (
+    <article
+      ref={cardRef}
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className="relative w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
+        style={{ minHeight: 240 }}
+        onClick={() => onOpenQuickView?.(product)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onOpenQuickView?.(product)
+          }
+        }}
+        aria-label={`Abrir detalhes rápidos de ${product?.name || "produto"}`}
+      >
+        {cardImgUrl ? (
           <img
-            src={imgUrl}
-            alt={product?.name || "Produto"}
+            src={cardImgUrl}
+            alt={activeImage?.alt || product?.name || "Produto"}
             loading="lazy"
             decoding="async"
-            width={600}
-            height={600}
+            width={640}
+            height={480}
             onLoad={() => setIsImageLoaded(true)}
             className={`h-64 w-full object-cover object-center transition duration-500 ease-out ${
               isImageLoaded ? "opacity-100" : "opacity-0"
@@ -63,14 +126,65 @@ export default function ProductCard({ product, isXmas = false }) {
         ) : (
           <div className="flex h-64 w-full items-center justify-center text-sm text-gray-500">Sem imagem</div>
         )}
-        {!isImageLoaded && imgUrl && (
+        {!isImageLoaded && cardImgUrl && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-200 to-gray-300" aria-hidden />
+        )}
+
+        {images.length > 1 && (
+          <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-2">
+            {images.map((img, idx) => (
+              <button
+                key={img.id}
+                type="button"
+                className={`h-2.5 w-2.5 rounded-full border border-white transition ${
+                  idx === activeIndex ? "bg-white" : "bg-white/50"
+                }`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setActiveIndex(idx)
+                  setIsImageLoaded(false)
+                }}
+                aria-label={`Mostrar imagem ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow transition hover:bg-white"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsImageLoaded(false)
+                setActiveIndex((prev) => (prev - 1 + images.length) % images.length)
+              }}
+              aria-label="Imagem anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow transition hover:bg-white"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsImageLoaded(false)
+                setActiveIndex((prev) => (prev + 1) % images.length)
+              }}
+              aria-label="Próxima imagem"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
         )}
 
         <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-2">
           {isOnSale && (
             <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white shadow">
-              🎁 Oferta de Natal
+              Oferta de Natal
             </span>
           )}
           {product?.category && (
@@ -120,7 +234,14 @@ export default function ProductCard({ product, isXmas = false }) {
           </button>
           <button
             className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:border-amber-400 hover:text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-            onClick={() => window.open(product?.link || buildWhatsappLink(product), "_blank")}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (onOpenQuickView) {
+                onOpenQuickView(product)
+                return
+              }
+              window.open(product?.link || buildWhatsappLink(product), "_blank")
+            }}
           >
             Ver detalhes
           </button>

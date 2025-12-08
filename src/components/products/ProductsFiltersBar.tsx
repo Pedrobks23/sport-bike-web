@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { useMemo } from "react"
 import { Search, ChevronDown } from "lucide-react"
 
 const sortOptions = [
@@ -15,19 +14,18 @@ export default function ProductsFiltersBar({
   onSearchChange,
   sort,
   onSortChange,
-  quickFilters,
-  onToggleQuick,
   topOffset = 96,
+  quickCategories = [],
+  quickBrands = [],
+  quickSizes = [],
+  selectedCategory,
+  selectedBrands = [],
+  selectedSizes = [],
+  onSelectCategory,
+  onSelectBrand,
+  onSelectSize,
 }) {
-  const chips = useMemo(
-    () => [
-      { key: "stock", label: "Em estoque" },
-      { key: "promo", label: "Promoção" },
-      { key: "frete", label: "Frete grátis" },
-    ],
-    []
-  )
-
+  
   return (
     <div
       className="sticky z-30 rounded-2xl border border-gray-200 bg-white/95 shadow-sm backdrop-blur"
@@ -46,21 +44,69 @@ export default function ProductsFiltersBar({
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {chips.map((chip) => (
-            <button
-              key={chip.key}
-              onClick={() => onToggleQuick(chip.key)}
-              className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
-                quickFilters?.[chip.key]
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
-              }`}
-              aria-pressed={quickFilters?.[chip.key] ? "true" : "false"}
-            >
-              {chip.label}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+          {quickCategories?.length ? (
+            <div className="flex flex-wrap items-center gap-2" aria-label="Categorias rápidas">
+              {quickCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => onSelectCategory?.(cat)}
+                  className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
+                    selectedCategory === cat
+                      ? "border-amber-300 bg-amber-100 text-amber-800"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
+                  }`}
+                  aria-pressed={selectedCategory === cat}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {quickBrands?.length ? (
+            <div className="flex flex-wrap items-center gap-2" aria-label="Marcas rápidas">
+              {quickBrands.map((brand) => {
+                const active = selectedBrands.includes(brand)
+                return (
+                  <button
+                    key={brand}
+                    onClick={() => onSelectBrand?.(brand)}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
+                      active
+                        ? "border-amber-300 bg-amber-100 text-amber-800"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {brand}
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
+
+          {quickSizes?.length ? (
+            <div className="flex flex-wrap items-center gap-2" aria-label="Aro rápido">
+              {quickSizes.map((size) => {
+                const active = selectedSizes.includes(size)
+                return (
+                  <button
+                    key={size}
+                    onClick={() => onSelectSize?.(size)}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
+                      active
+                        ? "border-amber-300 bg-amber-100 text-amber-800"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    Aro {size}
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
         </div>
 
         <div className="relative">

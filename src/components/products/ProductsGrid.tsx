@@ -79,10 +79,19 @@ function Pagination({ page, totalPages, onChange }) {
   )
 }
 
-export default function ProductsGrid({ products, loading, isXmas, page, totalPages, onPageChange }) {
+export default function ProductsGrid({
+  products,
+  loading,
+  isXmas,
+  page,
+  totalPages,
+  onPageChange,
+  prefersReducedMotion = false,
+  onOpenQuickView,
+}) {
   if (loading) {
     return (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(340px,1fr))]">
         {Array.from({ length: 8 }).map((_, idx) => (
           <SkeletonCard key={idx} />
         ))}
@@ -101,9 +110,15 @@ export default function ProductsGrid({ products, loading, isXmas, page, totalPag
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(340px,1fr))]">
         {products.map((p) => (
-          <ProductCard key={p.id} product={p} isXmas={isXmas} />
+          <ProductCard
+            key={p.id}
+            product={p}
+            isXmas={isXmas}
+            prefersReducedMotion={prefersReducedMotion}
+            onOpenQuickView={onOpenQuickView}
+          />
         ))}
       </div>
       <Pagination page={page} totalPages={totalPages} onChange={onPageChange} />

@@ -1,6 +1,6 @@
 // src/components/FeaturedProductsPublic.jsx
 import { useEffect, useState } from "react";
-import { cldFill } from "@/utils/cloudinaryUrl";
+import { productImgUrl } from "@/utils/productImage";
 import { listPublicProducts } from "@/services/productsService";
 
 export default function FeaturedProductsPublic() {
@@ -43,19 +43,23 @@ export default function FeaturedProductsPublic() {
 
       {/* Grid simples (pode trocar por seu carrossel depois) */}
       <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {items.map((p) => {
-          const url = cldFill(
-            typeof p.image === "string" ? { url: p.image } : p.image,
-            { w: 640, h: 480 }
-          );
+        {items.map((p, idx) => {
+          const images = Array.isArray(p.images) ? p.images : p.image ? [p.image] : [];
+          const cover = images[0];
+          const url = cover?.publicId
+            ? productImgUrl(cover.publicId, "card")
+            : cover?.url || (typeof cover === "string" ? cover : null);
           return (
-            <article key={p.id} className="bg-white rounded-xl border overflow-hidden shadow">
+            <article key={p.id || idx} className="bg-white rounded-xl border overflow-hidden shadow">
               {url && (
                 <img
                   src={url}
                   alt={p.name}
                   className="w-full h-56 object-cover object-center"
                   loading="lazy"
+                  decoding="async"
+                  width={640}
+                  height={480}
                 />
               )}
               <div className="p-4">
