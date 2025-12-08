@@ -49,7 +49,11 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     ...product,
     visible: product?.visible ?? true,
     features: product?.features || [],
-    featuresText: product?.featuresText || "",
+    featuresText:
+      product?.featuresText ||
+      (Array.isArray(product?.features) && product.features.length
+        ? product.features.join("\n")
+        : ""),
     // normaliza imagens antigas
     images:
       Array.isArray(product?.images) && product.images.length
@@ -84,10 +88,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
         ? formData.images.map(({ objectPosition, ...rest }) => rest)
         : []
       const { features, featuresText } = deriveFeaturesPayload(
-        formData.features && formData.features.length
-          ? formData.features
-          : formData.featuresText,
-        formData.featuresText
+        formData.featuresText || formData.features,
+        formData.featuresText || (Array.isArray(formData.features) ? formData.features.join("\n") : "")
       )
       const payload = {
         ...formData,
