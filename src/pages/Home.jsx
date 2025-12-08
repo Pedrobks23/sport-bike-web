@@ -46,6 +46,7 @@ export default function Home() {
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
   const [expandedFaq, setExpandedFaq] = useState(null)
   const [showXmasPromo, setShowXmasPromo] = useState(false)
+  const [dismissedXmasBar, setDismissedXmasBar] = useState(false)
 
   const XMAS_PROMO_SEEN_KEY = "xmas_promo_seen"
 
@@ -206,6 +207,11 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    const dismissed = localStorage.getItem("xmas_bar_dismissed") === "true"
+    setDismissedXmasBar(dismissed)
+  }, [])
+
+  useEffect(() => {
     if (showXmasPromo) {
       localStorage.setItem(XMAS_PROMO_SEEN_KEY, "true")
     }
@@ -278,7 +284,7 @@ export default function Home() {
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
       {isSnowing && !prefersReducedMotion && (
         <Snowfall
-          style={{ position: "fixed", width: "100vw", height: "100vh", zIndex: 60, pointerEvents: "none" }}
+          style={{ position: "fixed", width: "100vw", height: "100vh", inset: 0, zIndex: 20, pointerEvents: "none" }}
           snowflakeCount={180}
         />
       )}
@@ -305,12 +311,25 @@ export default function Home() {
             </div>
           </ResponsiveContainer>
         </div>
-        {isSnowing && (
-          <div className="hidden md:block">
-            <div className="fixed left-1/2 top-24 z-40 mx-auto flex w-full max-w-3xl -translate-x-1/2 items-center gap-3 rounded-full bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 dark:ring-white/10">
-              <span className="text-lg">🎄</span>
-              <span className="tracking-wide">Clima natalino ativado! Luzes, neve e boas festas.</span>
-              <span className="text-lg">✨</span>
+        {isSnowing && !dismissedXmasBar && (
+          <div className="fixed left-1/2 z-[60] w-[min(90vw,1100px)] max-w-screen-lg -translate-x-1/2 px-4">
+            <div
+              className="mt-2 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/10 dark:ring-white/10"
+              style={{ top: "var(--navbar-h, 64px)", position: "fixed", left: "50%", transform: "translateX(-50%)" }}
+            >
+              <span className="text-base sm:text-lg">🎄</span>
+              <span className="tracking-wide text-xs sm:text-sm">Clima natalino ativado! Luzes, neve e boas festas.</span>
+              <span className="text-base sm:text-lg">✨</span>
+              <button
+                onClick={() => {
+                  setDismissedXmasBar(true)
+                  localStorage.setItem("xmas_bar_dismissed", "true")
+                }}
+                className="ml-auto rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                aria-label="Fechar aviso de clima natalino"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         )}

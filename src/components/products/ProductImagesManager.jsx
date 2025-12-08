@@ -70,7 +70,7 @@ export default function ProductImagesManager({ value = [], onChange }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 max-h-[50vh] overflow-y-auto pr-1">
         {images.map((img, idx) => (
           <div
             key={img.id}

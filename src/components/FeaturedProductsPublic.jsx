@@ -49,7 +49,7 @@ export default function FeaturedProductsPublic() {
           const cover = images[0];
           return (
             <article key={p.id || idx} className="bg-white rounded-xl border overflow-hidden shadow">
-              <div className="w-full h-56 sm:h-64">
+              <div className="w-full h-48 sm:h-56">
                 <ProductImage
                   publicId={cover?.publicId}
                   secureUrl={cover?.secureUrl}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Instagram, Menu, MessageCircle, X } from "lucide-react"
 import ResponsiveContainer from "../ResponsiveContainer"
@@ -17,10 +17,25 @@ export default function MainNavbar({ isScrolled = false }) {
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { isXmasMode, toggleXmas, isDarkMode, toggleDarkMode } = useUI()
+  const headerRef = useRef(null)
 
   useEffect(() => {
     setIsMenuOpen(false)
   }, [location.pathname, location.hash])
+
+  useEffect(() => {
+    const headerEl = headerRef.current
+    if (!headerEl) return
+
+    const setVar = () => {
+      const h = headerEl.getBoundingClientRect().height
+      document.documentElement.style.setProperty("--navbar-h", `${h}px`)
+    }
+
+    setVar()
+    window.addEventListener("resize", setVar)
+    return () => window.removeEventListener("resize", setVar)
+  }, [])
 
   const navItems = useMemo(
     () => [
@@ -54,11 +69,10 @@ export default function MainNavbar({ isScrolled = false }) {
 
   return (
     <header
-      className={`sticky top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/85 dark:bg-gray-900/80 backdrop-blur-md shadow-lg border-b border-white/20 dark:border-gray-700/20"
-          : "bg-transparent"
-      }`}
+      ref={headerRef}
+      className={`sticky top-0 w-full z-50 border-b border-white/20 dark:border-white/10 shadow-md supports-[backdrop-filter]:bg-white/40 supports-[backdrop-filter]:dark:bg-neutral-950/40 bg-white/60 dark:bg-neutral-950/40 backdrop-blur-md transition-all duration-300 ${
+        isScrolled ? "shadow-lg" : "shadow"}
+      `}
     >
       <ResponsiveContainer className="py-4">
         <div className="flex items-center justify-between">

@@ -92,8 +92,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl">
+    <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="p-6 border-b border-gray-100 dark:border-gray-800">
           <h3 className="text-xl font-bold">{isEdit ? "Editar Produto" : "Novo Produto"}</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -102,94 +102,96 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
           </p>
         </div>
 
-        <form onSubmit={submit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Nome</label>
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Preço</label>
-              <input
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Categoria</label>
-              <input
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Descrição</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-                rows={4}
-              />
+        <form onSubmit={submit} className="flex h-full flex-col">
+          <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nome</label>
+                <input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Preço</label>
+                <input
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoria</label>
+                <input
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Descrição</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="isFeatured"
+                    checked={!!formData.isFeatured}
+                    onChange={handleChange}
+                  />
+                  <span>
+                    Aparecer no carrossel de <b>destaque</b>
+                  </span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="visible"
+                    checked={formData.visible !== false}
+                    onChange={handleChange}
+                  />
+                  <span>
+                    Produto <b>visível</b> (exibe o card na Home)
+                  </span>
+                </label>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2 pt-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="isFeatured"
-                  checked={!!formData.isFeatured}
-                  onChange={handleChange}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
+                <ProductImagesManager
+                  value={formData.images}
+                  onChange={(imgs) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      images: imgs,
+                      image: imgs?.[0] || prev.image || null,
+                    }))
+                  }
                 />
-                <span>
-                  Aparecer no carrossel de <b>destaque</b>
-                </span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="visible"
-                  checked={formData.visible !== false}
-                  onChange={handleChange}
-                />
-                <span>
-                  Produto <b>visível</b> (exibe o card na Home)
-                </span>
-              </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Envie várias imagens, reordene para definir a capa (primeira posição) e preencha o texto alternativo.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
-              <ProductImagesManager
-                value={formData.images}
-                onChange={(imgs) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    images: imgs,
-                    image: imgs?.[0] || prev.image || null,
-                  }))
-                }
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Envie várias imagens, reordene para definir a capa (primeira posição) e preencha o texto alternativo.
-              </p>
-            </div>
-          </div>
-
-          <div className="md:col-span-2 flex justify-end gap-3 pt-4">
+          <div className="sticky bottom-0 z-10 border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur px-6 py-4 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
