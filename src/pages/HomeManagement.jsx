@@ -108,7 +108,7 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4 overscroll-contain">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col">
+      <div className="relative flex w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-gray-900 max-h-[90vh] md:max-h-[85vh]">
         <div className="p-6 border-b border-gray-100 dark:border-gray-800">
           <h3 className="text-xl font-bold">{isEdit ? "Editar Produto" : "Novo Produto"}</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -118,8 +118,12 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
         </div>
 
         <form onSubmit={submit} className="flex h-full flex-col">
-          <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
+          <div
+            data-slot="modal-body"
+            className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 md:px-6 md:py-6"
+          >
+            <div className="grid min-h-0 grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="min-h-0 space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Nome</label>
                 <input
@@ -160,7 +164,7 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
                 />
               </div>
 
-              <div className="max-h-[40vh] overflow-y-auto pr-1">
+              <div className="min-h-0 max-h-[40vh] overflow-y-auto pr-1">
                 <label className="block text-sm font-medium mb-1">Características (uma por linha)</label>
                 <textarea
                   name="featuresText"
@@ -211,8 +215,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="max-h-[50vh] overflow-y-auto pr-1">
+            <div className="min-h-0 space-y-3">
+              <div className="min-h-0 max-h-[50vh] overflow-y-auto pr-1">
                 <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
                 <ProductImagesManager
                   value={formData.images}
@@ -231,7 +235,10 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
             </div>
           </div>
 
-          <div className="sticky bottom-0 z-10 border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur px-6 py-4 flex justify-end gap-3">
+          <div
+            data-slot="modal-footer"
+            className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-gray-100 bg-white/90 px-6 py-4 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90"
+          >
             <button
               type="button"
               onClick={onClose}

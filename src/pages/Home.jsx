@@ -273,17 +273,14 @@ export default function Home() {
   const showXmasBar = isSnowing && !dismissedXmasBar
 
   return (
-    <div
-      className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}
-      style={showXmasBar ? { paddingTop: "72px" } : undefined}
-    >
+    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
       {isSnowing && !prefersReducedMotion && (
         <Snowfall
           style={{ position: "fixed", width: "100vw", height: "100vh", inset: 0, zIndex: 20, pointerEvents: "none" }}
           snowflakeCount={180}
         />
       )}
-      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <div className={`bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${showXmasBar ? "pt-14" : ""}`}>
         {showXmasPromo && (
           <div className="fixed inset-0 z-[70] flex items-start md:items-center justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm">
             <div className="max-w-4xl w-full">
@@ -308,7 +305,7 @@ export default function Home() {
         </div>
         {showXmasBar && (
           <div className="fixed left-1/2 top-0 z-[60] w-[min(92vw,1100px)] max-w-screen-lg -translate-x-1/2 px-4">
-            <div className="mt-2 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/10 dark:ring-white/10">
+            <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/10 dark:ring-white/10">
               <span className="text-base sm:text-lg">🎄</span>
               <span className="tracking-wide text-xs sm:text-sm">Clima natalino ativado! Luzes, neve e boas festas.</span>
               <span className="text-base sm:text-lg">✨</span>
