@@ -1,7 +1,8 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState } from "react"
 import { X, MessageCircle, ChevronLeft, ChevronRight, Star } from "lucide-react"
-import { productImgUrl } from "@/utils/productImage"
+import { normalizeProductImages } from "@/utils/productImage"
+import { ProductImage } from "@/components/shared/ProductImage"
 
 const WHATSAPP_PHONE = import.meta.env.VITE_WHATSAPP_PHONE || "558532677425"
 
@@ -26,23 +27,19 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
   const [activeIndex, setActiveIndex] = useState(0)
 
   const images = useMemo(() => {
-    const base = Array.isArray(product?.images) ? product.images : []
-    const legacy = product?.image ? [product.image] : []
-    const merged = [...base, ...legacy].filter(Boolean)
-    if (!merged.length) return []
-    return merged.map((img, idx) => {
-      if (typeof img === "string") return { id: `img-${idx}`, url: img }
-      return { id: img.id || `img-${idx}`, ...img }
+    const base = normalizeProductImages(product?.images || [])
+    const legacy = normalizeProductImages(product?.image ? [product.image] : [])
+    const merged = [...base, ...legacy]
+    const seen = new Set()
+    return merged.filter((img) => {
+      const key = img.publicId || img.secureUrl || img.id
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
     })
   }, [product])
 
   const activeImage = images[activeIndex] || images[0]
-
-  const heroUrl = useMemo(() => {
-    if (!activeImage) return null
-    if (activeImage.publicId) return productImgUrl(activeImage.publicId, "expanded")
-    return activeImage.url || null
-  }, [activeImage])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -86,17 +83,12 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
 
         <div className="flex flex-col gap-3">
           <div className="relative flex max-h-[80vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-900">
-            {heroUrl ? (
-              <img
-                src={heroUrl}
-                alt={activeImage?.alt || product?.name || "Produto"}
-                className="max-h-[80vh] w-full object-contain object-center"
-                loading="lazy"
-                decoding="async"
-              />
-            ) : (
-              <div className="flex h-[320px] items-center justify-center text-sm text-gray-500">Sem imagem</div>
-            )}
+            <ProductImage
+              publicId={activeImage?.publicId}
+              secureUrl={activeImage?.secureUrl}
+              alt={activeImage?.alt || product?.name || "Produto"}
+              role="modal"
+            />
             {images.length > 1 && (
               <div className="absolute left-0 right-0 top-1/2 flex -translate-y-1/2 items-center justify-between px-3">
                 <button

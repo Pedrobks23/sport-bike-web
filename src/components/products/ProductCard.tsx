@@ -1,7 +1,8 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Star, Tag, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react"
-import { productImgUrl } from "@/utils/productImage"
+import { normalizeProductImages } from "@/utils/productImage"
+import { ProductImage } from "@/components/shared/ProductImage"
 
 const WHATSAPP_PHONE = import.meta.env.VITE_WHATSAPP_PHONE || "558532677425"
 
@@ -30,23 +31,24 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
   const cardRef = useRef(null)
 
   const images = useMemo(() => {
-    const base = Array.isArray(product?.images) ? product.images : []
-    const legacy = product?.image ? [product.image] : []
-    const merged = [...base, ...legacy].filter(Boolean)
+    const base = normalizeProductImages(product?.images || [])
+    const legacy = normalizeProductImages(product?.image ? [product.image] : [])
+    const merged = [...base, ...legacy]
     if (!merged.length) return []
-    return merged.map((img, idx) => {
-      if (typeof img === "string") return { id: `img-${idx}`, url: img }
-      return { id: img.id || `img-${idx}`, ...img }
+    const seen = new Set()
+    return merged.filter((img) => {
+      const key = img.publicId || img.secureUrl || img.id
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
     })
   }, [product])
 
   const activeImage = images[activeIndex] || images[0]
 
-  const cardImgUrl = useMemo(() => {
-    if (!activeImage) return null
-    if (activeImage.publicId) return productImgUrl(activeImage.publicId, "card")
-    return activeImage.url || null
-  }, [activeImage])
+  useEffect(() => {
+    setIsImageLoaded(false)
+  }, [activeImage?.publicId, activeImage?.secureUrl])
 
   const promoPrice = product?.promoPrice ?? product?.salePrice
   const hasPromoFlag = product?.promo === true || product?.promoNatal === true || product?.tags?.includes?.("natal")
@@ -109,23 +111,15 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
         }}
         aria-label={`Abrir detalhes rápidos de ${product?.name || "produto"}`}
       >
-        {cardImgUrl ? (
-          <img
-            src={cardImgUrl}
-            alt={activeImage?.alt || product?.name || "Produto"}
-            loading="lazy"
-            decoding="async"
-            width={640}
-            height={480}
-            onLoad={() => setIsImageLoaded(true)}
-            className={`h-full w-full object-contain object-center transition duration-500 ease-out ${
-              isImageLoaded ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">Sem imagem</div>
-        )}
-        {!isImageLoaded && cardImgUrl && (
+        <ProductImage
+          publicId={activeImage?.publicId}
+          secureUrl={activeImage?.secureUrl}
+          alt={activeImage?.alt || product?.name || "Produto"}
+          role="card"
+          wrapperClassName={`transition duration-500 ease-out ${isImageLoaded ? "opacity-100" : "opacity-0"}`}
+          onLoad={() => setIsImageLoaded(true)}
+        />
+        {!isImageLoaded && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-200 to-gray-300" aria-hidden />
         )}
 

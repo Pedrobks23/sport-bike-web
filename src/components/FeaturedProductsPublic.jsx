@@ -1,6 +1,7 @@
 // src/components/FeaturedProductsPublic.jsx
 import { useEffect, useState } from "react";
-import { productImgUrl } from "@/utils/productImage";
+import { normalizeProductImages } from "@/utils/productImage";
+import { ProductImage } from "@/components/shared/ProductImage";
 import { listPublicProducts } from "@/services/productsService";
 
 export default function FeaturedProductsPublic() {
@@ -44,24 +45,18 @@ export default function FeaturedProductsPublic() {
       {/* Grid simples (pode trocar por seu carrossel depois) */}
       <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {items.map((p, idx) => {
-          const images = Array.isArray(p.images) ? p.images : p.image ? [p.image] : [];
+          const images = normalizeProductImages(p?.images || (p?.image ? [p.image] : []));
           const cover = images[0];
-          const url = cover?.publicId
-            ? productImgUrl(cover.publicId, "card")
-            : cover?.url || (typeof cover === "string" ? cover : null);
           return (
             <article key={p.id || idx} className="bg-white rounded-xl border overflow-hidden shadow">
-              {url && (
-                <img
-                  src={url}
+              <div className="w-full h-56 sm:h-64">
+                <ProductImage
+                  publicId={cover?.publicId}
+                  secureUrl={cover?.secureUrl}
                   alt={p.name}
-                  className="w-full h-56 object-contain object-center bg-neutral-100"
-                  loading="lazy"
-                  decoding="async"
-                  width={640}
-                  height={480}
+                  role="card"
                 />
-              )}
+              </div>
               <div className="p-4">
                 <div className="text-xs text-gray-500">{p.category || "Sem categoria"}</div>
                 <h3 className="font-semibold">{p.name}</h3>

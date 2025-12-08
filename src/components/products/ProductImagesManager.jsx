@@ -24,6 +24,7 @@ export default function ProductImagesManager({ value = [], onChange }) {
           id: res.asset_id || res.public_id || uid(),
           publicId: res.public_id,
           url: res.secure_url,
+          secureUrl: res.secure_url,
           width: res.width,
           height: res.height,
           alt: file.name,
@@ -75,14 +76,20 @@ export default function ProductImagesManager({ value = [], onChange }) {
             key={img.id}
             className="relative flex w-40 flex-col overflow-hidden rounded-xl border bg-white shadow-sm"
           >
-            <img
-              src={img.url}
-              alt={img.alt || "Imagem do produto"}
-              className="h-28 w-full object-contain object-center bg-gray-50"
-              loading="lazy"
-              width={160}
-              height={112}
-            />
+            <div className="h-28 w-full bg-gray-50">
+              <img
+                src={
+                  (img.secureUrl || img.url) && /^(https?:)?\/\//.test(img.secureUrl || img.url)
+                    ? img.secureUrl || img.url
+                    : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='112' viewBox='0 0 160 112' fill='none'%3E%3Crect width='160' height='112' fill='%23f5f5f4'/%3E%3Cpath d='M50 80c0-15 12-27 27-27h6c15 0 27 12 27 27' stroke='%23d4d4d4' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='80' cy='50' r='24' stroke='%23d4d4d4' stroke-width='10'/%3E%3C/svg%3E"
+                }
+                alt={img.alt || "Imagem do produto"}
+                className="h-full w-full object-contain object-center"
+                loading="lazy"
+                width={160}
+                height={112}
+              />
+            </div>
             <div className="flex flex-col gap-1 p-2 text-xs text-gray-700">
               <input
                 value={img.alt || ""}
