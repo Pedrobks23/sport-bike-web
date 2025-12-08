@@ -1,8 +1,9 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import { X, MessageCircle, ChevronLeft, ChevronRight, Star } from "lucide-react"
 import { normalizeProductImages } from "@/utils/productImage"
 import { ProductImage } from "@/components/shared/ProductImage"
+import { getProductFeatures } from "@/utils/productFeatures"
 
 const WHATSAPP_PHONE = import.meta.env.VITE_WHATSAPP_PHONE || "558532677425"
 
@@ -25,6 +26,8 @@ function buildWhatsappLink(product) {
 
 export default function ProductQuickView({ product, isXmas, prefersReducedMotion, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0)
+  const [showAllFeatures, setShowAllFeatures] = useState(false)
+  const titleId = useId()
 
   const images = useMemo(() => {
     const base = normalizeProductImages(product?.images || [])
@@ -38,6 +41,10 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
       return true
     })
   }, [product])
+
+  const features = useMemo(() => getProductFeatures(product, 20), [product])
+  const displayFeatures = showAllFeatures ? features : features.slice(0, 8)
+  const hasMoreFeatures = features.length > displayFeatures.length
 
   const activeImage = images[activeIndex] || images[0]
 
@@ -58,6 +65,10 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
     }
   }, [images.length, prefersReducedMotion, onClose])
 
+  useEffect(() => {
+    if (activeIndex >= images.length) setActiveIndex(0)
+  }, [images.length, activeIndex])
+
   if (!product) return null
 
   const promoPrice = product?.promoPrice ?? product?.salePrice
@@ -71,90 +82,137 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
   const rating = Number(product?.rating || product?.stars || 0)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
-      <div className="relative grid w-full max-w-5xl gap-6 rounded-3xl bg-white p-6 shadow-2xl lg:grid-cols-2">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose?.()
+      }}
+    >
+      <div className="relative w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5 dark:bg-neutral-950">
         <button
-          className="absolute right-3 top-3 rounded-full bg-red-500 p-2 text-white shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
+          className="absolute right-3 top-3 z-10 rounded-full bg-red-500 p-2 text-white shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
           aria-label="Fechar"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="flex flex-col gap-3">
-          <div className="relative flex max-h-[80vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-900">
-            <ProductImage
-              publicId={activeImage?.publicId}
-              secureUrl={activeImage?.secureUrl}
-              alt={activeImage?.alt || product?.name || "Produto"}
-              role="modal"
-            />
-            {images.length > 1 && (
-              <div className="absolute left-0 right-0 top-1/2 flex -translate-y-1/2 items-center justify-between px-3">
-                <button
-                  className="rounded-full bg-white/85 p-2 shadow hover:bg-white"
-                  onClick={() => setActiveIndex((prev) => (prev - 1 + images.length) % images.length)}
-                  aria-label="Imagem anterior"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  className="rounded-full bg-white/85 p-2 shadow hover:bg-white"
-                  onClick={() => setActiveIndex((prev) => (prev + 1) % images.length)}
-                  aria-label="Próxima imagem"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
+        <div className="flex max-h-[90vh] flex-col">
+          <div className="grid flex-1 gap-6 overflow-y-auto p-5 lg:grid-cols-[0.95fr_1.05fr] lg:p-8">
+            <div className="flex flex-col gap-3">
+              <div className="relative w-full overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-900 lg:h-[420px] sm:h-[360px] h-[300px]">
+                <ProductImage
+                  publicId={activeImage?.publicId}
+                  secureUrl={activeImage?.secureUrl}
+                  alt={activeImage?.alt || product?.name || "Produto"}
+                  role="modal"
+                />
+                {images.length > 1 && (
+                  <div className="absolute left-0 right-0 top-1/2 flex -translate-y-1/2 items-center justify-between px-3">
+                    <button
+                      className="rounded-full bg-white/85 p-2 shadow hover:bg-white"
+                      onClick={() => setActiveIndex((prev) => (prev - 1 + images.length) % images.length)}
+                      aria-label="Imagem anterior"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      className="rounded-full bg-white/85 p-2 shadow hover:bg-white"
+                      onClick={() => setActiveIndex((prev) => (prev + 1) % images.length)}
+                      aria-label="Próxima imagem"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
+                {images.length > 1 && (
+                  <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2">
+                    {images.map((img, idx) => (
+                      <button
+                        key={img.id || idx}
+                        className={`h-2.5 w-2.5 rounded-full border border-white transition ${idx === activeIndex ? "bg-white" : "bg-white/60"}`}
+                        onClick={() => setActiveIndex(idx)}
+                        aria-label={`Mostrar imagem ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-            {images.length > 1 && (
-              <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2">
-                {images.map((img, idx) => (
-                  <button
-                    key={img.id}
-                    className={`h-2.5 w-2.5 rounded-full border border-white transition ${idx === activeIndex ? "bg-white" : "bg-white/60"}`}
-                    onClick={() => setActiveIndex(idx)}
-                    aria-label={`Mostrar imagem ${idx + 1}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Produto</p>
-            <h2 className="text-2xl font-bold text-gray-900">{product?.name || "Produto"}</h2>
-            {product?.category && <p className="text-sm text-gray-600">{product.category}</p>}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-end gap-2">
-              <span className="text-3xl font-extrabold text-gray-900">{formatBRL(displayPrice)}</span>
-              {previousPrice && <span className="text-sm text-gray-500 line-through">{formatBRL(previousPrice)}</span>}
             </div>
-            {isOnSale && (
-              <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${isXmas ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
-                Oferta de Natal
-              </span>
-            )}
-            {product?.installments && <p className="text-sm text-gray-600">{product.installments}</p>}
-            {rating > 0 && (
-              <div className="flex items-center gap-1 text-amber-500" aria-label={`Avaliação ${rating} de 5`}>
-                {Array.from({ length: 5 }).map((_, idx) => (
-                  <Star key={idx} className={`h-4 w-4 ${idx < rating ? "fill-amber-500" : "stroke-amber-300"}`} />
-                ))}
-                <span className="text-xs text-gray-600">{rating.toFixed(1)}</span>
+
+            <div className="flex flex-col gap-4">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Produto</p>
+                <h2 id={titleId} className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {product?.name || "Produto"}
+                </h2>
+                {product?.category && (
+                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                    {product.category}
+                  </span>
+                )}
               </div>
-            )}
+
+              <div className="flex flex-col gap-2">
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-extrabold text-gray-900 dark:text-white">{formatBRL(displayPrice)}</span>
+                  {previousPrice && <span className="text-sm text-gray-500 line-through">{formatBRL(previousPrice)}</span>}
+                </div>
+                {isOnSale && (
+                  <span
+                    className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                      isXmas ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
+                    }`}
+                  >
+                    Oferta de Natal
+                  </span>
+                )}
+                {product?.installments && <p className="text-sm text-gray-600 dark:text-gray-200">{product.installments}</p>}
+                {rating > 0 && (
+                  <div className="flex items-center gap-1 text-amber-500" aria-label={`Avaliação ${rating} de 5`}>
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <Star key={idx} className={`h-4 w-4 ${idx < rating ? "fill-amber-500" : "stroke-amber-300"}`} />
+                    ))}
+                    <span className="text-xs text-gray-600 dark:text-gray-200">{rating.toFixed(1)}</span>
+                  </div>
+                )}
+              </div>
+
+              {product?.description && (
+                <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700 dark:bg-gray-900/70 dark:text-gray-100">
+                  {product.description}
+                </p>
+              )}
+
+              {features.length > 0 && (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">Sobre este item</h3>
+                    <span className="text-xs text-gray-500">{features.length} itens</span>
+                  </div>
+                  <ul className="mt-3 list-disc space-y-1.5 pl-6 text-[15px] leading-6 text-gray-800 dark:text-gray-100">
+                    {displayFeatures.map((feat, idx) => (
+                      <li key={idx}>{feat}</li>
+                    ))}
+                  </ul>
+                  {hasMoreFeatures && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllFeatures((prev) => !prev)}
+                      className="mt-3 text-sm font-semibold text-amber-600 hover:text-amber-700 focus:outline-none"
+                    >
+                      {showAllFeatures ? "Ver menos" : "Ver mais"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {product?.description && (
-            <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">{product.description}</p>
-          )}
-
-          <div className="flex flex-wrap gap-3">
+          <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t border-gray-100 bg-white/95 px-5 py-4 shadow-inner backdrop-blur supports-[backdrop-filter]:bg-white/85 dark:border-gray-800 dark:bg-neutral-950/90 lg:flex-row">
             <button
               onClick={() => window.open(buildWhatsappLink(product), "_blank")}
               className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow transition focus:outline-none focus:ring-2 focus:ring-offset-2 ${
@@ -165,7 +223,7 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
             </button>
             <button
               onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:border-amber-400 hover:text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+              className="flex-1 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:border-amber-400 hover:text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:border-gray-800 dark:text-gray-100"
             >
               Fechar
             </button>

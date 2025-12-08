@@ -48,8 +48,11 @@ export default function FeaturedProductsPublic() {
           const images = normalizeProductImages(p?.images || (p?.image ? [p.image] : []));
           const cover = images[0];
           return (
-            <article key={p.id || idx} className="bg-white rounded-xl border overflow-hidden shadow">
-              <div className="w-full h-48 sm:h-56">
+            <article
+              key={p.id || idx}
+              className="flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow dark:border-gray-800 dark:bg-neutral-900"
+            >
+              <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-neutral-100 dark:bg-neutral-900">
                 <ProductImage
                   publicId={cover?.publicId}
                   secureUrl={cover?.secureUrl}
@@ -57,14 +60,12 @@ export default function FeaturedProductsPublic() {
                   role="card"
                 />
               </div>
-              <div className="p-4">
-                <div className="text-xs text-gray-500">{p.category || "Sem categoria"}</div>
-                <h3 className="font-semibold">{p.name}</h3>
-                <div className="text-amber-600 font-bold">
-                  {p.price || "—"}
-                </div>
+              <div className="p-4 space-y-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400">{p.category || "Sem categoria"}</div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-50">{p.name}</h3>
+                <div className="text-amber-600 font-bold">{p.price || "—"}</div>
                 {p.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2 mt-1">{p.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">{p.description}</p>
                 )}
               </div>
             </article>

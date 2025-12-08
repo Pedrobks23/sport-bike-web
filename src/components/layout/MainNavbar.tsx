@@ -70,7 +70,7 @@ export default function MainNavbar({ isScrolled = false }) {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 inset-x-0 z-50 w-full border-b border-white/20 dark:border-white/10 shadow-md supports-[backdrop-filter]:bg-white/40 supports-[backdrop-filter]:dark:bg-neutral-950/40 bg-white/60 dark:bg-neutral-950/40 backdrop-blur-md transition-all duration-300 ${
+      className={`relative z-50 w-full border-b border-white/20 dark:border-white/10 shadow-md supports-[backdrop-filter]:bg-white/40 supports-[backdrop-filter]:dark:bg-neutral-950/40 bg-white/60 dark:bg-neutral-950/40 backdrop-blur-md transition-all duration-300 ${
         isScrolled ? "shadow-lg" : "shadow"
       }`}
     >

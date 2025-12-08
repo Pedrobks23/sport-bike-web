@@ -1,6 +1,7 @@
 // src/pages/HomeManagement.jsx
 "use client";
 import { cldFill } from "@/utils/cloudinaryUrl";
+import { deriveFeaturesPayload, getProductFeatures } from "@/utils/productFeatures";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -33,6 +34,8 @@ const emptyProduct = {
   category: "",
   price: "",
   description: "",
+  features: [],
+  featuresText: "",
   // suporte a múltiplas imagens
   images: [],
   image: null,
@@ -45,6 +48,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     ...emptyProduct,
     ...product,
     visible: product?.visible ?? true,
+    features: product?.features || [],
+    featuresText: product?.featuresText || "",
     // normaliza imagens antigas
     images:
       Array.isArray(product?.images) && product.images.length
@@ -64,6 +69,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const featurePreview = getProductFeatures(formData, 20);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
@@ -76,8 +83,16 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
       const sanitizedImages = Array.isArray(formData.images)
         ? formData.images.map(({ objectPosition, ...rest }) => rest)
         : []
+      const { features, featuresText } = deriveFeaturesPayload(
+        formData.features && formData.features.length
+          ? formData.features
+          : formData.featuresText,
+        formData.featuresText
+      )
       const payload = {
         ...formData,
+        features,
+        featuresText,
         images: sanitizedImages,
         image: sanitizedImages?.[0] || formData.image || null,
       };
@@ -143,6 +158,31 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
                   className="w-full border rounded px-3 py-2"
                   rows={4}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Características (uma por linha)</label>
+                <textarea
+                  name="featuresText"
+                  value={formData.featuresText}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                  rows={6}
+                  placeholder={"Quadro alumínio 6061\n24 marchas indexadas\nAro 29 tubeless-ready"}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Uma característica por linha. Máx. 20 itens. ({featurePreview.length} válidas)
+                </p>
+                {featurePreview.length > 0 && (
+                  <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                    <p className="font-semibold mb-2">Pré-visualização</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {featurePreview.map((feat, idx) => (
+                        <li key={idx}>{feat}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-2 pt-2">

@@ -30,7 +30,8 @@ import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
 import ResponsiveContainer from "../components/ResponsiveContainer"
 import Silk from "../components/Silk"
-import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
+import { normalizeProductImages } from "@/utils/productImage"
+import { ProductImage } from "@/components/shared/ProductImage"
 import { Link } from "react-router-dom"
 import Snowfall from "react-snowfall"
 import XmasPromoCard from "@/components/xmas/XmasPromoCard"
@@ -166,9 +167,8 @@ export default function Home() {
         (list || [])
           .filter((p) => p && p.visible !== false) // respeita visibilidade
           .map((p) => {
-            const imgObj = typeof p.image === "string" ? { url: p.image } : p.image
-            const displayUrl = cldFill(imgObj, { w: 800, h: 600 })
-            return { ...p, displayUrl }
+            const coverImage = normalizeProductImages(p?.images || (p?.image ? [p.image] : []))?.[0] || null
+            return { ...p, coverImage }
           })
 
       try {
@@ -186,16 +186,6 @@ export default function Home() {
     }
     fetchData()
   }, [])
-
-  // Preload das imagens dos destaques
-  useEffect(() => {
-    featuredProducts.forEach((p) => {
-      if (p?.displayUrl) {
-        const img = new Image()
-        img.src = p.displayUrl
-      }
-    })
-  }, [featuredProducts])
 
   useEffect(() => {
     const today = new Date()
@@ -412,6 +402,9 @@ export default function Home() {
                         : "bg-gradient-to-r from-amber-400 to-amber-500 border-transparent"
                     }`}
                   >
+                    {featuredProducts[currentProduct] && (
+                      <div className="sr-only">{featuredProducts[currentProduct].name}</div>
+                    )}
                     {isSnowing && (
                       <div className="absolute inset-0 pointer-events-none opacity-70">
                         <div className="absolute top-4 left-6 right-6 h-2 rounded-full bg-gradient-to-r from-green-300 via-red-200 to-green-300 blur-sm"></div>
@@ -420,11 +413,11 @@ export default function Home() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center md:items-stretch">
                       <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20 h-full flex">
                         <div className="relative w-full h-72 sm:h-96 md:h-full">
-                          <img
-                            src={featuredProducts[currentProduct].displayUrl || ""}
-                            alt={featuredProducts[currentProduct].name}
-                            className="absolute inset-0 w-full h-full object-cover object-center"
-                            loading="lazy"
+                          <ProductImage
+                            publicId={featuredProducts[currentProduct]?.coverImage?.publicId}
+                            secureUrl={featuredProducts[currentProduct]?.coverImage?.secureUrl}
+                            alt={featuredProducts[currentProduct]?.coverImage?.alt || featuredProducts[currentProduct]?.name || "Produto em destaque"}
+                            role="modal"
                           />
                         </div>
                       </div>
