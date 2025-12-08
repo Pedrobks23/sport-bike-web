@@ -3,21 +3,14 @@ import { Sparkles } from "lucide-react"
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 const DEFAULT_BG_PUBLIC_ID = "v1765170667/background_natalG_rt61qo"
-const DEFAULT_SANTA_ID = "xmas/santa-bike-v1"
 
 function buildHeroUrl() {
   if (!CLOUD_NAME) return null
   return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,c_fill,g_auto,w_1920,h_480/${DEFAULT_BG_PUBLIC_ID}.png`
 }
 
-function buildSantaUrl() {
-  if (!CLOUD_NAME) return null
-  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,c_fit,w_520/${DEFAULT_SANTA_ID}.png`
-}
-
 export default function ProductsXmasHero({ onSeeDeals }) {
   const heroUrl = buildHeroUrl()
-  const santaUrl = buildSantaUrl()
   const fallbackGradient = "linear-gradient(120deg, #0f5132 0%, #198754 40%, #b42318 100%)"
 
   return (
@@ -30,7 +23,7 @@ export default function ProductsXmasHero({ onSeeDeals }) {
       <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/80 via-emerald-800/70 to-red-900/70" aria-hidden />
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_45%)]" aria-hidden />
 
-      <div className="relative z-10 grid gap-6 md:grid-cols-2 md:items-center">
+      <div className="relative z-10 grid gap-6 md:grid-cols-1 md:items-center">
         <div className="space-y-4">
           <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold uppercase tracking-wide text-amber-200">
             <Sparkles className="h-4 w-4" /> Natal Sport Bike
@@ -52,19 +45,6 @@ export default function ProductsXmasHero({ onSeeDeals }) {
               <span role="img" aria-label="Neve">❄️</span> Flocos suaves e cores especiais
             </div>
           </div>
-        </div>
-        <div className="relative flex justify-center md:justify-end">
-          {santaUrl ? (
-            <img
-              src={santaUrl}
-              alt="Papai Noel pedalando uma bicicleta"
-              loading="lazy"
-              decoding="async"
-              className="max-h-[260px] w-auto drop-shadow-2xl"
-            />
-          ) : (
-            <div className="h-52 w-full max-w-md rounded-2xl bg-gradient-to-br from-white/30 to-white/10" />
-          )}
         </div>
       </div>
     </section>

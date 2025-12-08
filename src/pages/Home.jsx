@@ -306,8 +306,8 @@ export default function Home() {
           </ResponsiveContainer>
         </div>
         {isSnowing && (
-          <div className="mt-20 hidden md:block">
-            <div className="mx-auto flex max-w-4xl items-center gap-3 rounded-full bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 dark:ring-white/10">
+          <div className="hidden md:block">
+            <div className="fixed left-1/2 top-24 z-40 mx-auto flex w-full max-w-3xl -translate-x-1/2 items-center gap-3 rounded-full bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 dark:ring-white/10">
               <span className="text-lg">🎄</span>
               <span className="tracking-wide">Clima natalino ativado! Luzes, neve e boas festas.</span>
               <span className="text-lg">✨</span>
@@ -316,7 +316,7 @@ export default function Home() {
         )}
 
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-12 md:pt-16">
           <div className="absolute inset-0">
             <div className="absolute inset-0 pointer-events-none">
               <Silk

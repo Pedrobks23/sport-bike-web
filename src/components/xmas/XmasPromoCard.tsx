@@ -71,7 +71,8 @@ export default function XmasPromoCard({
           {santaImageUrl ? (
             <img
               src={santaImageUrl}
-              alt="Papai Noel pedalando uma bicicleta"
+              alt=""
+              aria-hidden="true"
               className="h-full w-full object-contain"
               loading="lazy"
             />

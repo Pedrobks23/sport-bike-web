@@ -93,6 +93,7 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
                 className="h-[320px] w-full object-cover md:h-[420px]"
                 loading="lazy"
                 decoding="async"
+                style={{ objectPosition: activeImage?.objectPosition || "center center" }}
               />
             ) : (
               <div className="flex h-[320px] items-center justify-center text-sm text-gray-500">Sem imagem</div>

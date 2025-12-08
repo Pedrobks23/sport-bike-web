@@ -49,13 +49,15 @@ export default function FeaturedProductsPublic() {
           const url = cover?.publicId
             ? productImgUrl(cover.publicId, "card")
             : cover?.url || (typeof cover === "string" ? cover : null);
+          const objectPosition = cover?.objectPosition || "center center";
           return (
             <article key={p.id || idx} className="bg-white rounded-xl border overflow-hidden shadow">
               {url && (
                 <img
                   src={url}
                   alt={p.name}
-                  className="w-full h-56 object-cover object-center"
+                  className="w-full h-56 object-cover"
+                  style={{ objectPosition }}
                   loading="lazy"
                   decoding="async"
                   width={640}
