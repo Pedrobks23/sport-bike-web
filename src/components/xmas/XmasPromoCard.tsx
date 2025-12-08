@@ -109,7 +109,7 @@ export default function XmasPromoCard({
                 onClick={onClose}
                 className="inline-flex w-full items-center justify-center rounded-xl bg-white/70 px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-300 sm:text-base"
               >
-                Continuar na home normal
+                Ficar na página principal
               </button>
             </div>
           </div>

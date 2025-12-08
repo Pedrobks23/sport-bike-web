@@ -50,6 +50,9 @@ export default function Home() {
   const [isSnowing, setIsSnowing] = useState(false)
   const [showXmasPromo, setShowXmasPromo] = useState(false)
 
+  const XMAS_MODE_KEY = "xmas_mode_enabled"
+  const XMAS_PROMO_SEEN_KEY = "xmas_promo_seen"
+
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [showFeatured, setShowFeatured] = useState(true)
@@ -165,6 +168,14 @@ export default function Home() {
     }
   }, [])
 
+  // restore xmas mode preference
+  useEffect(() => {
+    const savedSnow = localStorage.getItem(XMAS_MODE_KEY)
+    if (savedSnow === "true") {
+      setIsSnowing(true)
+    }
+  }, [])
+
   // carrega destaques (usa Cloudinary quando houver)
   useEffect(() => {
     const fetchData = async () => {
@@ -204,10 +215,23 @@ export default function Home() {
   }, [featuredProducts])
 
   useEffect(() => {
+    localStorage.setItem(XMAS_MODE_KEY, isSnowing ? "true" : "false")
+  }, [isSnowing])
+
+  useEffect(() => {
     const today = new Date()
     const cutoff = new Date(today.getFullYear(), 11, 30, 23, 59, 59, 999)
-    setShowXmasPromo(today <= cutoff)
+    const hasSeen = localStorage.getItem(XMAS_PROMO_SEEN_KEY) === "true"
+    if (today <= cutoff && !hasSeen) {
+      setShowXmasPromo(true)
+    }
   }, [])
+
+  useEffect(() => {
+    if (showXmasPromo) {
+      localStorage.setItem(XMAS_PROMO_SEEN_KEY, "true")
+    }
+  }, [showXmasPromo])
 
   // header scroll effect
   useEffect(() => {
