@@ -28,7 +28,7 @@ export default function ProductsFiltersBar({
 
   return (
     <div
-      className="sticky z-30"
+      className="z-30 md:sticky"
       style={{ top: topOffset }}
       aria-label="Barra de busca e filtros"
     >
