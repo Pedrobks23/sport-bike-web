@@ -282,7 +282,7 @@ export default function Home() {
           snowflakeCount={180}
         />
       )}
-      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 pt-20">
+      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {showXmasPromo && (
           <div className="fixed inset-0 z-[70] flex items-start md:items-center justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm">
             <div className="max-w-4xl w-full">
@@ -290,6 +290,8 @@ export default function Home() {
             </div>
           </div>
         )}
+        {/* Header */}
+        <MainNavbar isScrolled={isScrolled} />
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
           <ResponsiveContainer>
@@ -303,9 +305,6 @@ export default function Home() {
             </div>
           </ResponsiveContainer>
         </div>
-
-        {/* Header */}
-        <MainNavbar isScrolled={isScrolled} />
         {isSnowing && (
           <div className="mt-20 hidden md:block">
             <div className="mx-auto flex max-w-4xl items-center gap-3 rounded-full bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 dark:ring-white/10">

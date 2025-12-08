@@ -305,7 +305,7 @@ export default function ProductsPublic() {
 
       <MainNavbar isScrolled />
 
-      <main className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-28">
+      <main className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-12">
         {isXmas ? (
           <ProductsXmasHero onSeeDeals={() => navigate("/produtos?natal=1")} />
         ) : (

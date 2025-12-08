@@ -54,7 +54,7 @@ export default function MainNavbar({ isScrolled = false }) {
 
   return (
     <header
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+      className={`sticky top-0 w-full z-50 transition-all duration-300 ${
         isScrolled
           ? "bg-white/85 dark:bg-gray-900/80 backdrop-blur-md shadow-lg border-b border-white/20 dark:border-gray-700/20"
           : "bg-transparent"
