@@ -15,8 +15,6 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  X,
   ShoppingCart,
   Award,
   Truck,
@@ -36,22 +34,23 @@ import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar U
 import { Link } from "react-router-dom"
 import Snowfall from "react-snowfall"
 import XmasPromoCard from "@/components/xmas/XmasPromoCard"
+import MainNavbar from "@/components/layout/MainNavbar"
+import { useUI } from "@/contexts/UIContext"
 
 
 export default function Home() {
   const navigate = useNavigate()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [currentProduct, setCurrentProduct] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
   const [expandedFaq, setExpandedFaq] = useState(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [isSnowing, setIsSnowing] = useState(false)
   const [showXmasPromo, setShowXmasPromo] = useState(false)
 
-  const XMAS_MODE_KEY = "xmas_mode_enabled"
   const XMAS_PROMO_SEEN_KEY = "xmas_promo_seen"
+
+  const { isXmasMode, enableXmas, toggleXmas, isDarkMode, toggleDarkMode, prefersReducedMotion } = useUI()
+  const isSnowing = isXmasMode
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -159,23 +158,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [navigate])
 
-  // restore dark theme
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme")
-    if (savedTheme === "dark") {
-      setIsDarkMode(true)
-      document.documentElement.classList.add("dark")
-    }
-  }, [])
-
-  // restore xmas mode preference
-  useEffect(() => {
-    const savedSnow = localStorage.getItem(XMAS_MODE_KEY)
-    if (savedSnow === "true") {
-      setIsSnowing(true)
-    }
-  }, [])
-
   // carrega destaques (usa Cloudinary quando houver)
   useEffect(() => {
     const fetchData = async () => {
@@ -213,10 +195,6 @@ export default function Home() {
       }
     })
   }, [featuredProducts])
-
-  useEffect(() => {
-    localStorage.setItem(XMAS_MODE_KEY, isSnowing ? "true" : "false")
-  }, [isSnowing])
 
   useEffect(() => {
     const today = new Date()
@@ -257,17 +235,6 @@ export default function Home() {
     }
   }, [featuredProducts.length])
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-    if (!isDarkMode) {
-      document.documentElement.classList.add("dark")
-      localStorage.setItem("theme", "dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-      localStorage.setItem("theme", "light")
-    }
-  }
-
   const handleConsultarOS = () => {
     navigate("/consulta")
   }
@@ -302,20 +269,20 @@ export default function Home() {
   }
 
   const handleActivateXmas = () => {
-    setIsSnowing(true)
+    enableXmas()
   }
 
   const handleClosePromo = () => setShowXmasPromo(false)
 
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
-      {isSnowing && (
+      {isSnowing && !prefersReducedMotion && (
         <Snowfall
           style={{ position: "fixed", width: "100vw", height: "100vh", zIndex: 60, pointerEvents: "none" }}
           snowflakeCount={180}
         />
       )}
-      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 pt-20">
         {showXmasPromo && (
           <div className="fixed inset-0 z-[70] flex items-start md:items-center justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm">
             <div className="max-w-4xl w-full">
@@ -338,154 +305,19 @@ export default function Home() {
         </div>
 
         {/* Header */}
-        <header
-          className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-            isScrolled
-              ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg border-b border-white/20 dark:border-gray-700/20 mt-0"
-              : "bg-transparent mt-10"
-          }`}
-        >
-          <ResponsiveContainer className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
-                <span className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</span>
-              </div>
-              {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center space-x-8">
-                <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  Serviços
-                </a>
-                <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  FAQ
-                </a>
-                <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  Contato
-                </a>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => handleWhatsApp("Olá! Vim através do site.")}
-                    className="text-green-500 hover:text-green-600 transition-colors"
-                    title="WhatsApp"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
-                    className="text-pink-500 hover:text-pink-600 transition-colors"
-                    title="Instagram"
-                  >
-                    <Instagram className="w-5 h-5" />
-                  </button>
-                </div>
-                <button
-                  onClick={() => setIsSnowing((prev) => !prev)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
-                    isSnowing
-                      ? "bg-white text-amber-600 shadow-amber-200/60"
-                      : "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                  }`}
-                >
-                  <span>Clima natalino</span>
-                  <span>{isSnowing ? "❄️" : ""}</span>
-                </button>
-                <button
-                  onClick={toggleDarkMode}
-                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                  title="Alternar tema"
-                >
-                  {isDarkMode ? "🌞" : "🌙"}
-                </button>
-                <button
-                  onClick={handleConsultarOS}
-                  className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium"
-                >
-                  Consultar O.S.
-                </button>
-              </nav>
-              {/* Mobile Menu Button */}
-              <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? (
-                  <X className="w-6 h-6 text-gray-800 dark:text-white" />
-                ) : (
-                  <Menu className="w-6 h-6 text-gray-800 dark:text-white" />
-                )}
-              </button>
+        <MainNavbar isScrolled={isScrolled} />
+        {isSnowing && (
+          <div className="mt-20 hidden md:block">
+            <div className="mx-auto flex max-w-4xl items-center gap-3 rounded-full bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 dark:ring-white/10">
+              <span className="text-lg">🎄</span>
+              <span className="tracking-wide">Clima natalino ativado! Luzes, neve e boas festas.</span>
+              <span className="text-lg">✨</span>
             </div>
-            {isSnowing && (
-              <div className="mt-3 hidden md:block">
-                <div className="flex items-center gap-3 rounded-full bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-2 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 dark:ring-white/10">
-                  <span className="text-lg">🎄</span>
-                  <span className="tracking-wide">Clima natalino ativado! Luzes, neve e boas festas.</span>
-                  <span className="text-lg">✨</span>
-                </div>
-              </div>
-            )}
-            {isMenuOpen && (
-              <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col space-y-4 pt-4">
-                  <a
-                    href="#servicos"
-                    className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
-                  >
-                    Serviços
-                  </a>
-                  <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                    FAQ
-                  </a>
-                  <a
-                    href="#contato"
-                    className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
-                  >
-                    Contato
-                  </a>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleWhatsApp("Olá! Vim através do site.")}
-                        className="text-green-500 hover:text-green-600 transition-colors"
-                      >
-                        <MessageCircle className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
-                        className="text-pink-500 hover:text-pink-600 transition-colors"
-                      >
-                        <Instagram className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={toggleDarkMode}
-                        className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                      >
-                        {isDarkMode ? "🌞" : "🌙"}
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => setIsSnowing((prev) => !prev)}
-                      className={`flex w-full items-center justify-center gap-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
-                        isSnowing
-                          ? "bg-white text-amber-600 shadow-amber-200/60"
-                          : "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                      }`}
-                    >
-                      <span>Clima natalino</span>
-                      <span>{isSnowing ? "❄️" : ""}</span>
-                    </button>
-                  </div>
-                  <button
-                    onClick={handleConsultarOS}
-                    className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium w-fit"
-                  >
-                    Consultar O.S.
-                  </button>
-                </div>
-              </nav>
-            )}
-          </ResponsiveContainer>
-        </header>
+          </div>
+        )}
 
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
           <div className="absolute inset-0">
             <div className="absolute inset-0 pointer-events-none">
               <Silk

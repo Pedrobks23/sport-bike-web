@@ -1,29 +1,24 @@
-import { createBrowserRouter } from "react-router-dom";
-import Home from "../pages/Home";
-import ConsultaOS from "../pages/ConsultaOS";
-import AdminLogin from "../pages/AdminLogin";
-import Admin from "../pages/Admin";
-import WorkshopDashboard from "../pages/WorkshopDashboard";
-import CustomerList from "../pages/CustomerList";
-import ServicesManagement from "../pages/ServicesManagement";
-import ReportsManagement from "../pages/ReportsManagement";
-import ReceiptsManagement from "../pages/ReceiptsManagement";
-import ServiceOrdersPage from "../pages/ServiceOrdersPage";
-import ManageReceiptsPage from "../pages/ManageReceiptsPage";
-import NewOrder from "../pages/NewOrder"; // Adicione esta importação
-import HomeManagement from "../pages/HomeManagement";
-import NewCustomer from "../pages/NewCustomer";
-import ServicoRapido from "../pages/ServicoRapido";
-import MechanicsManagement from "../pages/MechanicsManagement";
-import HistoricoMecanico from "../pages/HistoricoMecanico";
-import PrivateRoute from "../components/PrivateRoute";
-import Mecanicos from "../pages/Mecanicos";
-// import
-import ProductsPublic from "@/pages/ProductsPublic";
-
-
-
-
+import { createBrowserRouter } from "react-router-dom"
+import Home from "../pages/Home"
+import ConsultaOS from "../pages/ConsultaOS"
+import AdminLogin from "../pages/AdminLogin"
+import Admin from "../pages/Admin"
+import WorkshopDashboard from "../pages/WorkshopDashboard"
+import CustomerList from "../pages/CustomerList"
+import ServicesManagement from "../pages/ServicesManagement"
+import ReportsManagement from "../pages/ReportsManagement"
+import ReceiptsManagement from "../pages/ReceiptsManagement"
+import ServiceOrdersPage from "../pages/ServiceOrdersPage"
+import ManageReceiptsPage from "../pages/ManageReceiptsPage"
+import NewOrder from "../pages/NewOrder"
+import HomeManagement from "../pages/HomeManagement"
+import NewCustomer from "../pages/NewCustomer"
+import ServicoRapido from "../pages/ServicoRapido"
+import MechanicsManagement from "../pages/MechanicsManagement"
+import HistoricoMecanico from "../pages/HistoricoMecanico"
+import PrivateRoute from "../components/PrivateRoute"
+import Mecanicos from "../pages/Mecanicos"
+import ProductsPublic from "@/pages/ProductsPublic"
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +28,10 @@ export const router = createBrowserRouter([
   {
     path: "/consulta",
     element: <ConsultaOS />,
+  },
+  {
+    path: "/produtos",
+    element: <ProductsPublic />,
   },
   {
     path: "/admin/login",
@@ -55,7 +54,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/admin/orders/new", // Adicione esta nova rota
+    path: "/admin/orders/new",
     element: (
       <PrivateRoute>
         <NewOrder />
@@ -151,22 +150,19 @@ export const router = createBrowserRouter([
     ),
   },
   {
-  path: "/admin/mecanicos",
-  element: (
-    <PrivateRoute>
-      <Mecanicos />
-    </PrivateRoute>
-  ),
-},
-{
-  path: "/admin/historico-mecanico/:mecanicoId",
-  element: (
-    <PrivateRoute>
-      <HistoricoMecanico />
-    </PrivateRoute>
-  ),
-},
-{ path: "/produtos", 
-  element: <ProductsPublic /> },
-
-]);
+    path: "/admin/mecanicos",
+    element: (
+      <PrivateRoute>
+        <Mecanicos />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/historico-mecanico/:mecanicoId",
+    element: (
+      <PrivateRoute>
+        <HistoricoMecanico />
+      </PrivateRoute>
+    ),
+  },
+])
