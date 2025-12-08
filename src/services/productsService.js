@@ -11,8 +11,10 @@ import {
   query,
   orderBy,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
 import { destroyFromCloudinary } from "@/utils/cloudinary";
+import { deriveFeaturesPayload } from "@/utils/productFeatures";
 
 // ajuste se sua collection tiver outro nome
 const COL = "products";
@@ -59,16 +61,24 @@ export async function listPublicProducts() {
  * Retorna o doc salvo (com id).
  */
 export async function createProduct(data) {
-  const now = new Date();
+  const now = serverTimestamp();
+  const coverImage = data.images?.[0] || data.image || null;
+  const { features, featuresText } = deriveFeaturesPayload(
+    data.features,
+    data.featuresText
+  );
   const payload = {
     name: data.name ?? "",
     category: data.category ?? "",
     price: data.price ?? "",
     description: data.description ?? "",
+    features,
+    featuresText,
     isFeatured: !!data.isFeatured,
     visible: data.visible !== false,
     // image: { url, publicId, width, height } | null
-    image: data.image || null,
+    image: coverImage,
+    images: Array.isArray(data.images) ? data.images : coverImage ? [coverImage] : [],
     createdAt: now,
     updatedAt: now,
   };
@@ -82,9 +92,22 @@ export async function createProduct(data) {
  */
 export async function updateProduct(id, partial) {
   const ref = doc(db, COL, id);
+  const coverImage = partial.images?.[0] || partial.image || null;
+  const { features, featuresText } = deriveFeaturesPayload(
+    partial.features,
+    partial.featuresText
+  );
   await updateDoc(ref, {
     ...partial,
-    updatedAt: new Date(),
+    features,
+    featuresText,
+    image: coverImage ?? null,
+    images: Array.isArray(partial.images)
+      ? partial.images
+      : coverImage
+        ? [coverImage]
+        : [],
+    updatedAt: serverTimestamp(),
   });
 }
 

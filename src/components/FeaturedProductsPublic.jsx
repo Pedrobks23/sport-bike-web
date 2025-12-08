@@ -1,6 +1,7 @@
 // src/components/FeaturedProductsPublic.jsx
 import { useEffect, useState } from "react";
-import { cldFill } from "@/utils/cloudinaryUrl";
+import { normalizeProductImages } from "@/utils/productImage";
+import { ProductImage } from "@/components/shared/ProductImage";
 import { listPublicProducts } from "@/services/productsService";
 
 export default function FeaturedProductsPublic() {
@@ -43,29 +44,28 @@ export default function FeaturedProductsPublic() {
 
       {/* Grid simples (pode trocar por seu carrossel depois) */}
       <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {items.map((p) => {
-          const url = cldFill(
-            typeof p.image === "string" ? { url: p.image } : p.image,
-            { w: 640, h: 480 }
-          );
+        {items.map((p, idx) => {
+          const images = normalizeProductImages(p?.images || (p?.image ? [p.image] : []));
+          const cover = images[0];
           return (
-            <article key={p.id} className="bg-white rounded-xl border overflow-hidden shadow">
-              {url && (
-                <img
-                  src={url}
+            <article
+              key={p.id || idx}
+              className="flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow dark:border-gray-800 dark:bg-neutral-900"
+            >
+              <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+                <ProductImage
+                  publicId={cover?.publicId}
+                  secureUrl={cover?.secureUrl}
                   alt={p.name}
-                  className="w-full h-56 object-cover object-center"
-                  loading="lazy"
+                  role="card"
                 />
-              )}
-              <div className="p-4">
-                <div className="text-xs text-gray-500">{p.category || "Sem categoria"}</div>
-                <h3 className="font-semibold">{p.name}</h3>
-                <div className="text-amber-600 font-bold">
-                  {p.price || "—"}
-                </div>
+              </div>
+              <div className="p-4 space-y-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400">{p.category || "Sem categoria"}</div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-50">{p.name}</h3>
+                <div className="text-amber-600 font-bold">{p.price || "—"}</div>
                 {p.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2 mt-1">{p.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">{p.description}</p>
                 )}
               </div>
             </article>

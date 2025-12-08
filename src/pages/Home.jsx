@@ -15,8 +15,6 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  X,
   ShoppingCart,
   Award,
   Truck,
@@ -32,19 +30,29 @@ import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
 import { getAllServicesOrdered } from "../services/serviceService"
 import ResponsiveContainer from "../components/ResponsiveContainer"
 import Silk from "../components/Silk"
-import { cldFill } from "@/utils/cloudinaryUrl" // <<< novo helper para montar URL Cloudinary
+import { normalizeProductImages } from "@/utils/productImage"
+import { ProductImage } from "@/components/shared/ProductImage"
 import { Link } from "react-router-dom"
+import Snowfall from "react-snowfall"
+import XmasPromoCard from "@/components/xmas/XmasPromoCard"
+import MainNavbar from "@/components/layout/MainNavbar"
+import { useUI } from "@/contexts/UIContext"
 
 
 export default function Home() {
   const navigate = useNavigate()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
   const [currentProduct, setCurrentProduct] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
   const [expandedFaq, setExpandedFaq] = useState(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [showXmasPromo, setShowXmasPromo] = useState(false)
+  const [dismissedXmasBar, setDismissedXmasBar] = useState(false)
+
+  const XMAS_PROMO_SEEN_KEY = "xmas_promo_seen"
+
+  const { isXmasMode, enableXmas, toggleXmas, isDarkMode, toggleDarkMode, prefersReducedMotion } = useUI()
+  const isSnowing = isXmasMode
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -152,15 +160,6 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [navigate])
 
-  // restore dark theme
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme")
-    if (savedTheme === "dark") {
-      setIsDarkMode(true)
-      document.documentElement.classList.add("dark")
-    }
-  }, [])
-
   // carrega destaques (usa Cloudinary quando houver)
   useEffect(() => {
     const fetchData = async () => {
@@ -168,9 +167,8 @@ export default function Home() {
         (list || [])
           .filter((p) => p && p.visible !== false) // respeita visibilidade
           .map((p) => {
-            const imgObj = typeof p.image === "string" ? { url: p.image } : p.image
-            const displayUrl = cldFill(imgObj, { w: 800, h: 600 })
-            return { ...p, displayUrl }
+            const coverImage = normalizeProductImages(p?.images || (p?.image ? [p.image] : []))?.[0] || null
+            return { ...p, coverImage }
           })
 
       try {
@@ -189,15 +187,25 @@ export default function Home() {
     fetchData()
   }, [])
 
-  // Preload das imagens dos destaques
   useEffect(() => {
-    featuredProducts.forEach((p) => {
-      if (p?.displayUrl) {
-        const img = new Image()
-        img.src = p.displayUrl
-      }
-    })
-  }, [featuredProducts])
+    const today = new Date()
+    const cutoff = new Date(today.getFullYear(), 11, 30, 23, 59, 59, 999)
+    const hasSeen = localStorage.getItem(XMAS_PROMO_SEEN_KEY) === "true"
+    if (today <= cutoff && !hasSeen) {
+      setShowXmasPromo(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem("xmas_bar_dismissed") === "true"
+    setDismissedXmasBar(dismissed)
+  }, [])
+
+  useEffect(() => {
+    if (showXmasPromo) {
+      localStorage.setItem(XMAS_PROMO_SEEN_KEY, "true")
+    }
+  }, [showXmasPromo])
 
   // header scroll effect
   useEffect(() => {
@@ -222,17 +230,6 @@ export default function Home() {
       setCurrentProduct(0)
     }
   }, [featuredProducts.length])
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-    if (!isDarkMode) {
-      document.documentElement.classList.add("dark")
-      localStorage.setItem("theme", "dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-      localStorage.setItem("theme", "light")
-    }
-  }
 
   const handleConsultarOS = () => {
     navigate("/consulta")
@@ -267,9 +264,32 @@ export default function Home() {
     setExpandedFaq(expandedFaq === index ? null : index)
   }
 
+  const handleActivateXmas = () => {
+    enableXmas()
+  }
+
+  const handleClosePromo = () => setShowXmasPromo(false)
+
+  const showXmasBar = isSnowing && !dismissedXmasBar
+
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
-      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      {isSnowing && !prefersReducedMotion && (
+        <Snowfall
+          style={{ position: "fixed", width: "100vw", height: "100vh", inset: 0, zIndex: 20, pointerEvents: "none" }}
+          snowflakeCount={180}
+        />
+      )}
+      <div className={`bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${showXmasBar ? "pt-14" : ""}`}>
+        {showXmasPromo && (
+          <div className="fixed inset-0 z-[70] flex items-start md:items-center justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm">
+            <div className="max-w-4xl w-full">
+              <XmasPromoCard onClose={handleClosePromo} onActivateXmas={handleActivateXmas} />
+            </div>
+          </div>
+        )}
+        {/* Header */}
+        <MainNavbar isScrolled={isScrolled} />
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
           <ResponsiveContainer>
@@ -283,123 +303,28 @@ export default function Home() {
             </div>
           </ResponsiveContainer>
         </div>
-
-        {/* Header */}
-        <header
-          className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-            isScrolled
-              ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg border-b border-white/20 dark:border-gray-700/20 mt-0"
-              : "bg-transparent mt-10"
-          }`}
-        >
-          <ResponsiveContainer className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
-                <span className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</span>
-              </div>
-              {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center space-x-8">
-                <a href="#servicos" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  Serviços
-                </a>
-                <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  FAQ
-                </a>
-                <a href="#contato" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                  Contato
-                </a>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => handleWhatsApp("Olá! Vim através do site.")}
-                    className="text-green-500 hover:text-green-600 transition-colors"
-                    title="WhatsApp"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
-                    className="text-pink-500 hover:text-pink-600 transition-colors"
-                    title="Instagram"
-                  >
-                    <Instagram className="w-5 h-5" />
-                  </button>
-                </div>
-                <button
-                  onClick={toggleDarkMode}
-                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                  title="Alternar tema"
-                >
-                  {isDarkMode ? "🌞" : "🌙"}
-                </button>
-                <button
-                  onClick={handleConsultarOS}
-                  className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium"
-                >
-                  Consultar O.S.
-                </button>
-              </nav>
-              {/* Mobile Menu Button */}
-              <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? (
-                  <X className="w-6 h-6 text-gray-800 dark:text-white" />
-                ) : (
-                  <Menu className="w-6 h-6 text-gray-800 dark:text-white" />
-                )}
+        {showXmasBar && (
+          <div className="fixed left-1/2 top-0 z-[60] w-[min(92vw,1100px)] max-w-screen-lg -translate-x-1/2 px-4">
+            <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/10 dark:ring-white/10">
+              <span className="text-base sm:text-lg">🎄</span>
+              <span className="tracking-wide text-xs sm:text-sm">Clima natalino ativado! Luzes, neve e boas festas.</span>
+              <span className="text-base sm:text-lg">✨</span>
+              <button
+                onClick={() => {
+                  setDismissedXmasBar(true)
+                  localStorage.setItem("xmas_bar_dismissed", "true")
+                }}
+                className="ml-auto rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                aria-label="Fechar aviso de clima natalino"
+              >
+                Fechar
               </button>
             </div>
-            {isMenuOpen && (
-              <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col space-y-4 pt-4">
-                  <a
-                    href="#servicos"
-                    className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
-                  >
-                    Serviços
-                  </a>
-                  <a href="#faq" className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors">
-                    FAQ
-                  </a>
-                  <a
-                    href="#contato"
-                    className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
-                  >
-                    Contato
-                  </a>
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => handleWhatsApp("Olá! Vim através do site.")}
-                      className="text-green-500 hover:text-green-600 transition-colors"
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => window.open("https://www.instagram.com/sportbike_fortaleza/", "_blank")}
-                      className="text-pink-500 hover:text-pink-600 transition-colors"
-                    >
-                      <Instagram className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={toggleDarkMode}
-                      className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                    >
-                      {isDarkMode ? "🌞" : "🌙"}
-                    </button>
-                  </div>
-                  <button
-                    onClick={handleConsultarOS}
-                    className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium w-fit"
-                  >
-                    Consultar O.S.
-                  </button>
-                </div>
-              </nav>
-            )}
-          </ResponsiveContainer>
-        </header>
+          </div>
+        )}
 
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-12 md:pt-16">
           <div className="absolute inset-0">
             <div className="absolute inset-0 pointer-events-none">
               <Silk
@@ -429,13 +354,21 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
                 onClick={handleConsultarOS}
-                className="bg-white text-gray-800 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl"
+                className={`px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-xl ${
+                  isSnowing
+                    ? "bg-red-600 text-white hover:bg-red-500 shadow-red-200/60"
+                    : "bg-white text-gray-800 hover:bg-gray-100"
+                }`}
               >
                 Consultar Ordem de Serviço
               </button>
               <button
                 onClick={() => handleWhatsApp("Olá! Gostaria de alugar uma bike.")}
-                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-gray-800 transition-all transform hover:scale-105"
+                className={`px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 border-2 ${
+                  isSnowing
+                    ? "bg-green-600 text-white border-green-500 hover:bg-green-500 shadow-green-200/60"
+                    : "bg-transparent border-white text-white hover:bg-white hover:text-gray-800"
+                }`}
               >
                 Alugue sua Bike Hoje
               </button>
@@ -459,17 +392,33 @@ export default function Home() {
                   Confira nossa seleção especial de bikes e acessórios
                 </p>
               </div>
-              <div className="relative max-w-4xl mx-auto">
+              <div className="relative max-w-5xl mx-auto">
                 {featuredProducts.length > 0 ? (
-                  <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 shadow-2xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                      <div>
-                        <img
-                          src={featuredProducts[currentProduct].displayUrl || ""}
-                          alt={featuredProducts[currentProduct].name}
-                          className="w-full h-64 object-cover object-center rounded-lg"
-                          loading="lazy"
-                        />
+                  <div
+                    className={`relative overflow-hidden rounded-3xl p-8 shadow-2xl border-2 ${
+                      isSnowing
+                        ? "bg-gradient-to-r from-red-600 via-amber-400 to-green-600 border-white/60"
+                        : "bg-gradient-to-r from-amber-400 to-amber-500 border-transparent"
+                    }`}
+                  >
+                    {featuredProducts[currentProduct] && (
+                      <div className="sr-only">{featuredProducts[currentProduct].name}</div>
+                    )}
+                    {isSnowing && (
+                      <div className="absolute inset-0 pointer-events-none opacity-70">
+                        <div className="absolute top-4 left-6 right-6 h-2 rounded-full bg-gradient-to-r from-green-300 via-red-200 to-green-300 blur-sm"></div>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center md:items-stretch">
+                      <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20 h-full flex">
+                        <div className="relative w-full h-72 sm:h-96 md:h-full">
+                          <ProductImage
+                            publicId={featuredProducts[currentProduct]?.coverImage?.publicId}
+                            secureUrl={featuredProducts[currentProduct]?.coverImage?.secureUrl}
+                            alt={featuredProducts[currentProduct]?.coverImage?.alt || featuredProducts[currentProduct]?.name || "Produto em destaque"}
+                            role="modal"
+                          />
+                        </div>
                       </div>
                       <div className="text-white">
                         {featuredProducts[currentProduct].category && (
@@ -494,7 +443,11 @@ export default function Home() {
                               `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`,
                             )
                           }
-                          className="bg-white text-amber-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors inline-flex items-center space-x-2"
+                          className={`px-6 py-3 rounded-full font-bold transition-colors inline-flex items-center space-x-2 shadow-lg ${
+                            isSnowing
+                              ? "bg-green-100 text-green-800 hover:bg-green-50"
+                              : "bg-white text-amber-600 hover:bg-gray-100"
+                          }`}
                         >
                           <ShoppingCart className="w-5 h-5" />
                           <span>Tenho Interesse</span>
@@ -540,7 +493,11 @@ export default function Home() {
               <div className="mt-12 flex justify-center">
                 <Link
                   to="/produtos"
-                  className="inline-flex items-center gap-3 rounded-full bg-amber-500 text-white px-6 py-3 font-semibold shadow-lg hover:bg-amber-600 hover:scale-105 transform transition-all duration-300 animate-pulse"
+                  className={`inline-flex items-center gap-3 rounded-full px-6 py-3 font-semibold shadow-lg hover:scale-105 transform transition-all duration-300 ${
+                    isSnowing
+                      ? "bg-red-600 text-white hover:bg-red-500 ring-2 ring-green-300/60"
+                      : "bg-amber-500 text-white hover:bg-amber-600 animate-pulse"
+                  }`}
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Ver todos os produtos

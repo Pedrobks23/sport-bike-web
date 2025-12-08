@@ -1,6 +1,7 @@
 // src/pages/HomeManagement.jsx
 "use client";
 import { cldFill } from "@/utils/cloudinaryUrl";
+import { deriveFeaturesPayload, getProductFeatures } from "@/utils/productFeatures";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -17,7 +18,7 @@ import {
   Wrench,
 } from "lucide-react";
 
-import CloudinaryUploader from "@/components/CloudinaryUploader";
+import ProductImagesManager from "@/components/products/ProductImagesManager";
 
 import {
   listAllProducts,
@@ -33,8 +34,11 @@ const emptyProduct = {
   category: "",
   price: "",
   description: "",
-  // NOVO: objeto Cloudinary
-  image: null, // { url, publicId, width, height }
+  features: [],
+  featuresText: "",
+  // suporte a múltiplas imagens
+  images: [],
+  image: null,
   isFeatured: false,
   visible: true,
 };
@@ -44,7 +48,23 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     ...emptyProduct,
     ...product,
     visible: product?.visible ?? true,
-    // fallback: se produto antigo tiver string em image, converte para objeto simples
+    features: product?.features || [],
+    featuresText:
+      product?.featuresText ||
+      (Array.isArray(product?.features) && product.features.length
+        ? product.features.join("\n")
+        : ""),
+    // normaliza imagens antigas
+    images:
+      Array.isArray(product?.images) && product.images.length
+        ? product.images
+        : product?.image
+          ? [
+              typeof product.image === "string"
+                ? { id: "legacy", url: product.image, publicId: null }
+                : { id: "legacy", ...product.image },
+            ]
+          : [],
     image:
       product?.image && typeof product.image === "string"
         ? { url: product.image, publicId: null }
@@ -52,6 +72,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const featurePreview = getProductFeatures(formData, 20);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -62,8 +84,21 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Apenas envia o objeto com image já definido pelo CloudinaryUploader
-      await onSave({ ...formData });
+      const sanitizedImages = Array.isArray(formData.images)
+        ? formData.images.map(({ objectPosition, ...rest }) => rest)
+        : []
+      const { features, featuresText } = deriveFeaturesPayload(
+        formData.featuresText || formData.features,
+        formData.featuresText || (Array.isArray(formData.features) ? formData.features.join("\n") : "")
+      )
+      const payload = {
+        ...formData,
+        features,
+        featuresText,
+        images: sanitizedImages,
+        image: sanitizedImages?.[0] || formData.image || null,
+      };
+      await onSave(payload);
       onClose();
     } catch (err) {
       console.error(err);
@@ -74,8 +109,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl">
+    <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4 overscroll-contain">
+      <div className="relative flex w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-gray-900 max-h-[90vh] md:max-h-[85vh]">
         <div className="p-6 border-b border-gray-100 dark:border-gray-800">
           <h3 className="text-xl font-bold">{isEdit ? "Editar Produto" : "Novo Produto"}</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -84,90 +119,129 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
           </p>
         </div>
 
-        <form onSubmit={submit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Nome</label>
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Preço</label>
-              <input
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Categoria</label>
-              <input
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Descrição</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-                rows={4}
-              />
+        <form onSubmit={submit} className="flex h-full flex-col">
+          <div
+            data-slot="modal-body"
+            className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 md:px-6 md:py-6"
+          >
+            <div className="grid min-h-0 grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="min-h-0 space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nome</label>
+                <input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Preço</label>
+                <input
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoria</label>
+                <input
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Descrição</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2"
+                  rows={4}
+                />
+              </div>
+
+              <div className="min-h-0 max-h-[40vh] overflow-y-auto pr-1">
+                <label className="block text-sm font-medium mb-1">Características (uma por linha)</label>
+                <textarea
+                  name="featuresText"
+                  value={formData.featuresText}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2 min-h-[160px] resize-y"
+                  rows={6}
+                  placeholder={"Quadro alumínio 6061\n24 marchas indexadas\nAro 29 tubeless-ready"}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Uma característica por linha. Máx. 20 itens. ({featurePreview.length} válidas)
+                </p>
+                {featurePreview.length > 0 && (
+                  <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                    <p className="font-semibold mb-2">Pré-visualização</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {featurePreview.map((feat, idx) => (
+                        <li key={idx}>{feat}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="isFeatured"
+                    checked={!!formData.isFeatured}
+                    onChange={handleChange}
+                  />
+                  <span>
+                    Aparecer no carrossel de <b>destaque</b>
+                  </span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="visible"
+                    checked={formData.visible !== false}
+                    onChange={handleChange}
+                  />
+                  <span>
+                    Produto <b>visível</b> (exibe o card na Home)
+                  </span>
+                </label>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2 pt-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="isFeatured"
-                  checked={!!formData.isFeatured}
-                  onChange={handleChange}
+            <div className="min-h-0 space-y-3">
+              <div className="min-h-0 max-h-[50vh] overflow-y-auto pr-1">
+                <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
+                <ProductImagesManager
+                  value={formData.images}
+                  onChange={(imgs) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      images: imgs,
+                      image: imgs?.[0] || prev.image || null,
+                    }))
+                  }
                 />
-                <span>
-                  Aparecer no carrossel de <b>destaque</b>
-                </span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="visible"
-                  checked={formData.visible !== false}
-                  onChange={handleChange}
-                />
-                <span>
-                  Produto <b>visível</b> (exibe o card na Home)
-                </span>
-              </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Envie várias imagens, reordene para definir a capa (primeira posição) e preencha o texto alternativo.
+                </p>
+              </div>
             </div>
           </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Imagem</label>
-              {/* Uploader do Cloudinary (sem URL) */}
-              <CloudinaryUploader
-                value={formData.image}
-                onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
-                folder="sportbike/featured"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                A imagem é enviada ao Cloudinary e salva em <code>image: {"{ url, publicId, width, height }"}</code>.
-              </p>
-            </div>
           </div>
 
-          <div className="md:col-span-2 flex justify-end gap-3 pt-4">
+          <div
+            data-slot="modal-footer"
+            className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-gray-100 bg-white/90 px-6 py-4 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90"
+          >
             <button
               type="button"
               onClick={onClose}

@@ -44,11 +44,12 @@ export async function destroyFromCloudinary(publicId) {
   const resp = await fetch("/api/cloudinary/destroy", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ public_id: publicId }),
+    body: JSON.stringify({ publicId }),
   });
-  if (!resp.ok) {
-    const err = await resp.text();
+  const json = await resp.json().catch(() => null);
+  if (!resp.ok || json?.ok === false) {
+    const err = json?.message || json?.error || (await resp.text());
     throw new Error(`Falha ao deletar no Cloudinary: ${err}`);
   }
-  return resp.json();
+  return json;
 }
