@@ -27,7 +27,6 @@ export default function ProductImagesManager({ value = [], onChange }) {
           width: res.width,
           height: res.height,
           alt: file.name,
-          objectPosition: "center center",
         })
       }
       onChange?.(newImages)
@@ -68,23 +67,6 @@ export default function ProductImagesManager({ value = [], onChange }) {
     onChange?.(updated)
   }
 
-  function updatePosition(id, objectPosition) {
-    const updated = images.map((img) => (img.id === id ? { ...img, objectPosition } : img))
-    onChange?.(updated)
-  }
-
-  const focusOptions = [
-    { label: "↖", value: "top left" },
-    { label: "↑", value: "top center" },
-    { label: "↗", value: "top right" },
-    { label: "←", value: "center left" },
-    { label: "•", value: "center center" },
-    { label: "→", value: "center right" },
-    { label: "↙", value: "bottom left" },
-    { label: "↓", value: "bottom center" },
-    { label: "↘", value: "bottom right" },
-  ]
-
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">
@@ -96,8 +78,7 @@ export default function ProductImagesManager({ value = [], onChange }) {
             <img
               src={img.url}
               alt={img.alt || "Imagem do produto"}
-              className="h-28 w-full object-cover"
-              style={{ objectPosition: img.objectPosition || "center center" }}
+              className="h-28 w-full object-contain object-center bg-gray-50"
               loading="lazy"
               width={160}
               height={112}
@@ -109,24 +90,6 @@ export default function ProductImagesManager({ value = [], onChange }) {
                 placeholder="Alt da imagem"
                 className="w-full rounded border px-2 py-1 text-xs"
               />
-              <div className="grid grid-cols-3 gap-1" aria-label="Definir foco da imagem">
-                {focusOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => updatePosition(img.id, opt.value)}
-                    className={`rounded border px-2 py-1 text-[11px] transition ${
-                      (img.objectPosition || "center center") === opt.value
-                        ? "border-amber-500 bg-amber-50 text-amber-700"
-                        : "hover:bg-gray-50"
-                    }`}
-                    aria-pressed={(img.objectPosition || "center center") === opt.value}
-                    aria-label={`Foco ${opt.value}`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
               <div className="flex items-center justify-between gap-1">
                 <button
                   type="button"

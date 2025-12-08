@@ -42,8 +42,6 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
 
   const activeImage = images[activeIndex] || images[0]
 
-  const objectPosition = activeImage?.objectPosition || "center center"
-
   const cardImgUrl = useMemo(() => {
     if (!activeImage) return null
     if (activeImage.publicId) return productImgUrl(activeImage.publicId, "card")
@@ -99,8 +97,7 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className="relative w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
-        style={{ minHeight: 240 }}
+        className="relative flex h-56 w-full items-center justify-center overflow-hidden bg-neutral-100 transition sm:h-64 dark:bg-neutral-900"
         onClick={() => onOpenQuickView?.(product)}
         role="button"
         tabIndex={0}
@@ -121,13 +118,12 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
             width={640}
             height={480}
             onLoad={() => setIsImageLoaded(true)}
-            className={`h-64 w-full object-cover transition duration-500 ease-out ${
+            className={`h-full w-full object-contain object-center transition duration-500 ease-out ${
               isImageLoaded ? "opacity-100" : "opacity-0"
             }`}
-            style={{ objectPosition }}
           />
         ) : (
-          <div className="flex h-64 w-full items-center justify-center text-sm text-gray-500">Sem imagem</div>
+          <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">Sem imagem</div>
         )}
         {!isImageLoaded && cardImgUrl && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-200 to-gray-300" aria-hidden />

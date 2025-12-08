@@ -85,15 +85,14 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
         </button>
 
         <div className="flex flex-col gap-3">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="relative flex max-h-[80vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-900">
             {heroUrl ? (
               <img
                 src={heroUrl}
                 alt={activeImage?.alt || product?.name || "Produto"}
-                className="h-[320px] w-full object-cover md:h-[420px]"
+                className="max-h-[80vh] w-full object-contain object-center"
                 loading="lazy"
                 decoding="async"
-                style={{ objectPosition: activeImage?.objectPosition || "center center" }}
               />
             ) : (
               <div className="flex h-[320px] items-center justify-center text-sm text-gray-500">Sem imagem</div>

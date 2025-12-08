@@ -19,7 +19,7 @@ export function productImgUrl(publicId: string, variant: ImgVariant): string {
   const cloud = CLOUD
   const { w, h } = TRANSFORMS[variant]
   if (cloud) {
-    return `https://res.cloudinary.com/${cloud}/image/upload/w_${w},h_${h},c_fill,g_auto,f_auto,q_auto/${cleanId}.png`
+    return `https://res.cloudinary.com/${cloud}/image/upload/w_${w},h_${h},c_fit,g_auto,f_auto,q_auto,dpr_2/${cleanId}.png`
   }
   return cleanId
 }

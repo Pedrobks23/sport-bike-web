@@ -73,9 +73,13 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const sanitizedImages = Array.isArray(formData.images)
+        ? formData.images.map(({ objectPosition, ...rest }) => rest)
+        : []
       const payload = {
         ...formData,
-        image: formData.images?.[0] || formData.image || null,
+        images: sanitizedImages,
+        image: sanitizedImages?.[0] || formData.image || null,
       };
       await onSave(payload);
       onClose();
