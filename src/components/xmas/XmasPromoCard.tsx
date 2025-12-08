@@ -44,6 +44,10 @@ export default function XmasPromoCard({
     if (resolver) {
       resolver()
     }
+
+    if (onClose) {
+      onClose()
+    }
   }
 
   const handleSeeDeals = () => {
