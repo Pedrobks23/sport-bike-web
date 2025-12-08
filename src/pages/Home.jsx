@@ -270,8 +270,13 @@ export default function Home() {
 
   const handleClosePromo = () => setShowXmasPromo(false)
 
+  const showXmasBar = isSnowing && !dismissedXmasBar
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+    <div
+      className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}
+      style={showXmasBar ? { paddingTop: "72px" } : undefined}
+    >
       {isSnowing && !prefersReducedMotion && (
         <Snowfall
           style={{ position: "fixed", width: "100vw", height: "100vh", inset: 0, zIndex: 20, pointerEvents: "none" }}
@@ -301,12 +306,9 @@ export default function Home() {
             </div>
           </ResponsiveContainer>
         </div>
-        {isSnowing && !dismissedXmasBar && (
-          <div className="fixed left-1/2 z-[60] w-[min(90vw,1100px)] max-w-screen-lg -translate-x-1/2 px-4">
-            <div
-              className="mt-2 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/10 dark:ring-white/10"
-              style={{ top: "var(--navbar-h, 64px)", position: "fixed", left: "50%", transform: "translateX(-50%)" }}
-            >
+        {showXmasBar && (
+          <div className="fixed left-1/2 top-0 z-[60] w-[min(92vw,1100px)] max-w-screen-lg -translate-x-1/2 px-4">
+            <div className="mt-2 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/10 dark:ring-white/10">
               <span className="text-base sm:text-lg">🎄</span>
               <span className="tracking-wide text-xs sm:text-sm">Clima natalino ativado! Luzes, neve e boas festas.</span>
               <span className="text-base sm:text-lg">✨</span>

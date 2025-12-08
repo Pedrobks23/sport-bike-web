@@ -107,8 +107,8 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4 overscroll-contain">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col">
         <div className="p-6 border-b border-gray-100 dark:border-gray-800">
           <h3 className="text-xl font-bold">{isEdit ? "Editar Produto" : "Novo Produto"}</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -160,13 +160,13 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
                 />
               </div>
 
-              <div>
+              <div className="max-h-[40vh] overflow-y-auto pr-1">
                 <label className="block text-sm font-medium mb-1">Características (uma por linha)</label>
                 <textarea
                   name="featuresText"
                   value={formData.featuresText}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 min-h-[160px] resize-y"
                   rows={6}
                   placeholder={"Quadro alumínio 6061\n24 marchas indexadas\nAro 29 tubeless-ready"}
                 />
@@ -212,7 +212,7 @@ const ProductModal = ({ isEdit, onClose, onSave, product }) => {
             </div>
 
             <div className="space-y-3">
-              <div>
+              <div className="max-h-[50vh] overflow-y-auto pr-1">
                 <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
                 <ProductImagesManager
                   value={formData.images}
