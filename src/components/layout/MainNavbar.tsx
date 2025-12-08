@@ -54,7 +54,7 @@ export default function MainNavbar({ isScrolled = false }) {
 
   return (
     <header
-      className={`relative z-30 w-full border-b border-white/20 dark:border-white/10 shadow-md supports-[backdrop-filter]:bg-white/40 supports-[backdrop-filter]:dark:bg-neutral-950/40 bg-white/60 dark:bg-neutral-950/40 backdrop-blur-md transition-all duration-300 ${
+      className={`sticky top-0 inset-x-0 z-40 w-full border-b border-white/20 dark:border-white/10 shadow-md supports-[backdrop-filter]:bg-white/30 supports-[backdrop-filter]:dark:bg-neutral-950/30 bg-white/60 dark:bg-neutral-950/40 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300 ${
         isScrolled ? "shadow-lg" : "shadow"
       }`}
     >
