@@ -1,9 +1,11 @@
 // @ts-nocheck
 import { useEffect, useId, useMemo, useState } from "react"
 import { X, MessageCircle, ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { doc, onSnapshot } from "firebase/firestore"
 import { normalizeProductImages } from "@/utils/productImage"
 import { ProductImage } from "@/components/shared/ProductImage"
 import { getProductFeatures } from "@/utils/productFeatures"
+import { db } from "@/config/firebase"
 
 const WHATSAPP_PHONE = import.meta.env.VITE_WHATSAPP_PHONE || "558532677425"
 
@@ -28,10 +30,29 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
   const [activeIndex, setActiveIndex] = useState(0)
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const titleId = useId()
+  const [liveProduct, setLiveProduct] = useState(null)
+
+  useEffect(() => {
+    if (!product?.id) return
+    const ref = doc(db, "products", product.id)
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const data = snap.data()
+        setLiveProduct(data ? { id: snap.id, ...data } : null)
+      },
+      (err) => {
+        console.warn("[ProductQuickView] snapshot error", err?.message || err)
+      }
+    )
+    return () => unsub()
+  }, [product?.id])
+
+  const productData = liveProduct ?? product
 
   const images = useMemo(() => {
-    const base = normalizeProductImages(product?.images || [])
-    const legacy = normalizeProductImages(product?.image ? [product.image] : [])
+    const base = normalizeProductImages(productData?.images || [])
+    const legacy = normalizeProductImages(productData?.image ? [productData.image] : [])
     const merged = [...base, ...legacy]
     const seen = new Set()
     return merged.filter((img) => {
@@ -40,9 +61,9 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
       seen.add(key)
       return true
     })
-  }, [product])
+  }, [productData])
 
-  const features = useMemo(() => getProductFeatures(product, 20), [product])
+  const features = useMemo(() => getProductFeatures(productData, 20), [productData])
   const displayFeatures = showAllFeatures ? features : features.slice(0, 8)
   const hasMoreFeatures = features.length > displayFeatures.length
 
@@ -69,17 +90,19 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
     if (activeIndex >= images.length) setActiveIndex(0)
   }, [images.length, activeIndex])
 
-  if (!product) return null
+  if (!productData) return null
 
-  const promoPrice = product?.promoPrice ?? product?.salePrice
-  const hasPromoFlag = product?.promo === true || product?.promoNatal === true || product?.tags?.includes?.("natal")
-  const isOnSale = Boolean(hasPromoFlag || (promoPrice && Number(promoPrice) < Number(product?.price || promoPrice)))
-  const displayPrice = promoPrice && Number(promoPrice) < Number(product?.price || promoPrice) ? promoPrice : product?.price
-  const previousPrice = promoPrice && Number(promoPrice) < Number(product?.price || promoPrice)
-    ? product?.price
-    : product?.oldPrice || product?.previousPrice
+  const promoPrice = productData?.promoPrice ?? productData?.salePrice
+  const hasPromoFlag =
+    productData?.promo === true || productData?.promoNatal === true || productData?.tags?.includes?.("natal")
+  const isOnSale = Boolean(hasPromoFlag || (promoPrice && Number(promoPrice) < Number(productData?.price || promoPrice)))
+  const displayPrice =
+    promoPrice && Number(promoPrice) < Number(productData?.price || promoPrice) ? promoPrice : productData?.price
+  const previousPrice = promoPrice && Number(promoPrice) < Number(productData?.price || promoPrice)
+    ? productData?.price
+    : productData?.oldPrice || productData?.previousPrice
 
-  const rating = Number(product?.rating || product?.stars || 0)
+  const rating = Number(productData?.rating || productData?.stars || 0)
 
   return (
     <div
@@ -107,7 +130,7 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
                 <ProductImage
                   publicId={activeImage?.publicId}
                   secureUrl={activeImage?.secureUrl}
-                  alt={activeImage?.alt || product?.name || "Produto"}
+                  alt={activeImage?.alt || productData?.name || "Produto"}
                   role="modal"
                 />
                 {images.length > 1 && (
@@ -147,11 +170,11 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
               <div className="space-y-1">
                 <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Produto</p>
                 <h2 id={titleId} className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {product?.name || "Produto"}
+                  {productData?.name || "Produto"}
                 </h2>
-                {product?.category && (
+                {productData?.category && (
                   <span className="inline-flex w-fit items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-100">
-                    {product.category}
+                    {productData.category}
                   </span>
                 )}
               </div>
@@ -181,11 +204,11 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
                 )}
               </div>
 
-              {product?.description && (
-                <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700 dark:bg-gray-900/70 dark:text-gray-100">
-                  {product.description}
-                </p>
-              )}
+                  {productData?.description && (
+                    <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700 dark:bg-gray-900/70 dark:text-gray-100">
+                      {productData.description}
+                    </p>
+                  )}
 
               {features.length > 0 && (
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/60">
@@ -214,7 +237,7 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
 
           <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t border-gray-100 bg-white/95 px-5 py-4 shadow-inner backdrop-blur supports-[backdrop-filter]:bg-white/85 dark:border-gray-800 dark:bg-neutral-950/90 lg:flex-row">
             <button
-              onClick={() => window.open(buildWhatsappLink(product), "_blank")}
+              onClick={() => window.open(buildWhatsappLink(productData), "_blank")}
               className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow transition focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                 isXmas ? "bg-red-600 hover:bg-red-500 focus:ring-red-400" : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
               }`}

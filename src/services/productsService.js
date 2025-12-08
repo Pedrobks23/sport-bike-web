@@ -11,6 +11,7 @@ import {
   query,
   orderBy,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
 import { destroyFromCloudinary } from "@/utils/cloudinary";
 import { deriveFeaturesPayload } from "@/utils/productFeatures";
@@ -60,7 +61,7 @@ export async function listPublicProducts() {
  * Retorna o doc salvo (com id).
  */
 export async function createProduct(data) {
-  const now = new Date();
+  const now = serverTimestamp();
   const coverImage = data.images?.[0] || data.image || null;
   const { features, featuresText } = deriveFeaturesPayload(
     data.features,
@@ -106,7 +107,7 @@ export async function updateProduct(id, partial) {
       : coverImage
         ? [coverImage]
         : [],
-    updatedAt: new Date(),
+    updatedAt: serverTimestamp(),
   });
 }
 

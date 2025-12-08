@@ -1,3 +1,5 @@
+import { parseFeatures } from "./parseFeatures"
+
 export type FeatureInput = string | string[] | null | undefined
 
 function sanitizeFeature(text: string) {
@@ -12,9 +14,7 @@ export function normalizeFeatures(input: FeatureInput, max = 20): string[] {
   const baseArray = Array.isArray(input)
     ? input
     : typeof input === "string"
-      ? input
-          .split(/[\n;•]/)
-          .map((item) => item.trim())
+      ? parseFeatures(input)
       : []
 
   const cleaned = baseArray
