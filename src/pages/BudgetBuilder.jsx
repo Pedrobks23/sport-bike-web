@@ -61,6 +61,20 @@ export default function BudgetBuilder() {
 
   const displayTotal = customTotal ? toNumber(customTotal) : total;
 
+  const generateBudgetCode = () => {
+    const now = new Date();
+    return [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+      String(now.getHours()).padStart(2, "0"),
+      String(now.getMinutes()).padStart(2, "0"),
+      String(now.getSeconds()).padStart(2, "0"),
+    ].join("");
+  };
+
+  const [budgetCode] = useState(() => generateBudgetCode());
+
   const resetForm = () => {
     setDescription("");
     setQuantity(1);
@@ -113,7 +127,10 @@ export default function BudgetBuilder() {
   };
 
   const formatBudgetText = () => {
-    const lines = ["ORÇAMENTO - Sport & Bike", `Data: ${new Date().toLocaleDateString("pt-BR")}`];
+    const lines = [
+      `ORÇAMENTO - Sport & Bike (${budgetCode})`,
+      `Data: ${new Date().toLocaleDateString("pt-BR")}`,
+    ];
     if (customerName) lines.push(`Cliente: ${customerName}`);
     if (customerPhone) lines.push(`Contato: ${customerPhone}`);
     lines.push("", "Itens:");
@@ -237,8 +254,10 @@ export default function BudgetBuilder() {
   };
 
   const handleExportPDF = async () => {
-    const doc = new jsPDF();
-    let currentY = 18;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const marginX = 40;
+    let currentY = 40;
+    const pageWidth = doc.internal.pageSize.getWidth();
 
     try {
       const response = await fetch("/assets/Logo.png");
@@ -248,47 +267,130 @@ export default function BudgetBuilder() {
         reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       });
-      doc.addImage(dataUrl, "PNG", 14, 10, 32, 18);
+      doc.addImage(dataUrl, "PNG", marginX, currentY, 90, 50);
     } catch (error) {
       console.warn("Logo não pôde ser carregado", error);
     }
 
-    doc.setFontSize(14);
-    doc.text("Orçamento - Sport & Bike", 50, currentY);
     doc.setFontSize(11);
-    doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, 50, currentY + 8);
-    if (customerName) doc.text(`Cliente: ${customerName}`, 50, currentY + 16);
-    if (customerPhone) doc.text(`Contato: ${customerPhone}`, 50, currentY + 24);
+    doc.text("PEREIRA COMERCIO LTDA", marginX, currentY + 65);
+    doc.setTextColor(80, 80, 80);
+    const headerLines = [
+      "CNPJ: 52.532.493/0001-04",
+      "R. José Rufino, 1680C",
+      "Meireles, Fortaleza-CE",
+      "CEP 60160-110",
+      "sportbike_fortaleza?gshid=1nblpdcbl6piu",
+    ];
+    headerLines.forEach((line, idx) => {
+      doc.text(line, marginX, currentY + 80 + idx * 14);
+    });
 
-    currentY = customerPhone ? currentY + 34 : customerName ? currentY + 26 : currentY + 18;
+    const contactLines = [
+      "pedrobikes3219@gmail.com",
+      "(85) 99682-3553",
+      "(85) 3122-5874",
+    ];
+    contactLines.forEach((line, idx) => {
+      doc.text(line, pageWidth - marginX - doc.getTextWidth(line), currentY + 12 + idx * 14);
+    });
+    doc.setTextColor(0, 0, 0);
 
-    if (mode === "list" && (modeItems || []).length > 0) {
-      const tableBody = (modeItems || []).map((item) => [
-        item.description || "Item",
-        String(item.qty || 1),
-        currency(item.unitPrice || 0),
-        currency((item.qty || 1) * (item.unitPrice || 0)),
-      ]);
+    doc.setFontSize(12);
+    doc.text(new Date().toLocaleDateString("pt-BR"), pageWidth - marginX, currentY + 60, { align: "right" });
+
+    currentY += 110;
+
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(marginX, currentY, pageWidth - marginX * 2, 36, 4, 4, "F");
+    doc.setFontSize(16);
+    doc.text(`Orçamento ${budgetCode}`, marginX + 12, currentY + 24);
+    currentY += 60;
+
+    if (customerName || customerPhone) {
+      doc.setFontSize(12);
+      const labelWidth = 70;
+      if (customerName) {
+        doc.text("Cliente:", marginX, currentY);
+        doc.text(customerName, marginX + labelWidth, currentY);
+        currentY += 16;
+      }
+      if (customerPhone) {
+        doc.text("Contato:", marginX, currentY);
+        doc.text(customerPhone, marginX + labelWidth, currentY);
+        currentY += 22;
+      } else {
+        currentY += 12;
+      }
+    }
+
+    const hasItems = mode === "list" && (modeItems || []).length > 0;
+    const rawContent = previewText || rawText;
+
+    if (hasItems) {
+      doc.setFontSize(13);
+      doc.text("Produtos", marginX, currentY);
+      currentY += 12;
 
       doc.autoTable({
         startY: currentY,
-        head: [["Item", "Qtd", "Unitário", "Subtotal"]],
-        body: tableBody,
+        head: [["Descrição", "Qtd", "Unitário", "Subtotal"]],
+        body: (modeItems || []).map((item) => [
+          item.description || "Item",
+          String(item.qty || 1),
+          currency(item.unitPrice || 0),
+          currency((item.qty || 1) * (item.unitPrice || 0)),
+        ]),
+        styles: { fontSize: 11, halign: "left" },
+        headStyles: { fillColor: [230, 230, 230], textColor: 20 },
+        columnStyles: {
+          1: { halign: "center" },
+          2: { halign: "right" },
+          3: { halign: "right" },
+        },
       });
-
-      currentY = doc.lastAutoTable?.finalY || currentY + 20;
-    } else if (rawText || previewText) {
-      doc.setFontSize(12);
-      doc.text("Conteúdo do orçamento:", 14, currentY);
-      const wrapped = doc.splitTextToSize(previewText || rawText, 180);
-      doc.setFontSize(10);
-      doc.text(wrapped, 14, currentY + 8);
-      currentY = currentY + 8 + wrapped.length * 6;
+      currentY = doc.lastAutoTable?.finalY || currentY;
     }
 
+    if (rawContent) {
+      currentY += 24;
+      doc.setFontSize(13);
+      doc.text("Orçamento", marginX, currentY);
+      currentY += 10;
+      const boxHeight = doc.splitTextToSize(rawContent, pageWidth - marginX * 2 - 12).length * 14 + 20;
+      doc.setFillColor(248, 248, 248);
+      doc.roundedRect(marginX, currentY, pageWidth - marginX * 2, boxHeight, 6, 6, "F");
+      doc.setFontSize(11);
+      const wrapped = doc.splitTextToSize(rawContent, pageWidth - marginX * 2 - 20);
+      doc.text(wrapped, marginX + 10, currentY + 18);
+      currentY += boxHeight + 6;
+    }
+
+    currentY += 10;
     doc.setFontSize(12);
-    doc.text(`Total: ${currency(displayTotal)}`, 14, currentY + 14);
-    doc.save("orcamento.pdf");
+    doc.text(`Total: ${currency(displayTotal)}`, pageWidth - marginX, currentY, { align: "right" });
+
+    currentY += 30;
+    doc.setFontSize(12);
+    doc.text("Pagamento", marginX, currentY);
+    currentY += 8;
+    doc.setFontSize(11);
+    doc.text("Meios de pagamento", marginX, currentY + 14);
+    doc.text(
+      "Transferência bancária, dinheiro, cartão de crédito, cartão de débito",
+      marginX + 130,
+      currentY + 14
+    );
+    doc.text("PIX", marginX, currentY + 28);
+    doc.text("CNPJ: 37.338.208/0001-18", marginX + 130, currentY + 28);
+
+    currentY += 60;
+    doc.text(`Fortaleza, ${new Date().toLocaleDateString("pt-BR")}`, marginX, currentY);
+    currentY += 50;
+    doc.text("Sport & Bike", marginX, currentY);
+    doc.text("Gilberto Pereira", marginX, currentY + 14);
+
+    doc.save(`orcamento-${budgetCode}.pdf`);
   };
 
   const renderPreview = () => (
