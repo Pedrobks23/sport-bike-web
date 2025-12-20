@@ -504,23 +504,27 @@ export default function BudgetBuilder() {
       {mode === "list" && modeItems && modeItems.length > 0 ? (
         <div className="space-y-2">
           <div className="border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-4 text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
-              <div className="p-2">Descrição</div>
-              <div className="p-2 text-center">Qtd</div>
-              <div className="p-2 text-right">Unitário</div>
-              <div className="p-2 text-right">Subtotal</div>
-            </div>
-            {modeItems.map((item) => (
-              <div
-                key={item.id}
-                className="grid grid-cols-4 text-sm border-t border-neutral-100 dark:border-neutral-800"
-              >
-                <div className="p-2">{item.description}</div>
-                <div className="p-2 text-center">{item.qty || 1}</div>
-                <div className="p-2 text-right">{currency(item.unitPrice || 0)}</div>
-                <div className="p-2 text-right">{currency((item.qty || 1) * (item.unitPrice || 0))}</div>
+            <div className="overflow-x-auto">
+              <div className="min-w-[540px]">
+                <div className="grid grid-cols-4 text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
+                  <div className="p-2">Descrição</div>
+                  <div className="p-2 text-center">Qtd</div>
+                  <div className="p-2 text-right">Unitário</div>
+                  <div className="p-2 text-right">Subtotal</div>
+                </div>
+                {modeItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="grid grid-cols-4 text-sm border-t border-neutral-100 dark:border-neutral-800"
+                  >
+                    <div className="p-2">{item.description}</div>
+                    <div className="p-2 text-center">{item.qty || 1}</div>
+                    <div className="p-2 text-right">{currency(item.unitPrice || 0)}</div>
+                    <div className="p-2 text-right">{currency((item.qty || 1) * (item.unitPrice || 0))}</div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
           <div className="flex justify-end text-base font-semibold mt-2">
             Total: <span className="ml-2 text-amber-600">{currency(displayTotal)}</span>
@@ -679,43 +683,47 @@ export default function BudgetBuilder() {
                   </div>
 
                   <div className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden">
-                    <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
-                      <div className="col-span-6 p-2">Descrição</div>
-                      <div className="col-span-2 p-2 text-center">Qtd</div>
-                      <div className="col-span-2 p-2 text-right">Unitário</div>
-                      <div className="col-span-2 p-2 text-right">Subtotal</div>
-                    </div>
-                    {(items || []).length === 0 && (
-                      <div className="p-4 text-sm text-neutral-500">Nenhum item adicionado.</div>
-                    )}
-                    {(items || []).map((item) => (
-                      <div
-                        key={item.id}
-                        className="grid grid-cols-12 items-center text-sm border-t border-neutral-100 dark:border-neutral-800"
-                      >
-                        <div className="col-span-6 p-2">{item.description}</div>
-                        <div className="col-span-2 p-2 text-center">{item.qty}</div>
-                        <div className="col-span-2 p-2 text-right">{currency(item.unitPrice)}</div>
-                        <div className="col-span-2 p-2 text-right flex items-center justify-end gap-2">
-                          <span>{currency((item.qty || 1) * (item.unitPrice || 0))}</span>
-                          <button
-                            onClick={() => handleEditItem(item.id)}
-                            className="text-neutral-500 hover:text-amber-600"
-                            title="Editar"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="text-red-500 hover:text-red-600"
-                            title="Remover"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                    <div className="overflow-x-auto">
+                      <div className="min-w-[640px]">
+                        <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
+                          <div className="col-span-6 p-2">Descrição</div>
+                          <div className="col-span-2 p-2 text-center">Qtd</div>
+                          <div className="col-span-2 p-2 text-right">Unitário</div>
+                          <div className="col-span-2 p-2 text-right">Subtotal</div>
                         </div>
+                        {(items || []).length === 0 && (
+                          <div className="p-4 text-sm text-neutral-500">Nenhum item adicionado.</div>
+                        )}
+                        {(items || []).map((item) => (
+                          <div
+                            key={item.id}
+                            className="grid grid-cols-12 items-center text-sm border-t border-neutral-100 dark:border-neutral-800"
+                          >
+                            <div className="col-span-6 p-2">{item.description}</div>
+                            <div className="col-span-2 p-2 text-center">{item.qty}</div>
+                            <div className="col-span-2 p-2 text-right">{currency(item.unitPrice)}</div>
+                            <div className="col-span-2 p-2 text-right flex items-center justify-end gap-2">
+                              <span>{currency((item.qty || 1) * (item.unitPrice || 0))}</span>
+                              <button
+                                onClick={() => handleEditItem(item.id)}
+                                className="text-neutral-500 hover:text-amber-600"
+                                title="Editar"
+                              >
+                                <Edit3 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="text-red-500 hover:text-red-600"
+                                title="Remover"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    <div className="flex justify-between items-center px-4 py-3 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 text-sm">
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center px-4 py-3 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 text-sm">
                       <button
                         onClick={handleClear}
                         className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-300 hover:text-neutral-800"
@@ -830,44 +838,48 @@ export default function BudgetBuilder() {
           <div className="mt-3">
             {budgetsLoading ? (
               <div className="text-sm text-neutral-500">Carregando orçamentos...</div>
-            ) : budgets.length === 0 ? (
-              <div className="text-sm text-neutral-500">Nenhum orçamento salvo ainda.</div>
-            ) : (
-              <div className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden">
-                <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
-                  <div className="col-span-3 p-2">Código</div>
-                  <div className="col-span-3 p-2">Cliente</div>
-                  <div className="col-span-2 p-2">Modo</div>
-                  <div className="col-span-2 p-2 text-right">Total</div>
-                  <div className="col-span-1 p-2">Data</div>
-                  <div className="col-span-1 p-2 text-right">Ações</div>
-                </div>
-                {budgets.map((budget) => (
-                  <div
-                    key={budget.id}
-                    className="grid grid-cols-12 items-center text-sm border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
-                  >
-                    <div className="col-span-3 p-2 truncate">{budget.budgetCode || budget.id}</div>
-                    <div className="col-span-3 p-2 truncate">{budget.customerName || "-"}</div>
-                    <div className="col-span-2 p-2">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-                        {budget.mode === "paste" ? <FileText size={12} /> : <ListPlus size={12} />} {budget.mode === "paste" ? "Colado" : "Lista"}
-                      </span>
-                    </div>
-                    <div className="col-span-2 p-2 text-right">{currency(budget.total)}</div>
-                    <div className="col-span-1 p-2 text-xs text-neutral-500">{formatDate(budget.createdAt)}</div>
-                    <div className="col-span-1 p-2 flex justify-end">
-                      <button
-                        onClick={() => handleSelectBudget(budget)}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      >
-                        <Edit3 size={14} /> Editar
-                      </button>
+              ) : budgets.length === 0 ? (
+                <div className="text-sm text-neutral-500">Nenhum orçamento salvo ainda.</div>
+              ) : (
+                <div className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[720px]">
+                      <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
+                        <div className="col-span-3 p-2">Código</div>
+                        <div className="col-span-3 p-2">Cliente</div>
+                        <div className="col-span-2 p-2">Modo</div>
+                        <div className="col-span-2 p-2 text-right">Total</div>
+                        <div className="col-span-1 p-2">Data</div>
+                        <div className="col-span-1 p-2 text-right">Ações</div>
+                      </div>
+                      {budgets.map((budget) => (
+                        <div
+                          key={budget.id}
+                          className="grid grid-cols-12 items-center text-sm border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
+                        >
+                          <div className="col-span-3 p-2 truncate">{budget.budgetCode || budget.id}</div>
+                          <div className="col-span-3 p-2 truncate">{budget.customerName || "-"}</div>
+                          <div className="col-span-2 p-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                              {budget.mode === "paste" ? <FileText size={12} /> : <ListPlus size={12} />} {budget.mode === "paste" ? "Colado" : "Lista"}
+                            </span>
+                          </div>
+                          <div className="col-span-2 p-2 text-right">{currency(budget.total)}</div>
+                          <div className="col-span-1 p-2 text-xs text-neutral-500">{formatDate(budget.createdAt)}</div>
+                          <div className="col-span-1 p-2 flex justify-end">
+                            <button
+                              onClick={() => handleSelectBudget(budget)}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                            >
+                              <Edit3 size={14} /> Editar
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
           </div>
         </div>
       </div>
