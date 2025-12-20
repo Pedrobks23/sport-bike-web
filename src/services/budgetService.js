@@ -1,4 +1,4 @@
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 
 const COLLECTION = "orcamentos";
@@ -18,4 +18,13 @@ export const getBudgets = async () => {
   const q = query(ref, orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
   return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+};
+
+export const updateBudget = async (id, data) => {
+  const ref = doc(db, COLLECTION, id);
+  await updateDoc(ref, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+  return id;
 };

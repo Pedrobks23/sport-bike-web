@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { createBudget } from "../services/budgetService";
+import { createBudget, getBudgets, updateBudget } from "../services/budgetService";
 
 const toNumber = (value) => {
   if (value === undefined || value === null) return 0;
@@ -31,6 +31,13 @@ const toNumber = (value) => {
 const currency = (value) =>
   Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = value.toDate ? value.toDate() : new Date(value);
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("pt-BR");
+};
+
 export default function BudgetBuilder() {
   const navigate = useNavigate();
   const [mode, setMode] = useState("list");
@@ -41,6 +48,9 @@ export default function BudgetBuilder() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customTotal, setCustomTotal] = useState("");
+  const [budgets, setBudgets] = useState([]);
+  const [budgetsLoading, setBudgetsLoading] = useState(true);
+  const [selectedBudgetId, setSelectedBudgetId] = useState(null);
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
@@ -50,6 +60,8 @@ export default function BudgetBuilder() {
   const descriptionRef = useRef(null);
 
   const modeItems = mode === "list" ? items : parsedItems;
+
+  const isEditing = Boolean(selectedBudgetId);
 
   const total = useMemo(() => {
     return (modeItems || []).reduce((sum, item) => {
@@ -73,7 +85,7 @@ export default function BudgetBuilder() {
     ].join("");
   };
 
-  const [budgetCode] = useState(() => generateBudgetCode());
+  const [budgetCode, setBudgetCode] = useState(() => generateBudgetCode());
 
   const resetForm = () => {
     setDescription("");
@@ -123,7 +135,62 @@ export default function BudgetBuilder() {
     setRawText("");
     setPreviewText("");
     setCustomTotal("");
+    setSelectedBudgetId(null);
+    setBudgetCode(generateBudgetCode());
     resetForm();
+  };
+
+  const loadBudgets = async () => {
+    setBudgetsLoading(true);
+    try {
+      const list = await getBudgets();
+      setBudgets(list);
+    } catch (error) {
+      console.error("Erro ao buscar orçamentos", error);
+      setFeedback("Não foi possível carregar os orçamentos salvos.");
+    } finally {
+      setBudgetsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBudgets();
+  }, []);
+
+  const handleSelectBudget = (budget) => {
+    if (!budget) return;
+    setSelectedBudgetId(budget.id);
+    setMode(budget.mode || "list");
+    setCustomerName(budget.customerName || "");
+    setCustomerPhone(budget.customerPhone || "");
+    setBudgetCode(budget.budgetCode || budget.id || generateBudgetCode());
+    setCustomTotal(budget.total ? String(budget.total) : "");
+
+    if (budget.mode === "list") {
+      setItems(
+        (budget.items || []).map((item, idx) => ({
+          id: item.id || `loaded-${idx}`,
+          description: item.description,
+          qty: item.qty || item.quantity || 1,
+          unitPrice: item.unitPrice || item.valor || 0,
+        }))
+      );
+      setParsedItems([]);
+    } else {
+      setParsedItems(
+        (budget.items || []).map((item, idx) => ({
+          id: item.id || `loaded-p-${idx}`,
+          description: item.description,
+          qty: item.qty || item.quantity || 1,
+          unitPrice: item.unitPrice || item.valor || 0,
+        }))
+      );
+      setItems([]);
+    }
+
+    setRawText(budget.rawText || "");
+    setPreviewText(budget.rawText || "");
+    setFeedback("Orçamento carregado para edição.");
   };
 
   const formatBudgetText = () => {
@@ -225,6 +292,7 @@ export default function BudgetBuilder() {
 
     const data = {
       mode,
+      budgetCode,
       customerName: customerName?.trim() || "",
       customerPhone: customerPhone?.trim() || "",
       items: (payloadItems || []).map((item) => {
@@ -243,8 +311,14 @@ export default function BudgetBuilder() {
 
     try {
       setSaving(true);
-      await createBudget(data);
-      setFeedback("Orçamento salvo com sucesso.");
+      if (isEditing) {
+        await updateBudget(selectedBudgetId, data);
+        setFeedback("Orçamento atualizado com sucesso.");
+      } else {
+        await createBudget(data);
+        setFeedback("Orçamento salvo com sucesso.");
+      }
+      await loadBudgets();
     } catch (err) {
       console.error(err);
       setFeedback("Não foi possível salvar. Verifique sua conexão ou permissões.");
@@ -483,6 +557,19 @@ export default function BudgetBuilder() {
             <div>
               <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Criar Orçamento</h1>
               <p className="text-neutral-600 dark:text-neutral-400">Modo rápido para balcão</p>
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-sm">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                  <FileText size={14} /> Código: {budgetCode}
+                </span>
+                {isEditing && (
+                  <button
+                    onClick={handleClear}
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300 dark:bg-amber-900/30"
+                  >
+                    <RefreshCcw size={14} /> Novo orçamento
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
@@ -688,7 +775,8 @@ export default function BudgetBuilder() {
                   disabled={saving}
                   className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-60"
                 >
-                  <Save size={16} /> {saving ? "Salvando..." : "Salvar orçamento"}
+                  <Save size={16} />
+                  {saving ? "Salvando..." : isEditing ? "Salvar alterações" : "Salvar orçamento"}
                 </button>
                 <button
                   onClick={handleCopy}
@@ -715,6 +803,71 @@ export default function BudgetBuilder() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Orçamentos salvos</h2>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">Visualize e retome orçamentos existentes.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {isEditing && (
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800">
+                  <Edit3 size={14} /> Editando {budgetCode}
+                </span>
+              )}
+              <button
+                onClick={loadBudgets}
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm"
+              >
+                <RefreshCcw size={16} /> Atualizar lista
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            {budgetsLoading ? (
+              <div className="text-sm text-neutral-500">Carregando orçamentos...</div>
+            ) : budgets.length === 0 ? (
+              <div className="text-sm text-neutral-500">Nenhum orçamento salvo ainda.</div>
+            ) : (
+              <div className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden">
+                <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
+                  <div className="col-span-3 p-2">Código</div>
+                  <div className="col-span-3 p-2">Cliente</div>
+                  <div className="col-span-2 p-2">Modo</div>
+                  <div className="col-span-2 p-2 text-right">Total</div>
+                  <div className="col-span-1 p-2">Data</div>
+                  <div className="col-span-1 p-2 text-right">Ações</div>
+                </div>
+                {budgets.map((budget) => (
+                  <div
+                    key={budget.id}
+                    className="grid grid-cols-12 items-center text-sm border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
+                  >
+                    <div className="col-span-3 p-2 truncate">{budget.budgetCode || budget.id}</div>
+                    <div className="col-span-3 p-2 truncate">{budget.customerName || "-"}</div>
+                    <div className="col-span-2 p-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                        {budget.mode === "paste" ? <FileText size={12} /> : <ListPlus size={12} />} {budget.mode === "paste" ? "Colado" : "Lista"}
+                      </span>
+                    </div>
+                    <div className="col-span-2 p-2 text-right">{currency(budget.total)}</div>
+                    <div className="col-span-1 p-2 text-xs text-neutral-500">{formatDate(budget.createdAt)}</div>
+                    <div className="col-span-1 p-2 flex justify-end">
+                      <button
+                        onClick={() => handleSelectBudget(budget)}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      >
+                        <Edit3 size={14} /> Editar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
