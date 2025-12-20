@@ -15,6 +15,7 @@ import {
   RefreshCcw,
   Wand2,
   FileDown,
+  BadgeCheck,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -39,6 +40,7 @@ export default function BudgetBuilder() {
   const [previewText, setPreviewText] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customTotal, setCustomTotal] = useState("");
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
@@ -56,6 +58,8 @@ export default function BudgetBuilder() {
       return sum + qty * price;
     }, 0);
   }, [modeItems]);
+
+  const displayTotal = customTotal ? toNumber(customTotal) : total;
 
   const resetForm = () => {
     setDescription("");
@@ -104,6 +108,7 @@ export default function BudgetBuilder() {
     setParsedItems([]);
     setRawText("");
     setPreviewText("");
+    setCustomTotal("");
     resetForm();
   };
 
@@ -113,17 +118,18 @@ export default function BudgetBuilder() {
     if (customerPhone) lines.push(`Contato: ${customerPhone}`);
     lines.push("", "Itens:");
 
-    if ((modeItems || []).length > 0) {
+    if (mode === "list" && (modeItems || []).length > 0) {
       modeItems.forEach((item) => {
         const qty = item.qty || item.quantity || 1;
         const price = item.unitPrice || item.valor || 0;
         lines.push(`- ${item.description || "Item"} (${qty}x) = ${currency(qty * price)}`);
       });
-    } else if (rawText) {
-      lines.push(rawText);
+    } else if (rawText || previewText) {
+      lines.push("Conteúdo do orçamento:");
+      lines.push(previewText || rawText);
     }
 
-    lines.push("", `Total: ${currency(total)}`);
+    lines.push("", `Total: ${currency(displayTotal)}`);
     return lines.join("\n");
   };
 
@@ -215,7 +221,7 @@ export default function BudgetBuilder() {
         };
       }),
       rawText: rawText,
-      total,
+      total: displayTotal,
     };
 
     try {
@@ -230,46 +236,84 @@ export default function BudgetBuilder() {
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const doc = new jsPDF();
+    let currentY = 18;
+
+    try {
+      const response = await fetch("/assets/Logo.png");
+      const blob = await response.blob();
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      doc.addImage(dataUrl, "PNG", 14, 10, 32, 18);
+    } catch (error) {
+      console.warn("Logo não pôde ser carregado", error);
+    }
+
     doc.setFontSize(14);
-    doc.text("Orçamento - Sport & Bike", 14, 18);
+    doc.text("Orçamento - Sport & Bike", 50, currentY);
     doc.setFontSize(11);
-    doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, 14, 26);
-    if (customerName) doc.text(`Cliente: ${customerName}`, 14, 34);
-    if (customerPhone) doc.text(`Contato: ${customerPhone}`, 14, 42);
+    doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, 50, currentY + 8);
+    if (customerName) doc.text(`Cliente: ${customerName}`, 50, currentY + 16);
+    if (customerPhone) doc.text(`Contato: ${customerPhone}`, 50, currentY + 24);
 
-    const tableBody = (modeItems || []).map((item) => [
-      item.description || "Item",
-      String(item.qty || 1),
-      currency(item.unitPrice || 0),
-      currency((item.qty || 1) * (item.unitPrice || 0)),
-    ]);
+    currentY = customerPhone ? currentY + 34 : customerName ? currentY + 26 : currentY + 18;
 
-    doc.autoTable({
-      startY: customerPhone ? 48 : customerName ? 42 : 34,
-      head: [["Item", "Qtd", "Unitário", "Subtotal"]],
-      body: tableBody,
-    });
+    if (mode === "list" && (modeItems || []).length > 0) {
+      const tableBody = (modeItems || []).map((item) => [
+        item.description || "Item",
+        String(item.qty || 1),
+        currency(item.unitPrice || 0),
+        currency((item.qty || 1) * (item.unitPrice || 0)),
+      ]);
 
-    const endY = doc.lastAutoTable?.finalY || 60;
+      doc.autoTable({
+        startY: currentY,
+        head: [["Item", "Qtd", "Unitário", "Subtotal"]],
+        body: tableBody,
+      });
+
+      currentY = doc.lastAutoTable?.finalY || currentY + 20;
+    } else if (rawText || previewText) {
+      doc.setFontSize(12);
+      doc.text("Conteúdo do orçamento:", 14, currentY);
+      const wrapped = doc.splitTextToSize(previewText || rawText, 180);
+      doc.setFontSize(10);
+      doc.text(wrapped, 14, currentY + 8);
+      currentY = currentY + 8 + wrapped.length * 6;
+    }
+
     doc.setFontSize(12);
-    doc.text(`Total: ${currency(total)}`, 14, endY + 10);
+    doc.text(`Total: ${currency(displayTotal)}`, 14, currentY + 14);
     doc.save("orcamento.pdf");
   };
 
   const renderPreview = () => (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-3 text-sm text-neutral-600 dark:text-neutral-300">
-        <ClipboardList size={16} />
-        <span>Pré-visualização</span>
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 shadow-sm space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+          <ClipboardList size={16} />
+          <span>Pré-visualização</span>
+        </div>
+        <img src="/assets/Logo.png" alt="Logo" className="h-8 w-auto object-contain" />
       </div>
-      {modeItems && modeItems.length > 0 ? (
+      <div className="flex flex-wrap gap-3 text-sm text-neutral-600 dark:text-neutral-300">
+        {customerName && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+            <BadgeCheck size={14} /> Cliente: {customerName}
+          </span>
+        )}
+        {customerPhone && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+            Contato: {customerPhone}
+          </span>
+        )}
+      </div>
+      {mode === "list" && modeItems && modeItems.length > 0 ? (
         <div className="space-y-2">
-          <div className="flex flex-wrap gap-3 text-sm text-neutral-600 dark:text-neutral-300">
-            {customerName && <span className="font-medium">Cliente: {customerName}</span>}
-            {customerPhone && <span className="font-medium">Contato: {customerPhone}</span>}
-          </div>
           <div className="border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
             <div className="grid grid-cols-4 text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
               <div className="p-2">Descrição</div>
@@ -290,11 +334,19 @@ export default function BudgetBuilder() {
             ))}
           </div>
           <div className="flex justify-end text-base font-semibold mt-2">
-            Total: <span className="ml-2 text-amber-600">{currency(total)}</span>
+            Total: <span className="ml-2 text-amber-600">{currency(displayTotal)}</span>
           </div>
         </div>
-      ) : previewText ? (
-        <pre className="text-sm whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{previewText}</pre>
+      ) : rawText || previewText ? (
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-wide text-neutral-500">Conteúdo colado</p>
+          <div className="rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-3 max-h-96 overflow-auto">
+            <pre className="text-sm whitespace-pre-wrap text-neutral-700 dark:text-neutral-200 font-mono">{previewText || rawText}</pre>
+          </div>
+          <div className="flex justify-end text-base font-semibold">
+            Total informado: <span className="ml-2 text-amber-600">{currency(displayTotal)}</span>
+          </div>
+        </div>
       ) : (
         <p className="text-sm text-neutral-500">Cole ou adicione itens para visualizar aqui.</p>
       )}
@@ -368,6 +420,16 @@ export default function BudgetBuilder() {
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="(11) 99999-9999"
                   />
+                </div>
+                <div>
+                  <label className="text-sm text-neutral-600 dark:text-neutral-300">Total (manual)</label>
+                  <input
+                    className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950"
+                    value={customTotal}
+                    onChange={(e) => setCustomTotal(e.target.value)}
+                    placeholder="Use para sobrescrever o total (ex: 499,90)"
+                  />
+                  <p className="text-[11px] text-neutral-500 mt-1">No modo colar texto, este total será usado no documento.</p>
                 </div>
               </div>
 
@@ -459,7 +521,7 @@ export default function BudgetBuilder() {
                         <RefreshCcw size={16} /> Limpar
                       </button>
                       <div className="text-base font-semibold">
-                        Total: <span className="text-amber-600">{currency(total)}</span>
+                        Total: <span className="text-amber-600">{currency(displayTotal)}</span>
                       </div>
                     </div>
                   </div>
