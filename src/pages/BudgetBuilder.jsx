@@ -267,7 +267,20 @@ export default function BudgetBuilder() {
         reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       });
-      doc.addImage(dataUrl, "PNG", marginX, currentY, 90, 50);
+      const logoImage = new Image();
+      logoImage.src = dataUrl;
+      await new Promise((resolve) => {
+        if (logoImage.complete) {
+          resolve();
+        } else {
+          logoImage.onload = resolve;
+          logoImage.onerror = resolve;
+        }
+      });
+      const targetWidth = 120;
+      const aspectRatio = logoImage.width && logoImage.height ? logoImage.height / logoImage.width : 0.5;
+      const targetHeight = Math.min(targetWidth * aspectRatio, 60);
+      doc.addImage(dataUrl, "PNG", marginX, currentY, targetWidth, targetHeight || 50);
     } catch (error) {
       console.warn("Logo não pôde ser carregado", error);
     }
@@ -277,7 +290,7 @@ export default function BudgetBuilder() {
     doc.setTextColor(80, 80, 80);
     const headerLines = [
       "CNPJ: 52.532.493/0001-04",
-      "R. José Rufino, 1680C",
+      "Rua Ana Bilhar, 1680",
       "Meireles, Fortaleza-CE",
       "CEP 60160-110",
       "sportbike_fortaleza?gshid=1nblpdcbl6piu",
@@ -287,8 +300,8 @@ export default function BudgetBuilder() {
     });
 
     const contactLines = [
-      "pedrobikes3219@gmail.com",
-      "(85) 99682-3553",
+      "comercialsportbike@gmail.com",
+      "(85) 3267-7425",
       "(85) 3122-5874",
     ];
     contactLines.forEach((line, idx) => {
@@ -382,7 +395,7 @@ export default function BudgetBuilder() {
       currentY + 14
     );
     doc.text("PIX", marginX, currentY + 28);
-    doc.text("CNPJ: 37.338.208/0001-18", marginX + 130, currentY + 28);
+    doc.text("CNPJ: 52.532.493/0001-04", marginX + 130, currentY + 28);
 
     currentY += 60;
     doc.text(`Fortaleza, ${new Date().toLocaleDateString("pt-BR")}`, marginX, currentY);
