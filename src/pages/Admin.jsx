@@ -11,6 +11,7 @@ import {
   Settings,
   Home as HomeIcon,
   BarChart3,
+  ClipboardList,
   LogOut,
   Menu,
   X,
@@ -79,6 +80,14 @@ export default function Admin() {
       color: "from-blue-400 to-blue-600",
       hoverColor: "hover:from-blue-500 hover:to-blue-700",
       path: "/admin/receipts",
+    },
+    {
+      icon: <ClipboardList className="w-8 h-8" />,
+      title: "Orçamentos",
+      description: "Criar orçamentos rapidamente",
+      color: "from-cyan-400 to-cyan-600",
+      hoverColor: "hover:from-cyan-500 hover:to-cyan-700",
+      path: "/admin/budgets/new",
     },
     {
       icon: <FileText className="w-8 h-8" />,

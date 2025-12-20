@@ -19,6 +19,7 @@ import HistoricoMecanico from "../pages/HistoricoMecanico"
 import PrivateRoute from "../components/PrivateRoute"
 import Mecanicos from "../pages/Mecanicos"
 import ProductsPublic from "@/pages/ProductsPublic"
+import BudgetBuilder from "../pages/BudgetBuilder"
 
 export const router = createBrowserRouter([
   {
@@ -162,6 +163,14 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <HistoricoMecanico />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/admin/budgets/new",
+    element: (
+      <PrivateRoute>
+        <BudgetBuilder />
       </PrivateRoute>
     ),
   },
