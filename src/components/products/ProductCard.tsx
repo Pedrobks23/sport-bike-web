@@ -23,7 +23,7 @@ function buildWhatsappLink(product) {
   )}&type=phone_number&app_absent=0`
 }
 
-export default function ProductCard({ product, isXmas = false, prefersReducedMotion = false, onOpenQuickView }) {
+export default function ProductCard({ product, prefersReducedMotion = false, onOpenQuickView }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -51,7 +51,7 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
   }, [activeImage?.publicId, activeImage?.secureUrl])
 
   const promoPrice = product?.promoPrice ?? product?.salePrice
-  const hasPromoFlag = product?.promo === true || product?.promoNatal === true || product?.tags?.includes?.("natal")
+  const hasPromoFlag = product?.promo === true
   const isOnSale = Boolean(
     hasPromoFlag || (promoPrice && Number(promoPrice) < Number(product?.price || promoPrice))
   )
@@ -177,7 +177,7 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
         <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-2">
           {isOnSale && (
             <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white shadow">
-              Oferta de Natal
+              Oferta
             </span>
           )}
           {product?.category && (
@@ -219,9 +219,7 @@ export default function ProductCard({ product, isXmas = false, prefersReducedMot
         <div className="mt-auto flex flex-col gap-2">
           <button
             onClick={() => window.open(buildWhatsappLink(product), "_blank")}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow transition focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              isXmas ? "bg-red-600 hover:bg-red-500 focus:ring-red-400" : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
-            }`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow transition focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-600 hover:bg-green-700 focus:ring-green-500"
           >
             <MessageCircle className="h-4 w-4" /> Tenho interesse
           </button>

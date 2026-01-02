@@ -26,7 +26,7 @@ function buildWhatsappLink(product) {
   )}&type=phone_number&app_absent=0`
 }
 
-export default function ProductQuickView({ product, isXmas, prefersReducedMotion, onClose }) {
+export default function ProductQuickView({ product, prefersReducedMotion, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const titleId = useId()
@@ -93,8 +93,7 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
   if (!productData) return null
 
   const promoPrice = productData?.promoPrice ?? productData?.salePrice
-  const hasPromoFlag =
-    productData?.promo === true || productData?.promoNatal === true || productData?.tags?.includes?.("natal")
+  const hasPromoFlag = productData?.promo === true
   const isOnSale = Boolean(hasPromoFlag || (promoPrice && Number(promoPrice) < Number(productData?.price || promoPrice)))
   const displayPrice =
     promoPrice && Number(promoPrice) < Number(productData?.price || promoPrice) ? promoPrice : productData?.price
@@ -185,12 +184,8 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
                   {previousPrice && <span className="text-sm text-gray-500 line-through">{formatBRL(previousPrice)}</span>}
                 </div>
                 {isOnSale && (
-                  <span
-                    className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-                      isXmas ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
-                    }`}
-                  >
-                    Oferta de Natal
+                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    Oferta
                   </span>
                 )}
                 {product?.installments && <p className="text-sm text-gray-600 dark:text-gray-200">{product.installments}</p>}
@@ -204,11 +199,11 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
                 )}
               </div>
 
-                  {productData?.description && (
-                    <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700 dark:bg-gray-900/70 dark:text-gray-100">
-                      {productData.description}
-                    </p>
-                  )}
+              {productData?.description && (
+                <p className="rounded-2xl bg-gray-50 p-4 text-sm text-gray-700 dark:bg-gray-900/70 dark:text-gray-100">
+                  {productData.description}
+                </p>
+              )}
 
               {features.length > 0 && (
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/60">
@@ -238,10 +233,8 @@ export default function ProductQuickView({ product, isXmas, prefersReducedMotion
           <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t border-gray-100 bg-white/95 px-5 py-4 shadow-inner backdrop-blur supports-[backdrop-filter]:bg-white/85 dark:border-gray-800 dark:bg-neutral-950/90 lg:flex-row">
             <button
               onClick={() => window.open(buildWhatsappLink(productData), "_blank")}
-              className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow transition focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                isXmas ? "bg-red-600 hover:bg-red-500 focus:ring-red-400" : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
-              }`}
-            >
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow transition focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-600 hover:bg-green-700 focus:ring-green-500"
+          >
               <MessageCircle className="h-4 w-4" /> Tenho interesse
             </button>
             <button

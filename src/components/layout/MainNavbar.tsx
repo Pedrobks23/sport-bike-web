@@ -16,7 +16,7 @@ export default function MainNavbar({ isScrolled = false }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { isXmasMode, toggleXmas, isDarkMode, toggleDarkMode } = useUI()
+  const { isDarkMode, toggleDarkMode } = useUI()
 
   useEffect(() => {
     setIsMenuOpen(false)
@@ -97,19 +97,6 @@ export default function MainNavbar({ isScrolled = false }) {
               </div>
 
               <button
-                onClick={toggleXmas}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
-                  isXmasMode
-                    ? "bg-white text-amber-600 shadow-amber-200/60"
-                    : "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                }`}
-                aria-pressed={isXmasMode}
-              >
-                <span>Clima natalino</span>
-                <span aria-hidden>{isXmasMode ? "❄️" : ""}</span>
-              </button>
-
-              <button
                 onClick={toggleDarkMode}
                 className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 title="Alternar tema"
@@ -175,18 +162,6 @@ export default function MainNavbar({ isScrolled = false }) {
                       {isDarkMode ? "🌞" : "🌙"}
                     </button>
                   </div>
-                  <button
-                    onClick={toggleXmas}
-                    className={`flex w-full items-center justify-center gap-2 px-4 py-2 rounded-full font-medium transition-colors shadow-sm ${
-                      isXmasMode
-                        ? "bg-white text-amber-600 shadow-amber-200/60"
-                        : "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                    }`}
-                    aria-pressed={isXmasMode}
-                  >
-                    <span>Clima natalino</span>
-                    <span aria-hidden>{isXmasMode ? "❄️" : ""}</span>
-                  </button>
                 </div>
                 <button
                   onClick={handleConsult}

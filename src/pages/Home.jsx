@@ -33,8 +33,6 @@ import Silk from "../components/Silk"
 import { normalizeProductImages } from "@/utils/productImage"
 import { ProductImage } from "@/components/shared/ProductImage"
 import { Link } from "react-router-dom"
-import Snowfall from "react-snowfall"
-import XmasPromoCard from "@/components/xmas/XmasPromoCard"
 import MainNavbar from "@/components/layout/MainNavbar"
 import { useUI } from "@/contexts/UIContext"
 
@@ -46,13 +44,7 @@ export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false)
   const [expandedFaq, setExpandedFaq] = useState(null)
-  const [showXmasPromo, setShowXmasPromo] = useState(false)
-  const [dismissedXmasBar, setDismissedXmasBar] = useState(false)
-
-  const XMAS_PROMO_SEEN_KEY = "xmas_promo_seen"
-
-  const { isXmasMode, enableXmas, toggleXmas, isDarkMode, toggleDarkMode, prefersReducedMotion } = useUI()
-  const isSnowing = isXmasMode
+  const { isDarkMode } = useUI()
 
   // agora cada item já vem com .displayUrl (URL transformada) para usar no carrossel
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -187,26 +179,6 @@ export default function Home() {
     fetchData()
   }, [])
 
-  useEffect(() => {
-    const today = new Date()
-    const cutoff = new Date(today.getFullYear(), 11, 30, 23, 59, 59, 999)
-    const hasSeen = localStorage.getItem(XMAS_PROMO_SEEN_KEY) === "true"
-    if (today <= cutoff && !hasSeen) {
-      setShowXmasPromo(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    const dismissed = localStorage.getItem("xmas_bar_dismissed") === "true"
-    setDismissedXmasBar(dismissed)
-  }, [])
-
-  useEffect(() => {
-    if (showXmasPromo) {
-      localStorage.setItem(XMAS_PROMO_SEEN_KEY, "true")
-    }
-  }, [showXmasPromo])
-
   // header scroll effect
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -264,30 +236,9 @@ export default function Home() {
     setExpandedFaq(expandedFaq === index ? null : index)
   }
 
-  const handleActivateXmas = () => {
-    enableXmas()
-  }
-
-  const handleClosePromo = () => setShowXmasPromo(false)
-
-  const showXmasBar = isSnowing && !dismissedXmasBar
-
   return (
     <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
-      {isSnowing && !prefersReducedMotion && (
-        <Snowfall
-          style={{ position: "fixed", width: "100vw", height: "100vh", inset: 0, zIndex: 20, pointerEvents: "none" }}
-          snowflakeCount={180}
-        />
-      )}
-      <div className={`bg-gray-50 dark:bg-gray-900 transition-colors duration-300 ${showXmasBar ? "pt-14" : ""}`}>
-        {showXmasPromo && (
-          <div className="fixed inset-0 z-[70] flex items-start md:items-center justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm">
-            <div className="max-w-4xl w-full">
-              <XmasPromoCard onClose={handleClosePromo} onActivateXmas={handleActivateXmas} />
-            </div>
-          </div>
-        )}
+      <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Header */}
         <MainNavbar isScrolled={isScrolled} />
         {/* Benefits Bar */}
@@ -303,26 +254,6 @@ export default function Home() {
             </div>
           </ResponsiveContainer>
         </div>
-        {showXmasBar && (
-          <div className="fixed left-1/2 top-0 z-[60] w-[min(92vw,1100px)] max-w-screen-lg -translate-x-1/2 px-4">
-            <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-red-500 via-amber-300 to-green-500 px-4 py-3 text-sm font-semibold text-white shadow-lg ring-2 ring-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/10 dark:ring-white/10">
-              <span className="text-base sm:text-lg">🎄</span>
-              <span className="tracking-wide text-xs sm:text-sm">Clima natalino ativado! Luzes, neve e boas festas.</span>
-              <span className="text-base sm:text-lg">✨</span>
-              <button
-                onClick={() => {
-                  setDismissedXmasBar(true)
-                  localStorage.setItem("xmas_bar_dismissed", "true")
-                }}
-                className="ml-auto rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                aria-label="Fechar aviso de clima natalino"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-12 md:pt-16">
           <div className="absolute inset-0">
@@ -354,21 +285,13 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
                 onClick={handleConsultarOS}
-                className={`px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-xl ${
-                  isSnowing
-                    ? "bg-red-600 text-white hover:bg-red-500 shadow-red-200/60"
-                    : "bg-white text-gray-800 hover:bg-gray-100"
-                }`}
+                className="px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-xl bg-white text-gray-800 hover:bg-gray-100"
               >
                 Consultar Ordem de Serviço
               </button>
               <button
                 onClick={() => handleWhatsApp("Olá! Gostaria de alugar uma bike.")}
-                className={`px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 border-2 ${
-                  isSnowing
-                    ? "bg-green-600 text-white border-green-500 hover:bg-green-500 shadow-green-200/60"
-                    : "bg-transparent border-white text-white hover:bg-white hover:text-gray-800"
-                }`}
+                className="px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 border-2 bg-transparent border-white text-white hover:bg-white hover:text-gray-800"
               >
                 Alugue sua Bike Hoje
               </button>
@@ -394,20 +317,9 @@ export default function Home() {
               </div>
               <div className="relative max-w-5xl mx-auto">
                 {featuredProducts.length > 0 ? (
-                  <div
-                    className={`relative overflow-hidden rounded-3xl p-8 shadow-2xl border-2 ${
-                      isSnowing
-                        ? "bg-gradient-to-r from-red-600 via-amber-400 to-green-600 border-white/60"
-                        : "bg-gradient-to-r from-amber-400 to-amber-500 border-transparent"
-                    }`}
-                  >
+                  <div className="relative overflow-hidden rounded-3xl p-8 shadow-2xl border-2 bg-gradient-to-r from-amber-400 to-amber-500 border-transparent">
                     {featuredProducts[currentProduct] && (
                       <div className="sr-only">{featuredProducts[currentProduct].name}</div>
-                    )}
-                    {isSnowing && (
-                      <div className="absolute inset-0 pointer-events-none opacity-70">
-                        <div className="absolute top-4 left-6 right-6 h-2 rounded-full bg-gradient-to-r from-green-300 via-red-200 to-green-300 blur-sm"></div>
-                      </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center md:items-stretch">
                       <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20 h-full flex">
@@ -443,11 +355,7 @@ export default function Home() {
                               `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`,
                             )
                           }
-                          className={`px-6 py-3 rounded-full font-bold transition-colors inline-flex items-center space-x-2 shadow-lg ${
-                            isSnowing
-                              ? "bg-green-100 text-green-800 hover:bg-green-50"
-                              : "bg-white text-amber-600 hover:bg-gray-100"
-                          }`}
+                          className="px-6 py-3 rounded-full font-bold transition-colors inline-flex items-center space-x-2 shadow-lg bg-white text-amber-600 hover:bg-gray-100"
                         >
                           <ShoppingCart className="w-5 h-5" />
                           <span>Tenho Interesse</span>
@@ -493,11 +401,7 @@ export default function Home() {
               <div className="mt-12 flex justify-center">
                 <Link
                   to="/produtos"
-                  className={`inline-flex items-center gap-3 rounded-full px-6 py-3 font-semibold shadow-lg hover:scale-105 transform transition-all duration-300 ${
-                    isSnowing
-                      ? "bg-red-600 text-white hover:bg-red-500 ring-2 ring-green-300/60"
-                      : "bg-amber-500 text-white hover:bg-amber-600 animate-pulse"
-                  }`}
+                  className="inline-flex items-center gap-3 rounded-full px-6 py-3 font-semibold shadow-lg hover:scale-105 transform transition-all duration-300 bg-amber-500 text-white hover:bg-amber-600 animate-pulse"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Ver todos os produtos
