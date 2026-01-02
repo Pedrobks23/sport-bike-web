@@ -1,9 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import Snowfall from "react-snowfall"
 import MainNavbar from "@/components/layout/MainNavbar"
-import ProductsXmasHero from "@/components/products/ProductsXmasHero"
 import ProductsFiltersBar from "@/components/products/ProductsFiltersBar"
 import ProductsSideFilters from "@/components/products/ProductsSideFilters"
 import ProductsGrid from "@/components/products/ProductsGrid"
@@ -16,7 +14,7 @@ const PAGE_SIZE = 12
 
 const isOnSale = (product) => {
   const promoPrice = product?.promoPrice ?? product?.salePrice
-  const hasPromoFlag = product?.promo === true || product?.promoNatal === true || product?.tags?.includes?.("natal")
+  const hasPromoFlag = product?.promo === true
   return Boolean(hasPromoFlag || (promoPrice && Number(promoPrice) < Number(product?.price || promoPrice)))
 }
 
@@ -24,10 +22,7 @@ export default function ProductsPublic() {
   const navigate = useNavigate()
   const location = useLocation()
   const searchParams = new URLSearchParams(location.search)
-  const natalParam = searchParams.get("natal") === "1"
-
-  const { isXmasMode, prefersReducedMotion, enableXmas } = useUI()
-  const isXmas = isXmasMode
+  const { prefersReducedMotion } = useUI()
 
   const [loading, setLoading] = useState(true)
   const [settings, setSettings] = useState({ showProductsSection: true })
@@ -47,12 +42,6 @@ export default function ProductsPublic() {
   useEffect(() => {
     document.title = "Produtos | Sport Bike"
   }, [])
-
-  useEffect(() => {
-    if (natalParam && !isXmasMode) {
-      enableXmas()
-    }
-  }, [natalParam, isXmasMode, enableXmas])
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchInput), 300)
@@ -290,30 +279,17 @@ export default function ProductsPublic() {
     }
   }, [quickViewId, quickProduct, loading])
 
-  const topBg = isXmas
-    ? "bg-gradient-to-b from-emerald-900/60 via-emerald-800/30 to-white"
-    : "bg-gradient-to-b from-gray-100 via-white to-white"
+  const topBg = "bg-gradient-to-b from-gray-100 via-white to-white"
 
   return (
     <div className={`relative min-h-screen ${topBg}`}>
-      {isXmas && !prefersReducedMotion && (
-        <Snowfall
-          style={{ position: "fixed", width: "100vw", height: "100vh", zIndex: 30, pointerEvents: "none" }}
-          snowflakeCount={120}
-        />
-      )}
-
       <MainNavbar isScrolled />
 
       <main className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-12">
-        {isXmas ? (
-          <ProductsXmasHero onSeeDeals={() => navigate("/produtos?natal=1")} />
-        ) : (
-          <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h1 className="text-3xl font-extrabold text-gray-900">Produtos</h1>
-            <p className="mt-2 text-gray-600">Veja nossa seleção completa disponível na loja.</p>
-          </section>
-        )}
+        <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h1 className="text-3xl font-extrabold text-gray-900">Produtos</h1>
+          <p className="mt-2 text-gray-600">Veja nossa seleção completa disponível na loja.</p>
+        </section>
 
         <div className="mt-6 flex gap-3 overflow-x-auto pb-3" aria-label="Categorias">
           {categories.map((cat) => (
@@ -322,9 +298,7 @@ export default function ProductsPublic() {
               onClick={() => setSelectedCategory(cat)}
               className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
                 selectedCategory === cat
-                  ? isXmas
-                    ? "border-red-200 bg-red-50 text-red-700"
-                    : "border-amber-400 bg-amber-100 text-amber-800"
+                  ? "border-amber-400 bg-amber-100 text-amber-800"
                   : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
               }`}
               aria-pressed={selectedCategory === cat}
@@ -356,7 +330,7 @@ export default function ProductsPublic() {
               prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
             )
           }
-          topOffset={isXmas ? 96 : 88}
+          topOffset={88}
         />
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[280px,1fr]">
@@ -392,13 +366,12 @@ export default function ProductsPublic() {
 
           <section className="space-y-4">
             {settings.showProductsSection ? (
-              <ProductsGrid
-                products={pageItems}
-                loading={loading}
-                isXmas={isXmas}
-                page={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
+                <ProductsGrid
+                  products={pageItems}
+                  loading={loading}
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
                 prefersReducedMotion={prefersReducedMotion}
                 onOpenQuickView={handleOpenQuickView}
               />
@@ -414,7 +387,6 @@ export default function ProductsPublic() {
       {quickProduct ? (
         <ProductQuickView
           product={quickProduct}
-          isXmas={isXmas}
           prefersReducedMotion={prefersReducedMotion}
           onClose={handleCloseQuickView}
         />

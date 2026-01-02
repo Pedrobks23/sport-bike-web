@@ -2,20 +2,11 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 const UIContext = createContext(undefined)
 
-const XMAS_MODE_KEY = "xmas_mode_enabled"
 const THEME_KEY = "theme"
 
 export function UIProvider({ children }) {
-  const [isXmasMode, setIsXmasMode] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
-
-  useEffect(() => {
-    const savedSnow = localStorage.getItem(XMAS_MODE_KEY)
-    if (savedSnow === "true") {
-      setIsXmasMode(true)
-    }
-  }, [])
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_KEY)
@@ -34,10 +25,6 @@ export function UIProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(XMAS_MODE_KEY, isXmasMode ? "true" : "false")
-  }, [isXmasMode])
-
-  useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark")
       localStorage.setItem(THEME_KEY, "dark")
@@ -49,15 +36,11 @@ export function UIProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      isXmasMode,
-      enableXmas: () => setIsXmasMode(true),
-      disableXmas: () => setIsXmasMode(false),
-      toggleXmas: () => setIsXmasMode((prev) => !prev),
       isDarkMode,
       toggleDarkMode: () => setIsDarkMode((prev) => !prev),
       prefersReducedMotion,
     }),
-    [isXmasMode, isDarkMode, prefersReducedMotion]
+    [isDarkMode, prefersReducedMotion]
   )
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>

@@ -82,7 +82,6 @@ function Pagination({ page, totalPages, onChange }) {
 export default function ProductsGrid({
   products,
   loading,
-  isXmas,
   page,
   totalPages,
   onPageChange,
@@ -115,7 +114,6 @@ export default function ProductsGrid({
           <ProductCard
             key={p.id}
             product={p}
-            isXmas={isXmas}
             prefersReducedMotion={prefersReducedMotion}
             onOpenQuickView={onOpenQuickView}
           />
