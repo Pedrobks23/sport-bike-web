@@ -40,13 +40,23 @@ export async function listAllProducts() {
  */
 export async function listPublicProducts() {
   try {
-    const q = query(
-      collection(db, COL),
-      where("visible", "==", true),
-      orderBy("updatedAt", "desc")
+    const queries = [
+      query(collection(db, COL), where("visible", "==", true), orderBy("updatedAt", "desc")),
+      query(collection(db, COL), where("visivelLoja", "==", true), orderBy("updatedAt", "desc")),
+    ];
+    const results = await Promise.all(
+      queries.map(async (q) => {
+        try {
+          const snap = await getDocs(q);
+          return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        } catch (err) {
+          return [];
+        }
+      })
     );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const merged = new Map();
+    results.flat().forEach((item) => merged.set(item.id, item));
+    return Array.from(merged.values());
   } catch (err) {
     console.warn(
       "[productsService] Falha ao listar produtos públicos:",
@@ -67,6 +77,7 @@ export async function createProduct(data) {
     data.features,
     data.featuresText
   );
+  const visible = data.visible !== false;
   const payload = {
     name: data.name ?? "",
     category: data.category ?? "",
@@ -75,7 +86,22 @@ export async function createProduct(data) {
     features,
     featuresText,
     isFeatured: !!data.isFeatured,
-    visible: data.visible !== false,
+    visible,
+    visivelLoja: data.visivelLoja ?? visible,
+    visivelMontagem: !!data.visivelMontagem,
+    etapasMontagem: Array.isArray(data.etapasMontagem) ? data.etapasMontagem : [],
+    compatibilidade: {
+      aro: Array.isArray(data.compatibilidade?.aro) ? data.compatibilidade.aro : [],
+      tipoBike: Array.isArray(data.compatibilidade?.tipoBike) ? data.compatibilidade.tipoBike : [],
+      quadroSuportaDisco:
+        typeof data.compatibilidade?.quadroSuportaDisco === "boolean"
+          ? data.compatibilidade.quadroSuportaDisco
+          : null,
+    },
+    quadroTamanhosDisponiveis: Array.isArray(data.quadroTamanhosDisponiveis)
+      ? data.quadroTamanhosDisponiveis
+      : [],
+    tipoTamanhoQuadro: data.tipoTamanhoQuadro || null,
     // image: { url, publicId, width, height } | null
     image: coverImage,
     images: Array.isArray(data.images) ? data.images : coverImage ? [coverImage] : [],
@@ -97,10 +123,42 @@ export async function updateProduct(id, partial) {
     partial.features,
     partial.featuresText
   );
+  const nextVisible =
+    typeof partial.visible === "boolean"
+      ? partial.visible
+      : typeof partial.visivelLoja === "boolean"
+        ? partial.visivelLoja
+        : undefined;
+  const compatibilidade =
+    partial.compatibilidade || partial.compatibilidade === null
+      ? {
+          aro: Array.isArray(partial.compatibilidade?.aro) ? partial.compatibilidade.aro : [],
+          tipoBike: Array.isArray(partial.compatibilidade?.tipoBike)
+            ? partial.compatibilidade.tipoBike
+            : [],
+          quadroSuportaDisco:
+            typeof partial.compatibilidade?.quadroSuportaDisco === "boolean"
+              ? partial.compatibilidade.quadroSuportaDisco
+              : null,
+        }
+      : undefined;
   await updateDoc(ref, {
     ...partial,
     features,
     featuresText,
+    ...(typeof nextVisible === "boolean"
+      ? {
+          visible: nextVisible,
+          visivelLoja: nextVisible,
+        }
+      : {}),
+    ...(compatibilidade ? { compatibilidade } : {}),
+    ...(Array.isArray(partial.etapasMontagem)
+      ? { etapasMontagem: partial.etapasMontagem }
+      : {}),
+    ...(Array.isArray(partial.quadroTamanhosDisponiveis)
+      ? { quadroTamanhosDisponiveis: partial.quadroTamanhosDisponiveis }
+      : {}),
     image: coverImage ?? null,
     images: Array.isArray(partial.images)
       ? partial.images
@@ -118,8 +176,30 @@ export async function toggleVisibility(id, visible) {
   const ref = doc(db, COL, id);
   await updateDoc(ref, {
     visible: !!visible,
+    visivelLoja: !!visible,
     updatedAt: new Date(),
   });
+}
+
+/**
+ * Lista produtos disponíveis para montagem.
+ */
+export async function listBuildProducts() {
+  try {
+    const q = query(
+      collection(db, COL),
+      where("visivelMontagem", "==", true),
+      orderBy("updatedAt", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn(
+      "[productsService] Falha ao listar produtos para montagem:",
+      err?.message || err
+    );
+    return [];
+  }
 }
 
 /**

@@ -8,6 +8,7 @@ import ProductsGrid from "@/components/products/ProductsGrid"
 import ProductQuickView from "@/components/products/ProductQuickView"
 import { listPublicProducts } from "@/services/productsService"
 import { getHomeSettings } from "@/services/homeService"
+import { getProductsUIConfig } from "@/services/uiConfigService"
 import { useUI } from "@/contexts/UIContext"
 
 const PAGE_SIZE = 12
@@ -26,6 +27,7 @@ export default function ProductsPublic() {
 
   const [loading, setLoading] = useState(true)
   const [settings, setSettings] = useState({ showProductsSection: true })
+  const [productsUIConfig, setProductsUIConfig] = useState(null)
   const [items, setItems] = useState([])
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -51,10 +53,15 @@ export default function ProductsPublic() {
   useEffect(() => {
     ;(async () => {
       try {
-        const [prods, s] = await Promise.all([listPublicProducts(), getHomeSettings()])
+        const [prods, s, uiConfig] = await Promise.all([
+          listPublicProducts(),
+          getHomeSettings(),
+          getProductsUIConfig(),
+        ])
         const visibleItems = (prods || []).filter((p) => p && p.visible !== false)
         setItems(visibleItems)
         setSettings({ showProductsSection: s?.showProductsSection !== false })
+        setProductsUIConfig(uiConfig)
 
       } catch (e) {
         console.error(e)
@@ -280,6 +287,8 @@ export default function ProductsPublic() {
   }, [quickViewId, quickProduct, loading])
 
   const topBg = "bg-gradient-to-b from-gray-100 via-white to-white"
+  const showBuildBanner = productsUIConfig?.showMonteSuaBikeBanner !== false
+  const banner = productsUIConfig?.monteSuaBikeBanner || {}
 
   return (
     <div className={`relative min-h-screen ${topBg}`}>
@@ -290,6 +299,45 @@ export default function ProductsPublic() {
           <h1 className="text-3xl font-extrabold text-gray-900">Produtos</h1>
           <p className="mt-2 text-gray-600">Veja nossa seleção completa disponível na loja.</p>
         </section>
+
+        {showBuildBanner && (
+          <section className="mt-6 overflow-hidden rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-white shadow-sm">
+            <div className="grid gap-6 p-6 md:grid-cols-[1.2fr,0.8fr] md:items-center">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                  Monte sua Bike
+                </span>
+                <h2 className="mt-3 text-2xl font-bold text-gray-900">
+                  {banner.titulo || "Monte sua Bike"}
+                </h2>
+                <p className="mt-2 text-gray-600">
+                  {banner.subtitulo ||
+                    "Monte uma bike personalizada escolhendo aro, quadro e configuração"}
+                </p>
+                <button
+                  onClick={() => navigate("/monte-sua-bike")}
+                  className="mt-4 inline-flex items-center rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-amber-600"
+                >
+                  {banner.botaoTexto || "Montar agora"}
+                </button>
+              </div>
+              <div className="flex justify-center">
+                {banner.imagemUrl ? (
+                  <img
+                    src={banner.imagemUrl}
+                    alt={banner.titulo || "Monte sua Bike"}
+                    className="h-40 w-full max-w-xs rounded-2xl object-cover shadow"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-40 w-full max-w-xs items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-white text-amber-600">
+                    Escolha sua combinação ideal
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         <div className="mt-6 flex gap-3 overflow-x-auto pb-3" aria-label="Categorias">
           {categories.map((cat) => (
