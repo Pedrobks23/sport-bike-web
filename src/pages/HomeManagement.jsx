@@ -216,220 +216,220 @@ const ProductModal = ({ isEdit, onClose, onSave, product, availableAros }) => {
           >
             <div className="grid min-h-0 grid-cols-1 gap-4 md:grid-cols-2">
               <div className="min-h-0 space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nome</label>
-                <input
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Preço</label>
-                <input
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Categoria</label>
-                <input
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Descrição</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2"
-                  rows={4}
-                />
-              </div>
-
-              <div className="min-h-0 max-h-[40vh] overflow-y-auto pr-1">
-                <label className="block text-sm font-medium mb-1">Características (uma por linha)</label>
-                <textarea
-                  name="featuresText"
-                  value={formData.featuresText}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 min-h-[160px] resize-y"
-                  rows={6}
-                  placeholder={"Quadro alumínio 6061\n24 marchas indexadas\nAro 29 tubeless-ready"}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Uma característica por linha. Máx. 20 itens. ({featurePreview.length} válidas)
-                </p>
-                {featurePreview.length > 0 && (
-                  <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
-                    <p className="font-semibold mb-2">Pré-visualização</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {featurePreview.map((feat, idx) => (
-                        <li key={idx}>{feat}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2 pt-2">
-                <label className="flex items-center gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nome</label>
                   <input
-                    type="checkbox"
-                    name="isFeatured"
-                    checked={!!formData.isFeatured}
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
+                    className="w-full border rounded px-3 py-2"
+                    required
                   />
-                  <span>
-                    Aparecer no carrossel de <b>destaque</b>
-                  </span>
-                </label>
-                <label className="flex items-center gap-2">
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Preço</label>
                   <input
-                    type="checkbox"
-                    name="visible"
-                    checked={formData.visible !== false}
+                    name="price"
+                    value={formData.price}
                     onChange={handleChange}
+                    className="w-full border rounded px-3 py-2"
+                    required
                   />
-                  <span>
-                    Produto <b>visível</b> (exibe o card na Home)
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 p-4">
-              <h4 className="text-base font-semibold text-gray-700">Monte sua Bike</h4>
-              <p className="text-xs text-gray-500 mt-1">
-                Configure se este produto aparece na montagem, compatibilidade de aro e tamanhos de quadro.
-              </p>
-
-              <div className="mt-4 space-y-4">
-                <label className="flex items-center gap-2">
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Categoria</label>
                   <input
-                    type="checkbox"
-                    name="visivelMontagem"
-                    checked={!!formData.visivelMontagem}
+                    name="category"
+                    value={formData.category}
                     onChange={handleChange}
+                    className="w-full border rounded px-3 py-2"
                   />
-                  <span>Disponível no Monte sua Bike</span>
-                </label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descrição</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    className="w-full border rounded px-3 py-2"
+                    rows={4}
+                  />
+                </div>
 
-                {formData.visivelMontagem && (
-                  <>
-                    <div>
-                      <p className="text-sm font-medium mb-2">Etapas de montagem</p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {montagemEtapas.map((etapa) => (
-                          <label key={etapa} className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={formData.etapasMontagem.includes(etapa)}
-                              onChange={() => handleEtapaToggle(etapa)}
-                            />
-                            <span>{etapa}</span>
-                          </label>
+                <div className="min-h-0 max-h-[40vh] overflow-y-auto pr-1">
+                  <label className="block text-sm font-medium mb-1">Características (uma por linha)</label>
+                  <textarea
+                    name="featuresText"
+                    value={formData.featuresText}
+                    onChange={handleChange}
+                    className="w-full border rounded px-3 py-2 min-h-[160px] resize-y"
+                    rows={6}
+                    placeholder={"Quadro alumínio 6061\n24 marchas indexadas\nAro 29 tubeless-ready"}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Uma característica por linha. Máx. 20 itens. ({featurePreview.length} válidas)
+                  </p>
+                  {featurePreview.length > 0 && (
+                    <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                      <p className="font-semibold mb-2">Pré-visualização</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {featurePreview.map((feat, idx) => (
+                          <li key={idx}>{feat}</li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
+                  )}
+                </div>
 
-                    <div>
-                      <p className="text-sm font-medium mb-2">Compatibilidade de aro</p>
-                      {availableAros?.length ? (
-                        <div className="flex flex-wrap gap-3">
-                          {availableAros.map((aro) => (
-                            <label key={aro} className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={(formData.compatibilidade?.aro || []).includes(aro)}
-                                onChange={() => handleAroToggle(aro)}
-                              />
-                              <span>Aro {aro}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-500">
-                          Nenhum aro configurado. Defina a lista de aros na configuração da tela de produtos.
-                        </p>
-                      )}
-                    </div>
+                <div className="flex flex-col gap-2 pt-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="isFeatured"
+                      checked={!!formData.isFeatured}
+                      onChange={handleChange}
+                    />
+                    <span>
+                      Aparecer no carrossel de <b>destaque</b>
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="visible"
+                      checked={formData.visible !== false}
+                      onChange={handleChange}
+                    />
+                    <span>
+                      Produto <b>visível</b> (exibe o card na Home)
+                    </span>
+                  </label>
+                </div>
+              </div>
 
+              <div className="min-h-0 space-y-4">
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 p-4">
+                  <h4 className="text-base font-semibold text-gray-700">Monte sua Bike</h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Configure se este produto aparece na montagem, compatibilidade de aro e tamanhos de quadro.
+                  </p>
+
+                  <div className="mt-4 space-y-4">
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={formData.compatibilidade?.quadroSuportaDisco === true}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            compatibilidade: {
-                              ...prev.compatibilidade,
-                              quadroSuportaDisco: e.target.checked ? true : null,
-                            },
-                          }))
-                        }
+                        name="visivelMontagem"
+                        checked={!!formData.visivelMontagem}
+                        onChange={handleChange}
                       />
-                      <span>Requer quadro com suporte a disco</span>
+                      <span>Disponível no Monte sua Bike</span>
                     </label>
 
-                    {formData.etapasMontagem.includes("Quadro") && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Tamanhos do quadro</p>
-                        <input
-                          type="text"
-                          value={(formData.quadroTamanhosDisponiveis || []).join(", ")}
-                          onChange={(e) => handleQuadroTamanhosChange(e.target.value)}
-                          placeholder="Ex.: 15,17,19,21 ou P,M,G"
-                          className="w-full border rounded px-3 py-2"
-                        />
-                        <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                          <span>Tipo de tamanho:</span>
-                          <select
-                            name="tipoTamanhoQuadro"
-                            value={formData.tipoTamanhoQuadro || "numerico"}
-                            onChange={handleChange}
-                            className="border rounded px-2 py-1 text-sm"
-                          >
-                            <option value="numerico">Numérico</option>
-                            <option value="letras">Letras</option>
-                            <option value="livre">Livre</option>
-                          </select>
+                    {formData.visivelMontagem && (
+                      <>
+                        <div>
+                          <p className="text-sm font-medium mb-2">Etapas de montagem</p>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {montagemEtapas.map((etapa) => (
+                              <label key={etapa} className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.etapasMontagem.includes(etapa)}
+                                  onChange={() => handleEtapaToggle(etapa)}
+                                />
+                                <span>{etapa}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
 
-            <div className="min-h-0 space-y-3">
-              <div className="min-h-0 max-h-[50vh] overflow-y-auto pr-1">
-                <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
-                <ProductImagesManager
-                  value={formData.images}
-                  onChange={(imgs) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      images: imgs,
-                      image: imgs?.[0] || prev.image || null,
-                    }))
-                  }
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Envie várias imagens, reordene para definir a capa (primeira posição) e preencha o texto alternativo.
-                </p>
+                        <div>
+                          <p className="text-sm font-medium mb-2">Compatibilidade de aro</p>
+                          {availableAros?.length ? (
+                            <div className="flex flex-wrap gap-3">
+                              {availableAros.map((aro) => (
+                                <label key={aro} className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={(formData.compatibilidade?.aro || []).includes(aro)}
+                                    onChange={() => handleAroToggle(aro)}
+                                  />
+                                  <span>Aro {aro}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500">
+                              Nenhum aro configurado. Defina a lista de aros na configuração da tela de produtos.
+                            </p>
+                          )}
+                        </div>
+
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.compatibilidade?.quadroSuportaDisco === true}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                compatibilidade: {
+                                  ...prev.compatibilidade,
+                                  quadroSuportaDisco: e.target.checked ? true : null,
+                                },
+                              }))
+                            }
+                          />
+                          <span>Requer quadro com suporte a disco</span>
+                        </label>
+
+                        {formData.etapasMontagem.includes("Quadro") && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Tamanhos do quadro</p>
+                            <input
+                              type="text"
+                              value={(formData.quadroTamanhosDisponiveis || []).join(", ")}
+                              onChange={(e) => handleQuadroTamanhosChange(e.target.value)}
+                              placeholder="Ex.: 15,17,19,21 ou P,M,G"
+                              className="w-full border rounded px-3 py-2"
+                            />
+                            <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                              <span>Tipo de tamanho:</span>
+                              <select
+                                name="tipoTamanhoQuadro"
+                                value={formData.tipoTamanhoQuadro || "numerico"}
+                                onChange={handleChange}
+                                className="border rounded px-2 py-1 text-sm"
+                              >
+                                <option value="numerico">Numérico</option>
+                                <option value="letras">Letras</option>
+                                <option value="livre">Livre</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="min-h-0 max-h-[50vh] overflow-y-auto pr-1">
+                  <label className="block text-sm font-medium mb-1">Imagens (capa é a primeira)</label>
+                  <ProductImagesManager
+                    value={formData.images}
+                    onChange={(imgs) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        images: imgs,
+                        image: imgs?.[0] || prev.image || null,
+                      }))
+                    }
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Envie várias imagens, reordene para definir a capa (primeira posição) e preencha o texto alternativo.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
           </div>
 
           <div
