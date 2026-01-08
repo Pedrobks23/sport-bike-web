@@ -54,12 +54,15 @@ export default function BudgetBuilder() {
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
-  const [bikeLabel, setBikeLabel] = useState("");
+  const [selectedBike, setSelectedBike] = useState("");
+  const [bikeName, setBikeName] = useState("");
+  const [bikes, setBikes] = useState([]);
   const [groupByBike, setGroupByBike] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
   const descriptionRef = useRef(null);
+  const bikeInputRef = useRef(null);
 
   const modeItems = mode === "list" ? items : parsedItems;
 
@@ -93,19 +96,29 @@ export default function BudgetBuilder() {
     setDescription("");
     setQuantity(1);
     setUnitPrice("");
-    setBikeLabel("");
+    setSelectedBike("");
     setEditingId(null);
     setTimeout(() => descriptionRef.current?.focus(), 50);
   };
 
   const handleAddItem = () => {
     if (!description.trim()) return;
+    if (groupByBike && bikes.length === 0) {
+      setFeedback("Adicione uma bike antes de inserir itens.");
+      return;
+    }
+    if (groupByBike && !selectedBike) {
+      setFeedback("Selecione uma bike antes de adicionar o item.");
+      return;
+    }
     const price = toNumber(unitPrice);
     const qty = Number(quantity) > 0 ? Number(quantity) : 1;
     if (editingId) {
       setItems((prev) =>
         prev.map((item) =>
-          item.id === editingId ? { ...item, description, qty, unitPrice: price } : item
+          item.id === editingId
+            ? { ...item, description, qty, unitPrice: price, bike: selectedBike }
+            : item
         )
       );
     } else {
@@ -116,7 +129,7 @@ export default function BudgetBuilder() {
           description,
           qty,
           unitPrice: price,
-          bike: bikeLabel?.trim() || "",
+          bike: selectedBike?.trim() || "",
         },
       ]);
     }
@@ -129,7 +142,7 @@ export default function BudgetBuilder() {
       setDescription(current.description || "");
       setQuantity(current.qty || 1);
       setUnitPrice(current.unitPrice != null ? String(current.unitPrice) : "");
-      setBikeLabel(current.bike || "");
+      setSelectedBike(current.bike || "");
       setEditingId(id);
       setTimeout(() => descriptionRef.current?.focus(), 50);
     }
@@ -147,6 +160,9 @@ export default function BudgetBuilder() {
     setCustomTotal("");
     setSelectedBudgetId(null);
     setGroupByBike(false);
+    setBikes([]);
+    setBikeName("");
+    setSelectedBike("");
     setBudgetCode(generateBudgetCode());
     resetForm();
   };
@@ -176,7 +192,13 @@ export default function BudgetBuilder() {
     setCustomerPhone(budget.customerPhone || "");
     setBudgetCode(budget.budgetCode || budget.id || generateBudgetCode());
     setCustomTotal(budget.total ? String(budget.total) : "");
-    setGroupByBike(Boolean(budget.groupByBike));
+    const loadedBikes =
+      budget.bikes?.length
+        ? budget.bikes
+        : Array.from(new Set((budget.items || []).map((item) => item.bike).filter(Boolean)));
+    setBikes(loadedBikes);
+    setGroupByBike(Boolean(budget.groupByBike || loadedBikes.length));
+    setSelectedBike(loadedBikes[0] || "");
 
     if (budget.mode === "list") {
       setItems(
@@ -205,6 +227,44 @@ export default function BudgetBuilder() {
     setRawText(budget.rawText || "");
     setPreviewText(budget.rawText || "");
     setFeedback("Orçamento carregado para edição.");
+  };
+
+  useEffect(() => {
+    if (groupByBike && bikes.length > 0 && !bikes.includes(selectedBike)) {
+      setSelectedBike(bikes[0]);
+    }
+  }, [bikes, groupByBike, selectedBike]);
+
+  const handleEnableBikeMode = () => {
+    setGroupByBike(true);
+    setTimeout(() => bikeInputRef.current?.focus(), 50);
+  };
+
+  const handleDisableBikeMode = () => {
+    setGroupByBike(false);
+    setBikes([]);
+    setBikeName("");
+    setSelectedBike("");
+    setItems((prev) => prev.map((item) => ({ ...item, bike: "" })));
+  };
+
+  const handleAddBike = () => {
+    const trimmed = bikeName.trim();
+    if (!trimmed) return;
+    setBikes((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
+    setSelectedBike(trimmed);
+    setBikeName("");
+  };
+
+  const handleRemoveBike = (label) => {
+    setBikes((prev) => {
+      const next = prev.filter((bike) => bike !== label);
+      if (selectedBike === label) {
+        setSelectedBike(next[0] || "");
+      }
+      return next;
+    });
+    setItems((prev) => prev.map((item) => (item.bike === label ? { ...item, bike: "" } : item)));
   };
 
   const getBikeLabel = (item) => item?.bike?.trim() || "Sem bicicleta";
@@ -328,12 +388,18 @@ export default function BudgetBuilder() {
       return;
     }
 
+    if (groupByBike && bikes.length === 0) {
+      setFeedback("Adicione pelo menos uma bike antes de salvar.");
+      return;
+    }
+
     const data = {
       mode,
       budgetCode,
       customerName: customerName?.trim() || "",
       customerPhone: customerPhone?.trim() || "",
       groupByBike,
+      bikes,
       items: (payloadItems || []).map((item) => {
         const qty = item.qty || item.quantity || 1;
         const price = item.unitPrice || item.valor || 0;
@@ -564,13 +630,15 @@ export default function BudgetBuilder() {
     }
   };
 
-  const renderItemsTable = (list) => (
+  const renderItemsTable = (list, showBike) => (
     <div className="border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
-        <div className="min-w-[640px]">
-          <div className="grid grid-cols-5 text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
+        <div className="min-w-[540px]">
+          <div
+            className={`grid ${showBike ? "grid-cols-5" : "grid-cols-4"} text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200`}
+          >
             <div className="p-2">Descrição</div>
-            <div className="p-2">Bike</div>
+            {showBike && <div className="p-2">Bike</div>}
             <div className="p-2 text-center">Qtd</div>
             <div className="p-2 text-right">Unitário</div>
             <div className="p-2 text-right">Subtotal</div>
@@ -578,10 +646,10 @@ export default function BudgetBuilder() {
           {list.map((item) => (
             <div
               key={item.id}
-              className="grid grid-cols-5 text-sm border-t border-neutral-100 dark:border-neutral-800"
+              className={`grid ${showBike ? "grid-cols-5" : "grid-cols-4"} text-sm border-t border-neutral-100 dark:border-neutral-800`}
             >
               <div className="p-2">{item.description}</div>
-              <div className="p-2 text-neutral-500">{item.bike || "-"}</div>
+              {showBike && <div className="p-2 text-neutral-500">{item.bike || "-"}</div>}
               <div className="p-2 text-center">{item.qty || 1}</div>
               <div className="p-2 text-right">{currency(item.unitPrice || 0)}</div>
               <div className="p-2 text-right">{currency((item.qty || 1) * (item.unitPrice || 0))}</div>
@@ -620,12 +688,12 @@ export default function BudgetBuilder() {
               {Object.entries(groupedItems).map(([label, bikeItems]) => (
                 <div key={label} className="space-y-2">
                   <div className="text-xs uppercase tracking-wide text-neutral-500">Bike: {label}</div>
-                  {renderItemsTable(bikeItems)}
+                  {renderItemsTable(bikeItems, true)}
                 </div>
               ))}
             </div>
           ) : (
-            renderItemsTable(modeItems)
+            renderItemsTable(modeItems, false)
           )}
           <div className="flex justify-end text-base font-semibold mt-2">
             Total: <span className="ml-2 text-amber-600">{currency(displayTotal)}</span>
@@ -705,6 +773,19 @@ export default function BudgetBuilder() {
             >
               <FileText size={16} /> Colar texto pronto
             </button>
+            <button
+              onClick={handleEnableBikeMode}
+              disabled={mode !== "list"}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
+                mode !== "list"
+                  ? "border-neutral-200 text-neutral-400 cursor-not-allowed"
+                  : groupByBike
+                  ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800"
+                  : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              }`}
+            >
+              <ListPlus size={16} /> {groupByBike ? "Gerenciar bikes" : "Orçamento por bike"}
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -738,26 +819,67 @@ export default function BudgetBuilder() {
                   />
                   <p className="text-[11px] text-neutral-500 mt-1">No modo colar texto, este total será usado no documento.</p>
                 </div>
-                {mode === "list" && (
-                  <div className="flex items-center gap-2 pt-2">
-                    <input
-                      id="groupByBike"
-                      type="checkbox"
-                      checked={groupByBike}
-                      onChange={(e) => setGroupByBike(e.target.checked)}
-                      className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
-                    />
-                    <label htmlFor="groupByBike" className="text-sm text-neutral-600 dark:text-neutral-300">
-                      Separar itens por bike
-                    </label>
-                  </div>
-                )}
               </div>
+
+              {groupByBike && mode === "list" && (
+                <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Bikes do orçamento</h3>
+                    <button
+                      onClick={handleDisableBikeMode}
+                      className="text-xs text-neutral-500 hover:text-red-600"
+                    >
+                      Remover modo por bike
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      ref={bikeInputRef}
+                      className="flex-1 min-w-[220px] rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950 text-sm"
+                      value={bikeName}
+                      onChange={(e) => setBikeName(e.target.value)}
+                      placeholder="Ex: Caloi Elite ou Bike 1"
+                    />
+                    <button
+                      onClick={handleAddBike}
+                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-amber-500 text-white hover:bg-amber-600 text-sm"
+                    >
+                      <Plus size={16} /> Adicionar bike
+                    </button>
+                  </div>
+                  {bikes.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {bikes.map((bike) => (
+                        <span
+                          key={bike}
+                          className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 px-3 py-1 text-xs"
+                        >
+                          {bike}
+                          <button
+                            onClick={() => handleRemoveBike(bike)}
+                            className="text-red-500 hover:text-red-600"
+                            title="Remover bike"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-neutral-500">Nenhuma bike adicionada ainda.</p>
+                  )}
+                </div>
+              )}
+              {groupByBike && mode === "list" && bikes.length === 0 && (
+                <p className="text-xs text-neutral-500">
+                  Adicione uma bike para habilitar o lançamento de itens por bike.
+                </p>
+              )}
 
               {mode === "list" ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                    <div className="md:col-span-4">
+                    <div className={groupByBike ? "md:col-span-4" : "md:col-span-6"}>
                       <label className="text-sm text-neutral-600 dark:text-neutral-300">Descrição</label>
                       <input
                         ref={descriptionRef}
@@ -767,15 +889,23 @@ export default function BudgetBuilder() {
                         placeholder="Ex: Revisão completa"
                       />
                     </div>
-                    <div className="md:col-span-3">
-                      <label className="text-sm text-neutral-600 dark:text-neutral-300">Bike</label>
-                      <input
-                        className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950"
-                        value={bikeLabel}
-                        onChange={(e) => setBikeLabel(e.target.value)}
-                        placeholder="Ex: Caloi Elite"
-                      />
-                    </div>
+                    {groupByBike && (
+                      <div className="md:col-span-3">
+                        <label className="text-sm text-neutral-600 dark:text-neutral-300">Bike</label>
+                        <select
+                          className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950"
+                          value={selectedBike}
+                          onChange={(e) => setSelectedBike(e.target.value)}
+                        >
+                          <option value="">Selecione uma bike</option>
+                          {bikes.map((bike) => (
+                            <option key={bike} value={bike}>
+                              {bike}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div className="md:col-span-2">
                       <label className="text-sm text-neutral-600 dark:text-neutral-300">Qtd</label>
                       <input
@@ -798,7 +928,8 @@ export default function BudgetBuilder() {
                     <div className="md:col-span-1 flex items-end">
                       <button
                         onClick={handleAddItem}
-                        className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 shadow"
+                        disabled={groupByBike && bikes.length === 0}
+                        className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 shadow disabled:opacity-60"
                       >
                         {editingId ? <CheckCircle2 size={16} /> : <Plus size={16} />}
                         <span>{editingId ? "Atualizar" : "Adicionar"}</span>
@@ -810,10 +941,14 @@ export default function BudgetBuilder() {
                     <div className="overflow-x-auto">
                       <div className="min-w-[640px]">
                         <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
-                          <div className="col-span-4 p-2">Descrição</div>
-                          <div className="col-span-3 p-2">Bike</div>
+                          <div className={groupByBike ? "col-span-4 p-2" : "col-span-6 p-2"}>Descrição</div>
+                          {groupByBike && <div className="col-span-3 p-2">Bike</div>}
                           <div className="col-span-2 p-2 text-center">Qtd</div>
-                          <div className="col-span-1 p-2 text-right">Unitário</div>
+                          <div
+                            className={groupByBike ? "col-span-1 p-2 text-right" : "col-span-2 p-2 text-right"}
+                          >
+                            Unitário
+                          </div>
                           <div className="col-span-2 p-2 text-right">Subtotal</div>
                         </div>
                         {(items || []).length === 0 && (
@@ -824,10 +959,14 @@ export default function BudgetBuilder() {
                             key={item.id}
                             className="grid grid-cols-12 items-center text-sm border-t border-neutral-100 dark:border-neutral-800"
                           >
-                            <div className="col-span-4 p-2">{item.description}</div>
-                            <div className="col-span-3 p-2 text-neutral-500">{item.bike || "-"}</div>
+                            <div className={groupByBike ? "col-span-4 p-2" : "col-span-6 p-2"}>
+                              {item.description}
+                            </div>
+                            {groupByBike && <div className="col-span-3 p-2 text-neutral-500">{item.bike || "-"}</div>}
                             <div className="col-span-2 p-2 text-center">{item.qty}</div>
-                            <div className="col-span-1 p-2 text-right">{currency(item.unitPrice)}</div>
+                            <div className={groupByBike ? "col-span-1 p-2 text-right" : "col-span-2 p-2 text-right"}>
+                              {currency(item.unitPrice)}
+                            </div>
                             <div className="col-span-2 p-2 text-right flex items-center justify-end gap-2">
                               <span>{currency((item.qty || 1) * (item.unitPrice || 0))}</span>
                               <button
