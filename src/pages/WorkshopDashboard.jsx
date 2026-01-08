@@ -644,6 +644,164 @@ const WorkshopDashboard = () => {
     }
   };
 
+  const generateBudgetPDF = async (order) => {
+    try {
+      const docPDF = new jsPDF({ unit: "pt", format: "a4" });
+      const marginX = 40;
+      const pageWidth = docPDF.internal.pageSize.getWidth();
+      let currentY = 40;
+
+      try {
+        const response = await fetch("/assets/Logo.png");
+        const blob = await response.blob();
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+        const logoImage = new Image();
+        logoImage.src = dataUrl;
+        await new Promise((resolve) => {
+          if (logoImage.complete) {
+            resolve();
+          } else {
+            logoImage.onload = resolve;
+            logoImage.onerror = resolve;
+          }
+        });
+        const targetWidth = 120;
+        const aspectRatio = logoImage.width && logoImage.height ? logoImage.height / logoImage.width : 0.5;
+        const targetHeight = Math.min(targetWidth * aspectRatio, 60);
+        docPDF.addImage(dataUrl, "PNG", marginX, currentY, targetWidth, targetHeight || 50);
+      } catch (error) {
+        console.warn("Logo não pôde ser carregado", error);
+      }
+
+      docPDF.setFontSize(11);
+      docPDF.text("PEREIRA COMERCIO LTDA", marginX, currentY + 65);
+      docPDF.setTextColor(80, 80, 80);
+      const headerLines = [
+        "CNPJ: 52.532.493/0001-04",
+        "Rua Ana Bilhar, 1680",
+        "Meireles, Fortaleza-CE",
+        "CEP 60160-110",
+        "sportbike_fortaleza?gshid=1nblpdcbl6piu",
+      ];
+      headerLines.forEach((line, idx) => {
+        docPDF.text(line, marginX, currentY + 80 + idx * 14);
+      });
+
+      const contactLines = ["comercialsportbike@gmail.com", "(85) 3267-7425", "(85) 3122-5874"];
+      contactLines.forEach((line, idx) => {
+        docPDF.text(line, pageWidth - marginX - docPDF.getTextWidth(line), currentY + 12 + idx * 14);
+      });
+      docPDF.setTextColor(0, 0, 0);
+
+      docPDF.setFontSize(12);
+      docPDF.text(new Date().toLocaleDateString("pt-BR"), pageWidth - marginX, currentY + 60, { align: "right" });
+
+      currentY += 110;
+
+      docPDF.setFillColor(245, 245, 245);
+      docPDF.roundedRect(marginX, currentY, pageWidth - marginX * 2, 36, 4, 4, "F");
+      docPDF.setFontSize(16);
+      docPDF.text(`Orçamento ${order.codigo || ""}`, marginX + 12, currentY + 24);
+      currentY += 60;
+
+      docPDF.setFontSize(12);
+      const labelWidth = 70;
+      docPDF.text("Cliente:", marginX, currentY);
+      docPDF.text(order.cliente?.nome || "-", marginX + labelWidth, currentY);
+      currentY += 16;
+      docPDF.text("Contato:", marginX, currentY);
+      docPDF.text(order.cliente?.telefone || "-", marginX + labelWidth, currentY);
+      currentY += 22;
+
+      const bikes = order.bicicletas || [];
+      let totalGeral = 0;
+
+      if (bikes.length > 0) {
+        bikes.forEach((bike, index) => {
+          const bikeLabel =
+            [bike.marca, bike.modelo, bike.cor].filter(Boolean).join(" - ") || `Bike ${index + 1}`;
+          const rows = [];
+
+          if (bike.services) {
+            Object.entries(bike.services).forEach(([serviceName, quantity]) => {
+              if (!quantity) return;
+              const value = parseFloat(
+                bike.serviceValues?.[serviceName]?.valorFinal ||
+                  bike.serviceValues?.[serviceName]?.valor ||
+                  0
+              );
+              const subtotal = value * quantity;
+              totalGeral += subtotal;
+              rows.push([`Serviço - ${serviceName}`, String(quantity), formatCurrency(value), formatCurrency(subtotal)]);
+            });
+          }
+
+          if (bike.pecas?.length) {
+            bike.pecas.forEach((peca) => {
+              const qty = parseInt(peca.quantidade) || 1;
+              const valorPeca = parseFloat(peca.valor || 0);
+              const subtotal = valorPeca * qty;
+              totalGeral += subtotal;
+              rows.push([`Peça - ${peca.nome}`, String(qty), formatCurrency(valorPeca), formatCurrency(subtotal)]);
+            });
+          }
+
+          if (rows.length > 0) {
+            docPDF.setFontSize(13);
+            docPDF.text(`Bike: ${bikeLabel}`, marginX, currentY);
+            currentY += 12;
+            docPDF.autoTable({
+              startY: currentY,
+              head: [["Descrição", "Qtd", "Unitário", "Subtotal"]],
+              body: rows,
+              styles: { fontSize: 11, halign: "left" },
+              headStyles: { fillColor: [230, 230, 230], textColor: 20 },
+              columnStyles: {
+                1: { halign: "center" },
+                2: { halign: "right" },
+                3: { halign: "right" },
+              },
+            });
+            currentY = (docPDF.lastAutoTable?.finalY || currentY) + 16;
+          }
+        });
+      }
+
+      currentY += 10;
+      docPDF.setFontSize(12);
+      docPDF.text(`Total: ${formatCurrency(totalGeral)}`, pageWidth - marginX, currentY, { align: "right" });
+
+      currentY += 30;
+      docPDF.setFontSize(12);
+      docPDF.text("Pagamento", marginX, currentY);
+      currentY += 8;
+      docPDF.setFontSize(11);
+      docPDF.text("Meios de pagamento", marginX, currentY + 14);
+      docPDF.text(
+        "Transferência bancária, dinheiro, cartão de crédito, cartão de débito",
+        marginX + 130,
+        currentY + 14
+      );
+      docPDF.text("PIX", marginX, currentY + 28);
+      docPDF.text("CNPJ: 52.532.493/0001-04", marginX + 130, currentY + 28);
+
+      currentY += 60;
+      docPDF.text(`Fortaleza, ${new Date().toLocaleDateString("pt-BR")}`, marginX, currentY);
+      currentY += 50;
+      docPDF.text("Sport & Bike", marginX, currentY);
+      docPDF.text("Gilberto Pereira", marginX, currentY + 14);
+
+      docPDF.save(`orcamento-os-${order.codigo || "sem-codigo"}.pdf`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF do orçamento:", err);
+      alert("Erro ao gerar PDF do orçamento. Tente novamente.");
+    }
+  };
+
   // --------------------------------------------------------------------------------
 
   // Componente OrderCard
@@ -1395,6 +1553,12 @@ const WorkshopDashboard = () => {
                   className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                 >
                   Imprimir Versão Cliente
+                </button>
+                <button
+                  onClick={() => generateBudgetPDF(localOrder)}
+                  className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700"
+                >
+                  Gerar Orçamento (PDF)
                 </button>
                 <button
                   onClick={() => generateWorkshopTagsPDF(localOrder)}

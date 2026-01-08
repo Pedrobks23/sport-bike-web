@@ -1,4 +1,14 @@
-import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../config/firebase";
 
 const COLLECTION = "orcamentos";
@@ -26,5 +36,11 @@ export const updateBudget = async (id, data) => {
     ...data,
     updatedAt: serverTimestamp(),
   });
+  return id;
+};
+
+export const deleteBudget = async (id) => {
+  const ref = doc(db, COLLECTION, id);
+  await deleteDoc(ref);
   return id;
 };
