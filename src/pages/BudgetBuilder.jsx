@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { createBudget, getBudgets, updateBudget } from "../services/budgetService";
+import { createBudget, deleteBudget, getBudgets, updateBudget } from "../services/budgetService";
 
 const toNumber = (value) => {
   if (value === undefined || value === null) return 0;
@@ -54,6 +54,8 @@ export default function BudgetBuilder() {
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
+  const [bikeLabel, setBikeLabel] = useState("");
+  const [groupByBike, setGroupByBike] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -91,6 +93,7 @@ export default function BudgetBuilder() {
     setDescription("");
     setQuantity(1);
     setUnitPrice("");
+    setBikeLabel("");
     setEditingId(null);
     setTimeout(() => descriptionRef.current?.focus(), 50);
   };
@@ -108,7 +111,13 @@ export default function BudgetBuilder() {
     } else {
       setItems((prev) => [
         ...prev,
-        { id: crypto.randomUUID ? crypto.randomUUID() : Date.now(), description, qty, unitPrice: price },
+        {
+          id: crypto.randomUUID ? crypto.randomUUID() : Date.now(),
+          description,
+          qty,
+          unitPrice: price,
+          bike: bikeLabel?.trim() || "",
+        },
       ]);
     }
     resetForm();
@@ -120,6 +129,7 @@ export default function BudgetBuilder() {
       setDescription(current.description || "");
       setQuantity(current.qty || 1);
       setUnitPrice(current.unitPrice != null ? String(current.unitPrice) : "");
+      setBikeLabel(current.bike || "");
       setEditingId(id);
       setTimeout(() => descriptionRef.current?.focus(), 50);
     }
@@ -136,6 +146,7 @@ export default function BudgetBuilder() {
     setPreviewText("");
     setCustomTotal("");
     setSelectedBudgetId(null);
+    setGroupByBike(false);
     setBudgetCode(generateBudgetCode());
     resetForm();
   };
@@ -165,6 +176,7 @@ export default function BudgetBuilder() {
     setCustomerPhone(budget.customerPhone || "");
     setBudgetCode(budget.budgetCode || budget.id || generateBudgetCode());
     setCustomTotal(budget.total ? String(budget.total) : "");
+    setGroupByBike(Boolean(budget.groupByBike));
 
     if (budget.mode === "list") {
       setItems(
@@ -173,6 +185,7 @@ export default function BudgetBuilder() {
           description: item.description,
           qty: item.qty || item.quantity || 1,
           unitPrice: item.unitPrice || item.valor || 0,
+          bike: item.bike || "",
         }))
       );
       setParsedItems([]);
@@ -183,6 +196,7 @@ export default function BudgetBuilder() {
           description: item.description,
           qty: item.qty || item.quantity || 1,
           unitPrice: item.unitPrice || item.valor || 0,
+          bike: item.bike || "",
         }))
       );
       setItems([]);
@@ -192,6 +206,18 @@ export default function BudgetBuilder() {
     setPreviewText(budget.rawText || "");
     setFeedback("Orçamento carregado para edição.");
   };
+
+  const getBikeLabel = (item) => item?.bike?.trim() || "Sem bicicleta";
+
+  const groupedItems = useMemo(() => {
+    if (!groupByBike) return {};
+    return (modeItems || []).reduce((acc, item) => {
+      const label = getBikeLabel(item);
+      if (!acc[label]) acc[label] = [];
+      acc[label].push(item);
+      return acc;
+    }, {});
+  }, [groupByBike, modeItems]);
 
   const formatBudgetText = () => {
     const lines = [
@@ -203,11 +229,23 @@ export default function BudgetBuilder() {
     lines.push("", "Itens:");
 
     if (mode === "list" && (modeItems || []).length > 0) {
-      modeItems.forEach((item) => {
-        const qty = item.qty || item.quantity || 1;
-        const price = item.unitPrice || item.valor || 0;
-        lines.push(`- ${item.description || "Item"} (${qty}x) = ${currency(qty * price)}`);
-      });
+      if (groupByBike) {
+        Object.entries(groupedItems).forEach(([label, bikeItems]) => {
+          lines.push("");
+          lines.push(`Bike: ${label}`);
+          bikeItems.forEach((item) => {
+            const qty = item.qty || item.quantity || 1;
+            const price = item.unitPrice || item.valor || 0;
+            lines.push(`- ${item.description || "Item"} (${qty}x) = ${currency(qty * price)}`);
+          });
+        });
+      } else {
+        modeItems.forEach((item) => {
+          const qty = item.qty || item.quantity || 1;
+          const price = item.unitPrice || item.valor || 0;
+          lines.push(`- ${item.description || "Item"} (${qty}x) = ${currency(qty * price)}`);
+        });
+      }
     } else if (rawText || previewText) {
       lines.push("Conteúdo do orçamento:");
       lines.push(previewText || rawText);
@@ -295,6 +333,7 @@ export default function BudgetBuilder() {
       budgetCode,
       customerName: customerName?.trim() || "",
       customerPhone: customerPhone?.trim() || "",
+      groupByBike,
       items: (payloadItems || []).map((item) => {
         const qty = item.qty || item.quantity || 1;
         const price = item.unitPrice || item.valor || 0;
@@ -303,6 +342,7 @@ export default function BudgetBuilder() {
           qty,
           unitPrice: price,
           total: qty * price,
+          bike: item.bike || "",
         };
       }),
       rawText: rawText,
@@ -415,28 +455,54 @@ export default function BudgetBuilder() {
     const rawContent = previewText || rawText;
 
     if (hasItems) {
-      doc.setFontSize(13);
-      doc.text("Produtos", marginX, currentY);
-      currentY += 12;
+      if (groupByBike) {
+        Object.entries(groupedItems).forEach(([label, bikeItems]) => {
+          doc.setFontSize(13);
+          doc.text(`Bike: ${label}`, marginX, currentY);
+          currentY += 12;
+          doc.autoTable({
+            startY: currentY,
+            head: [["Descrição", "Qtd", "Unitário", "Subtotal"]],
+            body: (bikeItems || []).map((item) => [
+              item.description || "Item",
+              String(item.qty || 1),
+              currency(item.unitPrice || 0),
+              currency((item.qty || 1) * (item.unitPrice || 0)),
+            ]),
+            styles: { fontSize: 11, halign: "left" },
+            headStyles: { fillColor: [230, 230, 230], textColor: 20 },
+            columnStyles: {
+              1: { halign: "center" },
+              2: { halign: "right" },
+              3: { halign: "right" },
+            },
+          });
+          currentY = (doc.lastAutoTable?.finalY || currentY) + 16;
+        });
+      } else {
+        doc.setFontSize(13);
+        doc.text("Produtos", marginX, currentY);
+        currentY += 12;
 
-      doc.autoTable({
-        startY: currentY,
-        head: [["Descrição", "Qtd", "Unitário", "Subtotal"]],
-        body: (modeItems || []).map((item) => [
-          item.description || "Item",
-          String(item.qty || 1),
-          currency(item.unitPrice || 0),
-          currency((item.qty || 1) * (item.unitPrice || 0)),
-        ]),
-        styles: { fontSize: 11, halign: "left" },
-        headStyles: { fillColor: [230, 230, 230], textColor: 20 },
-        columnStyles: {
-          1: { halign: "center" },
-          2: { halign: "right" },
-          3: { halign: "right" },
-        },
-      });
-      currentY = doc.lastAutoTable?.finalY || currentY;
+        doc.autoTable({
+          startY: currentY,
+          head: [["Descrição", "Qtd", "Unitário", "Subtotal"]],
+          body: (modeItems || []).map((item) => [
+            item.description || "Item",
+            String(item.qty || 1),
+            currency(item.unitPrice || 0),
+            currency((item.qty || 1) * (item.unitPrice || 0)),
+          ]),
+          styles: { fontSize: 11, halign: "left" },
+          headStyles: { fillColor: [230, 230, 230], textColor: 20 },
+          columnStyles: {
+            1: { halign: "center" },
+            2: { halign: "right" },
+            3: { halign: "right" },
+          },
+        });
+        currentY = doc.lastAutoTable?.finalY || currentY;
+      }
     }
 
     if (rawContent) {
@@ -480,6 +546,52 @@ export default function BudgetBuilder() {
     doc.save(`orcamento-${budgetCode}.pdf`);
   };
 
+  const handleDeleteBudget = async (budget) => {
+    if (!budget?.id) return;
+    const confirmDelete = window.confirm(`Deseja excluir o orçamento ${budget.budgetCode || budget.id}?`);
+    if (!confirmDelete) return;
+
+    try {
+      await deleteBudget(budget.id);
+      if (selectedBudgetId === budget.id) {
+        handleClear();
+      }
+      await loadBudgets();
+      setFeedback("Orçamento excluído com sucesso.");
+    } catch (error) {
+      console.error("Erro ao excluir orçamento", error);
+      setFeedback("Não foi possível excluir o orçamento.");
+    }
+  };
+
+  const renderItemsTable = (list) => (
+    <div className="border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <div className="min-w-[640px]">
+          <div className="grid grid-cols-5 text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
+            <div className="p-2">Descrição</div>
+            <div className="p-2">Bike</div>
+            <div className="p-2 text-center">Qtd</div>
+            <div className="p-2 text-right">Unitário</div>
+            <div className="p-2 text-right">Subtotal</div>
+          </div>
+          {list.map((item) => (
+            <div
+              key={item.id}
+              className="grid grid-cols-5 text-sm border-t border-neutral-100 dark:border-neutral-800"
+            >
+              <div className="p-2">{item.description}</div>
+              <div className="p-2 text-neutral-500">{item.bike || "-"}</div>
+              <div className="p-2 text-center">{item.qty || 1}</div>
+              <div className="p-2 text-right">{currency(item.unitPrice || 0)}</div>
+              <div className="p-2 text-right">{currency((item.qty || 1) * (item.unitPrice || 0))}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderPreview = () => (
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 shadow-sm space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -503,29 +615,18 @@ export default function BudgetBuilder() {
       </div>
       {mode === "list" && modeItems && modeItems.length > 0 ? (
         <div className="space-y-2">
-          <div className="border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <div className="min-w-[540px]">
-                <div className="grid grid-cols-4 text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
-                  <div className="p-2">Descrição</div>
-                  <div className="p-2 text-center">Qtd</div>
-                  <div className="p-2 text-right">Unitário</div>
-                  <div className="p-2 text-right">Subtotal</div>
+          {groupByBike ? (
+            <div className="space-y-4">
+              {Object.entries(groupedItems).map(([label, bikeItems]) => (
+                <div key={label} className="space-y-2">
+                  <div className="text-xs uppercase tracking-wide text-neutral-500">Bike: {label}</div>
+                  {renderItemsTable(bikeItems)}
                 </div>
-                {modeItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-4 text-sm border-t border-neutral-100 dark:border-neutral-800"
-                  >
-                    <div className="p-2">{item.description}</div>
-                    <div className="p-2 text-center">{item.qty || 1}</div>
-                    <div className="p-2 text-right">{currency(item.unitPrice || 0)}</div>
-                    <div className="p-2 text-right">{currency((item.qty || 1) * (item.unitPrice || 0))}</div>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            renderItemsTable(modeItems)
+          )}
           <div className="flex justify-end text-base font-semibold mt-2">
             Total: <span className="ml-2 text-amber-600">{currency(displayTotal)}</span>
           </div>
@@ -637,12 +738,26 @@ export default function BudgetBuilder() {
                   />
                   <p className="text-[11px] text-neutral-500 mt-1">No modo colar texto, este total será usado no documento.</p>
                 </div>
+                {mode === "list" && (
+                  <div className="flex items-center gap-2 pt-2">
+                    <input
+                      id="groupByBike"
+                      type="checkbox"
+                      checked={groupByBike}
+                      onChange={(e) => setGroupByBike(e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                    />
+                    <label htmlFor="groupByBike" className="text-sm text-neutral-600 dark:text-neutral-300">
+                      Separar itens por bike
+                    </label>
+                  </div>
+                )}
               </div>
 
               {mode === "list" ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                    <div className="md:col-span-6">
+                    <div className="md:col-span-4">
                       <label className="text-sm text-neutral-600 dark:text-neutral-300">Descrição</label>
                       <input
                         ref={descriptionRef}
@@ -650,6 +765,15 @@ export default function BudgetBuilder() {
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Ex: Revisão completa"
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="text-sm text-neutral-600 dark:text-neutral-300">Bike</label>
+                      <input
+                        className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950"
+                        value={bikeLabel}
+                        onChange={(e) => setBikeLabel(e.target.value)}
+                        placeholder="Ex: Caloi Elite"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -662,7 +786,7 @@ export default function BudgetBuilder() {
                         onChange={(e) => setQuantity(e.target.value)}
                       />
                     </div>
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-2">
                       <label className="text-sm text-neutral-600 dark:text-neutral-300">Valor unitário</label>
                       <input
                         className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950"
@@ -686,9 +810,10 @@ export default function BudgetBuilder() {
                     <div className="overflow-x-auto">
                       <div className="min-w-[640px]">
                         <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
-                          <div className="col-span-6 p-2">Descrição</div>
+                          <div className="col-span-4 p-2">Descrição</div>
+                          <div className="col-span-3 p-2">Bike</div>
                           <div className="col-span-2 p-2 text-center">Qtd</div>
-                          <div className="col-span-2 p-2 text-right">Unitário</div>
+                          <div className="col-span-1 p-2 text-right">Unitário</div>
                           <div className="col-span-2 p-2 text-right">Subtotal</div>
                         </div>
                         {(items || []).length === 0 && (
@@ -699,9 +824,10 @@ export default function BudgetBuilder() {
                             key={item.id}
                             className="grid grid-cols-12 items-center text-sm border-t border-neutral-100 dark:border-neutral-800"
                           >
-                            <div className="col-span-6 p-2">{item.description}</div>
+                            <div className="col-span-4 p-2">{item.description}</div>
+                            <div className="col-span-3 p-2 text-neutral-500">{item.bike || "-"}</div>
                             <div className="col-span-2 p-2 text-center">{item.qty}</div>
-                            <div className="col-span-2 p-2 text-right">{currency(item.unitPrice)}</div>
+                            <div className="col-span-1 p-2 text-right">{currency(item.unitPrice)}</div>
                             <div className="col-span-2 p-2 text-right flex items-center justify-end gap-2">
                               <span>{currency((item.qty || 1) * (item.unitPrice || 0))}</span>
                               <button
@@ -848,9 +974,9 @@ export default function BudgetBuilder() {
                         <div className="col-span-3 p-2">Código</div>
                         <div className="col-span-3 p-2">Cliente</div>
                         <div className="col-span-2 p-2">Modo</div>
-                        <div className="col-span-2 p-2 text-right">Total</div>
+                        <div className="col-span-1 p-2 text-right">Total</div>
                         <div className="col-span-1 p-2">Data</div>
-                        <div className="col-span-1 p-2 text-right">Ações</div>
+                        <div className="col-span-2 p-2 text-right">Ações</div>
                       </div>
                       {budgets.map((budget) => (
                         <div
@@ -864,14 +990,20 @@ export default function BudgetBuilder() {
                               {budget.mode === "paste" ? <FileText size={12} /> : <ListPlus size={12} />} {budget.mode === "paste" ? "Colado" : "Lista"}
                             </span>
                           </div>
-                          <div className="col-span-2 p-2 text-right">{currency(budget.total)}</div>
+                          <div className="col-span-1 p-2 text-right">{currency(budget.total)}</div>
                           <div className="col-span-1 p-2 text-xs text-neutral-500">{formatDate(budget.createdAt)}</div>
-                          <div className="col-span-1 p-2 flex justify-end">
+                          <div className="col-span-2 p-2 flex justify-end gap-2">
                             <button
                               onClick={() => handleSelectBudget(budget)}
                               className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                             >
                               <Edit3 size={14} /> Editar
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBudget(budget)}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 size={14} /> Excluir
                             </button>
                           </div>
                         </div>

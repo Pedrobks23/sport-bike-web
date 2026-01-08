@@ -644,6 +644,146 @@ const WorkshopDashboard = () => {
     }
   };
 
+  const generateBudgetPDF = async (order) => {
+    try {
+      const docPDF = new jsPDF({ unit: "pt", format: "a4" });
+      const marginX = 40;
+      const pageWidth = docPDF.internal.pageSize.getWidth();
+      const pageHeight = docPDF.internal.pageSize.getHeight();
+      let yPos = 40;
+
+      const logoImg = new Image();
+      logoImg.src = "/assets/Logo.png";
+      await new Promise((resolve) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = resolve;
+      });
+
+      if (logoImg.complete) {
+        docPDF.addImage(logoImg, "PNG", marginX, yPos, 90, 45);
+      }
+
+      docPDF.setFontSize(16);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text("Orçamento", pageWidth - marginX, yPos + 18, { align: "right" });
+
+      docPDF.setFontSize(10);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.text(`OS: ${order.codigo || "-"}`, pageWidth - marginX, yPos + 34, { align: "right" });
+      docPDF.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, pageWidth - marginX, yPos + 48, {
+        align: "right",
+      });
+
+      yPos += 70;
+
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text("Cliente", marginX, yPos);
+      yPos += 14;
+      docPDF.setFont("helvetica", "normal");
+      docPDF.text(`Nome: ${order.cliente?.nome || "-"}`, marginX, yPos);
+      yPos += 14;
+      docPDF.text(`Contato: ${order.cliente?.telefone || "-"}`, marginX, yPos);
+      yPos += 22;
+
+      const bikes = order.bicicletas || [];
+      let totalGeral = 0;
+
+      bikes.forEach((bike, index) => {
+        const bikeLabel =
+          [bike.marca, bike.modelo, bike.cor].filter(Boolean).join(" - ") || `Bike ${index + 1}`;
+
+        if (yPos > pageHeight - 120) {
+          docPDF.addPage();
+          yPos = 40;
+        }
+
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(12);
+        docPDF.text(`Bike ${index + 1}: ${bikeLabel}`, marginX, yPos);
+        yPos += 10;
+
+        const rows = [];
+        let totalBike = 0;
+
+        if (bike.services) {
+          Object.entries(bike.services).forEach(([serviceName, quantity]) => {
+            if (!quantity) return;
+            const value = parseFloat(
+              bike.serviceValues?.[serviceName]?.valorFinal ||
+                bike.serviceValues?.[serviceName]?.valor ||
+                0
+            );
+            const subtotal = value * quantity;
+            totalBike += subtotal;
+            rows.push([`Serviço - ${serviceName}`, String(quantity), formatCurrency(value), formatCurrency(subtotal)]);
+          });
+        }
+
+        if (bike.pecas?.length) {
+          bike.pecas.forEach((peca) => {
+            const qty = parseInt(peca.quantidade) || 1;
+            const valorPeca = parseFloat(peca.valor || 0);
+            const subtotal = valorPeca * qty;
+            totalBike += subtotal;
+            rows.push([`Peça - ${peca.nome}`, String(qty), formatCurrency(valorPeca), formatCurrency(subtotal)]);
+          });
+        }
+
+        if (rows.length === 0) {
+          docPDF.setFont("helvetica", "normal");
+          docPDF.setFontSize(10);
+          docPDF.text("Nenhum item registrado para esta bike.", marginX, yPos);
+          yPos += 14;
+        } else {
+          docPDF.autoTable({
+            startY: yPos,
+            head: [["Descrição", "Qtd", "Unitário", "Subtotal"]],
+            body: rows,
+            styles: { fontSize: 10, halign: "left" },
+            headStyles: { fillColor: [230, 230, 230], textColor: 20 },
+            columnStyles: {
+              1: { halign: "center" },
+              2: { halign: "right" },
+              3: { halign: "right" },
+            },
+          });
+          yPos = docPDF.lastAutoTable?.finalY ? docPDF.lastAutoTable.finalY + 6 : yPos + 6;
+        }
+
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(11);
+        docPDF.text(`Subtotal Bike ${index + 1}: ${formatCurrency(totalBike)}`, pageWidth - marginX, yPos, {
+          align: "right",
+        });
+        yPos += 18;
+        totalGeral += totalBike;
+      });
+
+      if (bikes.length === 0) {
+        docPDF.setFontSize(11);
+        docPDF.text("Nenhuma bike registrada nesta ordem.", marginX, yPos);
+        yPos += 14;
+      }
+
+      if (yPos > pageHeight - 80) {
+        docPDF.addPage();
+        yPos = 40;
+      }
+
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`Total do orçamento: ${formatCurrency(totalGeral)}`, pageWidth - marginX, yPos, {
+        align: "right",
+      });
+
+      docPDF.save(`Orcamento-OS-${order.codigo || "sem-codigo"}.pdf`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF do orçamento:", err);
+      alert("Erro ao gerar PDF do orçamento. Tente novamente.");
+    }
+  };
+
   // --------------------------------------------------------------------------------
 
   // Componente OrderCard
@@ -1395,6 +1535,12 @@ const WorkshopDashboard = () => {
                   className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
                 >
                   Imprimir Versão Cliente
+                </button>
+                <button
+                  onClick={() => generateBudgetPDF(localOrder)}
+                  className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700"
+                >
+                  Gerar Orçamento (PDF)
                 </button>
                 <button
                   onClick={() => generateWorkshopTagsPDF(localOrder)}
