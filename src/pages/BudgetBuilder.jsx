@@ -637,7 +637,7 @@ export default function BudgetBuilder() {
   const renderItemsTable = (list, showBike) => (
     <div className="border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
-        <div className="min-w-[540px]">
+        <div className="min-w-[720px]">
           <div
             className={`grid ${showBike ? "grid-cols-5" : "grid-cols-4"} text-xs font-semibold bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200`}
           >
@@ -729,7 +729,7 @@ export default function BudgetBuilder() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <button
@@ -971,7 +971,7 @@ export default function BudgetBuilder() {
 
                   <div className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden">
                     <div className="overflow-x-auto">
-                      <div className="min-w-[640px]">
+                      <div className="min-w-[760px]">
                         <div className="grid grid-cols-12 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-200">
                           <div className={groupByBike ? "col-span-4 p-2" : "col-span-6 p-2"}>Descrição</div>
                           {groupByBike && <div className="col-span-3 p-2">Bike</div>}
