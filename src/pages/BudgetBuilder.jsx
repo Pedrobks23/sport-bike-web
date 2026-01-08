@@ -55,6 +55,7 @@ export default function BudgetBuilder() {
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
   const [selectedBike, setSelectedBike] = useState("");
+  const [isGeneralItem, setIsGeneralItem] = useState(false);
   const [bikeName, setBikeName] = useState("");
   const [bikes, setBikes] = useState([]);
   const [groupByBike, setGroupByBike] = useState(false);
@@ -97,6 +98,7 @@ export default function BudgetBuilder() {
     setQuantity(1);
     setUnitPrice("");
     setSelectedBike("");
+    setIsGeneralItem(false);
     setEditingId(null);
     setTimeout(() => descriptionRef.current?.focus(), 50);
   };
@@ -105,11 +107,12 @@ export default function BudgetBuilder() {
     if (!description.trim()) return;
     const price = toNumber(unitPrice);
     const qty = Number(quantity) > 0 ? Number(quantity) : 1;
+    const bikeValue = isGeneralItem ? "" : selectedBike?.trim() || "";
     if (editingId) {
       setItems((prev) =>
         prev.map((item) =>
           item.id === editingId
-            ? { ...item, description, qty, unitPrice: price, bike: selectedBike }
+            ? { ...item, description, qty, unitPrice: price, bike: bikeValue }
             : item
         )
       );
@@ -121,7 +124,7 @@ export default function BudgetBuilder() {
           description,
           qty,
           unitPrice: price,
-          bike: selectedBike?.trim() || "",
+          bike: bikeValue,
         },
       ]);
     }
@@ -135,6 +138,7 @@ export default function BudgetBuilder() {
       setQuantity(current.qty || 1);
       setUnitPrice(current.unitPrice != null ? String(current.unitPrice) : "");
       setSelectedBike(current.bike || "");
+      setIsGeneralItem(!current.bike);
       setEditingId(id);
       setTimeout(() => descriptionRef.current?.focus(), 50);
     }
@@ -155,6 +159,7 @@ export default function BudgetBuilder() {
     setBikes([]);
     setBikeName("");
     setSelectedBike("");
+    setIsGeneralItem(false);
     setBudgetCode(generateBudgetCode());
     resetForm();
   };
@@ -259,7 +264,7 @@ export default function BudgetBuilder() {
     setItems((prev) => prev.map((item) => (item.bike === label ? { ...item, bike: "" } : item)));
   };
 
-  const getBikeLabel = (item) => item?.bike?.trim() || "Sem bicicleta";
+  const getBikeLabel = (item) => item?.bike?.trim() || "Itens gerais";
 
   const groupedItems = useMemo(() => {
     if (!groupByBike) return {};
@@ -650,8 +655,12 @@ export default function BudgetBuilder() {
               <div className="p-2">{item.description}</div>
               {showBike && <div className="p-2 text-neutral-500">{item.bike || "-"}</div>}
               <div className="p-2 text-center">{item.qty || 1}</div>
-              <div className="p-2 text-right">{currency(item.unitPrice || 0)}</div>
-              <div className="p-2 text-right">{currency((item.qty || 1) * (item.unitPrice || 0))}</div>
+              <div className="p-2 text-right whitespace-nowrap tabular-nums">
+                {currency(item.unitPrice || 0)}
+              </div>
+              <div className="p-2 text-right whitespace-nowrap tabular-nums">
+                {currency((item.qty || 1) * (item.unitPrice || 0))}
+              </div>
             </div>
           ))}
         </div>
@@ -898,18 +907,39 @@ export default function BudgetBuilder() {
                         <select
                           className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950"
                           value={selectedBike}
+                          disabled={isGeneralItem}
                           onChange={(e) => setSelectedBike(e.target.value)}
                         >
-                          <option value="">Sem bike (itens gerais)</option>
+                          <option value="">Selecione uma bike</option>
                           {bikes.map((bike) => (
                             <option key={bike} value={bike}>
                               {bike}
                             </option>
                           ))}
                         </select>
+                        {isGeneralItem && (
+                          <p className="text-[11px] text-neutral-500 mt-1">Itens gerais não exigem seleção de bike.</p>
+                        )}
                       </div>
                     )}
-                    <div className="md:col-span-2">
+                    {groupByBike && (
+                      <div className="md:col-span-1 flex items-end">
+                        <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+                          <input
+                            type="checkbox"
+                            checked={isGeneralItem}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setIsGeneralItem(checked);
+                              if (checked) setSelectedBike("");
+                            }}
+                            className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          Item geral
+                        </label>
+                      </div>
+                    )}
+                    <div className={groupByBike ? "md:col-span-1" : "md:col-span-2"}>
                       <label className="text-sm text-neutral-600 dark:text-neutral-300">Qtd</label>
                       <input
                         type="number"
@@ -919,7 +949,7 @@ export default function BudgetBuilder() {
                         onChange={(e) => setQuantity(e.target.value)}
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className={groupByBike ? "md:col-span-2" : "md:col-span-3"}>
                       <label className="text-sm text-neutral-600 dark:text-neutral-300">Valor unitário</label>
                       <input
                         className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-white dark:bg-neutral-950"
@@ -966,11 +996,15 @@ export default function BudgetBuilder() {
                             </div>
                             {groupByBike && <div className="col-span-3 p-2 text-neutral-500">{item.bike || "-"}</div>}
                             <div className="col-span-2 p-2 text-center">{item.qty}</div>
-                            <div className={groupByBike ? "col-span-1 p-2 text-right" : "col-span-2 p-2 text-right"}>
+                            <div
+                              className={`${groupByBike ? "col-span-1" : "col-span-2"} p-2 text-right whitespace-nowrap tabular-nums`}
+                            >
                               {currency(item.unitPrice)}
                             </div>
                             <div className="col-span-2 p-2 text-right flex items-center justify-end gap-2">
-                              <span>{currency((item.qty || 1) * (item.unitPrice || 0))}</span>
+                              <span className="whitespace-nowrap tabular-nums">
+                                {currency((item.qty || 1) * (item.unitPrice || 0))}
+                              </span>
                               <button
                                 onClick={() => handleEditItem(item.id)}
                                 className="text-neutral-500 hover:text-amber-600"
