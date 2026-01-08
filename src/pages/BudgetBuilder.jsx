@@ -103,14 +103,6 @@ export default function BudgetBuilder() {
 
   const handleAddItem = () => {
     if (!description.trim()) return;
-    if (groupByBike && bikes.length === 0) {
-      setFeedback("Adicione uma bike antes de inserir itens.");
-      return;
-    }
-    if (groupByBike && !selectedBike) {
-      setFeedback("Selecione uma bike antes de adicionar o item.");
-      return;
-    }
     const price = toNumber(unitPrice);
     const qty = Number(quantity) > 0 ? Number(quantity) : 1;
     if (editingId) {
@@ -279,6 +271,18 @@ export default function BudgetBuilder() {
     }, {});
   }, [groupByBike, modeItems]);
 
+  const groupedTotals = useMemo(() => {
+    if (!groupByBike) return {};
+    return Object.entries(groupedItems).reduce((acc, [label, itemsList]) => {
+      acc[label] = itemsList.reduce((sum, item) => {
+        const qty = item.qty || item.quantity || 1;
+        const price = item.unitPrice || item.valor || 0;
+        return sum + qty * price;
+      }, 0);
+      return acc;
+    }, {});
+  }, [groupByBike, groupedItems]);
+
   const formatBudgetText = () => {
     const lines = [
       `ORÇAMENTO - Sport & Bike (${budgetCode})`,
@@ -385,11 +389,6 @@ export default function BudgetBuilder() {
 
     if (mode === "paste" && !rawText.trim()) {
       setFeedback("Cole o texto do orçamento antes de salvar.");
-      return;
-    }
-
-    if (groupByBike && bikes.length === 0) {
-      setFeedback("Adicione pelo menos uma bike antes de salvar.");
       return;
     }
 
@@ -689,6 +688,10 @@ export default function BudgetBuilder() {
                 <div key={label} className="space-y-2">
                   <div className="text-xs uppercase tracking-wide text-neutral-500">Bike: {label}</div>
                   {renderItemsTable(bikeItems, true)}
+                  <div className="flex justify-end text-sm font-semibold">
+                    Total {label}:{" "}
+                    <span className="ml-2 text-amber-600">{currency(groupedTotals[label] || 0)}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -872,7 +875,7 @@ export default function BudgetBuilder() {
               )}
               {groupByBike && mode === "list" && bikes.length === 0 && (
                 <p className="text-xs text-neutral-500">
-                  Adicione uma bike para habilitar o lançamento de itens por bike.
+                  Você pode lançar itens gerais sem bike ou adicionar bikes para separar os itens.
                 </p>
               )}
 
@@ -897,7 +900,7 @@ export default function BudgetBuilder() {
                           value={selectedBike}
                           onChange={(e) => setSelectedBike(e.target.value)}
                         >
-                          <option value="">Selecione uma bike</option>
+                          <option value="">Sem bike (itens gerais)</option>
                           {bikes.map((bike) => (
                             <option key={bike} value={bike}>
                               {bike}
@@ -928,8 +931,7 @@ export default function BudgetBuilder() {
                     <div className="md:col-span-1 flex items-end">
                       <button
                         onClick={handleAddItem}
-                        disabled={groupByBike && bikes.length === 0}
-                        className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 shadow disabled:opacity-60"
+                        className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 shadow"
                       >
                         {editingId ? <CheckCircle2 size={16} /> : <Plus size={16} />}
                         <span>{editingId ? "Atualizar" : "Adicionar"}</span>
@@ -1041,7 +1043,6 @@ export default function BudgetBuilder() {
             </div>
 
             <div className="space-y-3">
-              {renderPreview()}
               <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-3 flex flex-col gap-2">
                 <button
                   onClick={handleSave}
@@ -1078,6 +1079,8 @@ export default function BudgetBuilder() {
             </div>
           </div>
         </div>
+
+        <div className="mb-4">{renderPreview()}</div>
 
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-lg border border-neutral-200 dark:border-neutral-800 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
