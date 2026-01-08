@@ -655,10 +655,10 @@ export default function BudgetBuilder() {
               <div className="p-2">{item.description}</div>
               {showBike && <div className="p-2 text-neutral-500">{item.bike || "-"}</div>}
               <div className="p-2 text-center">{item.qty || 1}</div>
-              <div className="p-2 text-right whitespace-nowrap tabular-nums">
+              <div className="p-2 pr-4 text-right whitespace-nowrap tabular-nums">
                 {currency(item.unitPrice || 0)}
               </div>
-              <div className="p-2 text-right whitespace-nowrap tabular-nums">
+              <div className="p-2 pl-4 text-right whitespace-nowrap tabular-nums">
                 {currency((item.qty || 1) * (item.unitPrice || 0))}
               </div>
             </div>
@@ -997,12 +997,12 @@ export default function BudgetBuilder() {
                             {groupByBike && <div className="col-span-3 p-2 text-neutral-500">{item.bike || "-"}</div>}
                             <div className="col-span-2 p-2 text-center">{item.qty}</div>
                             <div
-                              className={`${groupByBike ? "col-span-1" : "col-span-2"} p-2 text-right whitespace-nowrap tabular-nums`}
+                              className={`${groupByBike ? "col-span-1" : "col-span-2"} p-2 pr-4 text-right whitespace-nowrap tabular-nums`}
                             >
                               {currency(item.unitPrice)}
                             </div>
                             <div className="col-span-2 p-2 text-right flex items-center justify-end gap-2">
-                              <span className="whitespace-nowrap tabular-nums">
+                              <span className="whitespace-nowrap tabular-nums pl-4">
                                 {currency((item.qty || 1) * (item.unitPrice || 0))}
                               </span>
                               <button
