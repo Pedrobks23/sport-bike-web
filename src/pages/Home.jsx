@@ -22,8 +22,9 @@ import {
   Shield,
   ChevronDown,
   ChevronUp,
+  X,
 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { auth } from "../config/firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import { getFeaturedProducts, getHomeSettings } from "../services/homeService"
@@ -32,10 +33,8 @@ import ResponsiveContainer from "../components/ResponsiveContainer"
 import Silk from "../components/Silk"
 import { normalizeProductImages } from "@/utils/productImage"
 import { ProductImage } from "@/components/shared/ProductImage"
-import { Link } from "react-router-dom"
 import MainNavbar from "@/components/layout/MainNavbar"
 import { useUI } from "@/contexts/UIContext"
-
 
 export default function Home() {
   const navigate = useNavigate()
@@ -241,6 +240,7 @@ export default function Home() {
       <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         {/* Header */}
         <MainNavbar isScrolled={isScrolled} />
+
         {/* Benefits Bar */}
         <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
           <ResponsiveContainer>
@@ -254,23 +254,20 @@ export default function Home() {
             </div>
           </ResponsiveContainer>
         </div>
+
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-12 md:pt-16">
+        {/* ✅ removido o pt-12/md:pt-16 pra tirar o espaço em branco */}
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-0">
           <div className="absolute inset-0">
             <div className="absolute inset-0 pointer-events-none">
-              <Silk
-                className="h-full w-full"
-                color="#f59e0b"
-                noiseIntensity={0}
-                rotation={0}
-                scale={1.05}
-                speed={0.75}
-              />
+              <Silk className="h-full w-full" color="#f59e0b" noiseIntensity={0} rotation={0} scale={1.05} speed={0.75} />
             </div>
             <div className="absolute inset-0 bg-gradient-to-br from-amber-400/90 via-amber-500/90 to-amber-600/90 z-10"></div>
           </div>
+
           <div className="absolute top-20 right-10 sm:right-20 w-48 h-48 sm:w-72 sm:h-72 bg-white/20 rounded-full blur-xl animate-pulse z-10"></div>
           <div className="absolute bottom-20 left-10 sm:left-20 w-64 h-64 sm:w-96 sm:h-96 bg-white/10 rounded-full blur-2xl animate-bounce z-10"></div>
+
           <div className="relative z-20 container mx-auto px-4 text-center text-white">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
               25 Anos de
@@ -297,12 +294,14 @@ export default function Home() {
               </button>
             </div>
           </div>
+
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce z-20">
             <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
               <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
             </div>
           </div>
         </section>
+
         {/* Featured Products Carousel */}
         {showFeatured && (
           <section className="py-20 bg-white dark:bg-gray-800">
@@ -315,35 +314,38 @@ export default function Home() {
                   Confira nossa seleção especial de bikes e acessórios
                 </p>
               </div>
+
               <div className="relative max-w-5xl mx-auto">
                 {featuredProducts.length > 0 ? (
                   <div className="relative overflow-hidden rounded-3xl p-8 shadow-2xl border-2 bg-gradient-to-r from-amber-400 to-amber-500 border-transparent">
                     {featuredProducts[currentProduct] && (
                       <div className="sr-only">{featuredProducts[currentProduct].name}</div>
                     )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center md:items-stretch">
                       <div className="rounded-2xl overflow-hidden bg-white/10 shadow-inner ring-2 ring-white/20 h-full flex">
                         <div className="relative w-full h-72 sm:h-96 md:h-full">
                           <ProductImage
                             publicId={featuredProducts[currentProduct]?.coverImage?.publicId}
                             secureUrl={featuredProducts[currentProduct]?.coverImage?.secureUrl}
-                            alt={featuredProducts[currentProduct]?.coverImage?.alt || featuredProducts[currentProduct]?.name || "Produto em destaque"}
+                            alt={
+                              featuredProducts[currentProduct]?.coverImage?.alt ||
+                              featuredProducts[currentProduct]?.name ||
+                              "Produto em destaque"
+                            }
                             role="modal"
                           />
                         </div>
                       </div>
+
                       <div className="text-white">
                         {featuredProducts[currentProduct].category && (
                           <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
                             {featuredProducts[currentProduct].category}
                           </span>
                         )}
-                        <h3 className="text-2xl font-bold mt-4 mb-2">
-                          {featuredProducts[currentProduct].name}
-                        </h3>
-                        <p className="text-3xl font-bold mb-2">
-                          {featuredProducts[currentProduct].price}
-                        </p>
+                        <h3 className="text-2xl font-bold mt-4 mb-2">{featuredProducts[currentProduct].name}</h3>
+                        <p className="text-3xl font-bold mb-2">{featuredProducts[currentProduct].price}</p>
                         {featuredProducts[currentProduct].description && (
                           <p className="mb-4 text-white/90 whitespace-pre-line">
                             {featuredProducts[currentProduct].description}
@@ -366,6 +368,7 @@ export default function Home() {
                 ) : (
                   <div className="text-center text-gray-600 dark:text-gray-300">Carregando...</div>
                 )}
+
                 {featuredProducts.length > 1 && (
                   <>
                     <button
@@ -384,6 +387,7 @@ export default function Home() {
                     </button>
                   </>
                 )}
+
                 <div className="flex justify-center mt-8 space-x-2">
                   {featuredProducts.map((_, index) => (
                     <button
@@ -410,8 +414,10 @@ export default function Home() {
             </div>
           </section>
         )}
+
         {/* Services Section */}
-        <section id="servicos" className="py-20 bg-gray-50 dark:bg-gray-900">
+        {/* ✅ scroll-mt pra rolar certinho com navbar fixa */}
+        <section id="servicos" className="py-20 bg-gray-50 dark:bg-gray-900 scroll-mt-24">
           <ResponsiveContainer>
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Nossos Serviços</h2>
@@ -419,14 +425,13 @@ export default function Home() {
                 Soluções completas para todos os tipos de ciclistas
               </p>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {services.map((service, index) => (
                 <div
                   key={index}
                   onClick={() =>
-                    handleServiceClick(
-                      index === 0 ? "vendas" : index === 1 ? "oficina" : index === 2 ? "aluguel" : "pecas",
-                    )
+                    handleServiceClick(index === 0 ? "vendas" : index === 1 ? "oficina" : index === 2 ? "aluguel" : "pecas")
                   }
                   className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
                 >
@@ -442,7 +447,7 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section id="faq" className="py-20 bg-white dark:bg-gray-800">
+        <section id="faq" className="py-20 bg-white dark:bg-gray-800 scroll-mt-24">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
@@ -452,6 +457,7 @@ export default function Home() {
                 Tire suas dúvidas sobre nossos serviços
               </p>
             </div>
+
             <div className="max-w-3xl mx-auto space-y-4">
               {faqData.map((faq, index) => (
                 <div
@@ -469,6 +475,7 @@ export default function Home() {
                       <ChevronDown className="w-5 h-5 text-amber-500" />
                     )}
                   </button>
+
                   {expandedFaq === index && (
                     <div className="px-6 pb-4">
                       <p className="text-gray-600 dark:text-gray-300">{faq.answer}</p>
@@ -488,6 +495,7 @@ export default function Home() {
                 O que nossos clientes dizem
               </h2>
             </div>
+
             <div className="max-w-4xl mx-auto relative">
               <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 text-white shadow-2xl">
                 <div className="flex items-center justify-center mb-4">
@@ -495,23 +503,27 @@ export default function Home() {
                     <Star key={i} className="w-6 h-6 fill-current" />
                   ))}
                 </div>
+
                 <p className="text-xl md:text-2xl text-center mb-6 italic">
                   &quot;{testimonials[currentTestimonial].text}&quot;
                 </p>
                 <p className="text-center font-bold text-lg">- {testimonials[currentTestimonial].name}</p>
               </div>
+
               <button
                 onClick={() => setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
               >
                 <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
               </button>
+
               <button
                 onClick={() => setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white dark:bg-gray-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all"
               >
                 <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-300" />
               </button>
+
               <div className="flex justify-center mt-8 space-x-2">
                 {testimonials.map((_, index) => (
                   <button
@@ -543,12 +555,13 @@ export default function Home() {
         </section>
 
         {/* Map & Contact Section */}
-        <section id="contato" className="py-20 bg-gray-50 dark:bg-gray-900">
+        <section id="contato" className="py-20 bg-gray-50 dark:bg-gray-900 scroll-mt-24">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">Visite Nossa Loja</h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">Estamos localizados próximos à Aldeota</p>
             </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden h-[400px]">
                 <iframe
@@ -561,6 +574,7 @@ export default function Home() {
                   title="Localização Sport & Bike"
                 ></iframe>
               </div>
+
               <div className="space-y-8">
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
@@ -569,6 +583,7 @@ export default function Home() {
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">R. Ana Bilhar, 1680 - Varjota, Fortaleza - CE</p>
                 </div>
+
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
                     <Phone className="w-6 h-6 text-amber-500" />
@@ -580,6 +595,7 @@ export default function Home() {
                     WhatsApp: (85) 3267-7425
                   </p>
                 </div>
+
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
                     <Clock className="w-6 h-6 text-amber-500" />
@@ -593,6 +609,7 @@ export default function Home() {
                     Domingo: Fechado
                   </p>
                 </div>
+
                 <div className="flex space-x-4">
                   <button
                     onClick={() => handleWhatsApp("Olá! Vim através do site.")}
@@ -641,6 +658,7 @@ export default function Home() {
                   Clique no serviço desejado para solicitar via WhatsApp
                 </p>
               </div>
+
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {officeServices.map((service, index) => (
@@ -672,6 +690,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-400">Desde 1999 oferecendo o melhor do ciclismo em Fortaleza.</p>
               </div>
+
               <div>
                 <h4 className="text-lg font-bold mb-4">Contato</h4>
                 <div className="space-y-2 text-gray-400">
@@ -680,6 +699,7 @@ export default function Home() {
                   <p>comercialsportbike@gmail.com</p>
                 </div>
               </div>
+
               <div>
                 <h4 className="text-lg font-bold mb-4">Redes Sociais</h4>
                 <div className="flex space-x-4">
@@ -698,10 +718,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
             <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-              <p className="text-gray-400 mb-4">
-                © {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.
-              </p>
+              <p className="text-gray-400 mb-4">© {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.</p>
               <button
                 onClick={() => {
                   onAuthStateChanged(auth, (user) => {
