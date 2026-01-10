@@ -20,6 +20,7 @@ import PrivateRoute from "../components/PrivateRoute"
 import Mecanicos from "../pages/Mecanicos"
 import ProductsPublic from "@/pages/ProductsPublic"
 import BudgetBuilder from "../pages/BudgetBuilder"
+import BuildBikePublic from "@/pages/BuildBikePublic"
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,10 @@ export const router = createBrowserRouter([
   {
     path: "/produtos",
     element: <ProductsPublic />,
+  },
+  {
+    path: "/monte-sua-bike",
+    element: <BuildBikePublic />,
   },
   {
     path: "/admin/login",
