@@ -40,7 +40,7 @@ export default function ProductsPublic() {
   const syncingRef = useRef(false)
 
   useEffect(() => {
-    document.title = "Produtos | Sport Bike"
+    document.title = "Produtos | Giilberto Bike"
   }, [])
 
   useEffect(() => {

@@ -447,9 +447,9 @@ const ConsultaOS = () => {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center space-x-3">
-                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
+                  <img src="/assets/Logo.png" alt="Giilberto Bike" className="w-12 h-12" />
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Sport & Bike</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Giilberto Bike</h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400">25 anos de tradição</p>
                   </div>
                 </div>

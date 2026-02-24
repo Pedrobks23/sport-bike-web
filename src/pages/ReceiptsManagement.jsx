@@ -26,7 +26,7 @@ import {
 } from "../services/receiptService";
 import { getLatestCompletedOrderByPhone } from "../services/orderService";
 const storeInfo = {
-  name: "Sport & Bike",
+  name: "Giilberto Bike",
   company: "Pereira Comércio LTDA",
   cnpj: "52.532.493/0001-04",
   address: "Rua Ana Bilhar, 1680",

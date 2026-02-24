@@ -6,7 +6,7 @@ import { useUI } from "@/contexts/UIContext"
 
 const WHATSAPP_PHONE = import.meta.env.VITE_WHATSAPP_PHONE || "558532677425"
 
-function buildWhatsappUrl(message = "Olá! Vim pelo site da Sport Bike.") {
+function buildWhatsappUrl(message = "Olá! Vim pelo site da Giilberto Bike.") {
   return `https://api.whatsapp.com/send/?phone=${WHATSAPP_PHONE}&text=${encodeURIComponent(
     message,
   )}&type=phone_number&app_absent=0`
@@ -62,7 +62,7 @@ export default function MainNavbar({ isScrolled = false }) {
       <ResponsiveContainer className="py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2" aria-label="Voltar para a Home">
-            <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
+            <img src="/assets/Logo.png" alt="Giilberto Bike" className="w-12 h-12" />
             <span className="text-2xl font-bold text-gray-800 dark:text-white">Sport &amp; Bike</span>
           </Link>
 

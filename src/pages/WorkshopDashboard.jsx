@@ -792,7 +792,7 @@ const WorkshopDashboard = () => {
       currentY += 60;
       docPDF.text(`Fortaleza, ${new Date().toLocaleDateString("pt-BR")}`, marginX, currentY);
       currentY += 50;
-      docPDF.text("Sport & Bike", marginX, currentY);
+      docPDF.text("Giilberto Bike", marginX, currentY);
       docPDF.text("Gilberto Pereira", marginX, currentY + 14);
 
       docPDF.save(`orcamento-os-${order.codigo || "sem-codigo"}.pdf`);

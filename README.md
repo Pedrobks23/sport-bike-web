@@ -1,6 +1,6 @@
-# Sport & Bike Web
+# Giilberto Bike Web
 
-A management system for the Sport & Bike bicycle store built with React, Vite and Firebase. It provides tools for creating workshop orders, managing customers and services and issuing receipts with PDF generation.
+A management system for the Giilberto Bike bicycle store built with React, Vite and Firebase. It provides tools for creating workshop orders, managing customers and services and issuing receipts with PDF generation.
 
 ## Features
 

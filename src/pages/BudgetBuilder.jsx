@@ -290,7 +290,7 @@ export default function BudgetBuilder() {
 
   const formatBudgetText = () => {
     const lines = [
-      `ORÇAMENTO - Sport & Bike (${budgetCode})`,
+      `ORÇAMENTO - Giilberto Bike (${budgetCode})`,
       `Data: ${new Date().toLocaleDateString("pt-BR")}`,
     ];
     if (customerName) lines.push(`Cliente: ${customerName}`);
@@ -610,7 +610,7 @@ export default function BudgetBuilder() {
     currentY += 60;
     doc.text(`Fortaleza, ${new Date().toLocaleDateString("pt-BR")}`, marginX, currentY);
     currentY += 50;
-    doc.text("Sport & Bike", marginX, currentY);
+    doc.text("Giilberto Bike", marginX, currentY);
     doc.text("Gilberto Pereira", marginX, currentY + 14);
 
     doc.save(`orcamento-${budgetCode}.pdf`);
@@ -759,7 +759,7 @@ export default function BudgetBuilder() {
           </div>
           <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
             <FileSignature size={18} />
-            <span>Sport & Bike</span>
+            <span>Giilberto Bike</span>
           </div>
         </div>
 

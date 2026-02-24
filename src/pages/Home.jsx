@@ -571,7 +571,7 @@ export default function Home() {
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Localização Sport & Bike"
+                  title="Localização Giilberto Bike"
                 ></iframe>
               </div>
 
@@ -685,8 +685,8 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <div className="flex items-center space-x-2 mb-4">
-                  <img src="/assets/Logo.png" alt="Sport & Bike" className="w-12 h-12" />
-                  <span className="text-2xl font-bold">Sport & Bike</span>
+                  <img src="/assets/Logo.png" alt="Giilberto Bike" className="w-12 h-12" />
+                  <span className="text-2xl font-bold">Giilberto Bike</span>
                 </div>
                 <p className="text-gray-400">Desde 1999 oferecendo o melhor do ciclismo em Fortaleza.</p>
               </div>
@@ -720,7 +720,7 @@ export default function Home() {
             </div>
 
             <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-              <p className="text-gray-400 mb-4">© {new Date().getFullYear()} Sport & Bike. Todos os direitos reservados.</p>
+              <p className="text-gray-400 mb-4">© {new Date().getFullYear()} Giilberto Bike. Todos os direitos reservados.</p>
               <button
                 onClick={() => {
                   onAuthStateChanged(auth, (user) => {
