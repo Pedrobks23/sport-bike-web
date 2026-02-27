@@ -359,7 +359,7 @@ export default function HomeManagement() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-r from-amber-400 to-amber-600 p-2 rounded-full">
+                <div className="bg-gradient-to-r from-blue-400 to-blue-600 p-2 rounded-full">
                   <Bike className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -395,7 +395,7 @@ export default function HomeManagement() {
                 onChange={() => handleSettingToggle("showFeaturedProducts")}
               />
               <span className="inline-flex items-center gap-2">
-                <Star className="w-4 h-4 text-amber-500" />
+                <Star className="w-4 h-4 text-blue-500" />
                 Exibir seção <b>Destaques</b> (carrossel)
               </span>
             </label>
@@ -477,7 +477,7 @@ export default function HomeManagement() {
                     {/* Badges */}
                     <div className="absolute top-3 left-3 space-y-2">
                       {product.isFeatured ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-amber-500/90 text-white px-2 py-1 rounded">
+                        <span className="inline-flex items-center gap-1 text-xs bg-blue-500/90 text-white px-2 py-1 rounded">
                           <Star className="w-3 h-3" /> Destaque
                         </span>
                       ) : null}
@@ -496,7 +496,7 @@ export default function HomeManagement() {
                         }
                         className={`p-2 rounded-full ${
                           product.visible !== false
-                            ? "bg-amber-500 text-white"
+                            ? "bg-blue-500 text-white"
                             : "bg-white/90 text-gray-800"
                         }`}
                         title={
@@ -536,7 +536,7 @@ export default function HomeManagement() {
                   <div className="p-4">
                     <div className="text-xs text-gray-500">{product.category || "Sem categoria"}</div>
                     <div className="font-semibold">{product.name || "Sem nome"}</div>
-                    <div className="text-amber-600 font-bold">{product.price || "—"}</div>
+                    <div className="text-blue-600 font-bold">{product.price || "—"}</div>
                     {product.description && (
                       <div className="text-sm text-gray-600 line-clamp-2 mt-1">
                         {product.description}

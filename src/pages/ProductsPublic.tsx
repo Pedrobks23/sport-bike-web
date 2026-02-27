@@ -296,10 +296,10 @@ export default function ProductsPublic() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
+              className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${
                 selectedCategory === cat
-                  ? "border-amber-400 bg-amber-100 text-amber-800"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
+                  ? "border-blue-400 bg-blue-100 text-blue-800"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-blue-200"
               }`}
               aria-pressed={selectedCategory === cat}
             >

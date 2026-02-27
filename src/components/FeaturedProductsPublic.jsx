@@ -63,7 +63,7 @@ export default function FeaturedProductsPublic() {
               <div className="p-4 space-y-1">
                 <div className="text-xs text-gray-500 dark:text-gray-400">{p.category || "Sem categoria"}</div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-50">{p.name}</h3>
-                <div className="text-amber-600 font-bold">{p.price || "—"}</div>
+                <div className="text-blue-600 font-bold">{p.price || "—"}</div>
                 {p.description && (
                   <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">{p.description}</p>
                 )}

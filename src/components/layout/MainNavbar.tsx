@@ -74,7 +74,7 @@ export default function MainNavbar({ isScrolled = false }) {
                     key={item.to}
                     to={item.to}
                     aria-current={isProductsActive ? "page" : undefined}
-                    className={`text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors ${
+                    className={`text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-colors ${
                       isProductsActive ? "font-semibold" : ""
                     }`}
                   >
@@ -88,7 +88,7 @@ export default function MainNavbar({ isScrolled = false }) {
                   key={item.id}
                   type="button"
                   onClick={() => goToSection(item.id)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
+                  className="text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-colors"
                 >
                   {item.label}
                 </button>
@@ -130,7 +130,7 @@ export default function MainNavbar({ isScrolled = false }) {
 
             <button
               onClick={handleConsult}
-              className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium"
+              className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 transition-colors font-medium"
               type="button"
             >
               Consultar O.S.
@@ -155,7 +155,7 @@ export default function MainNavbar({ isScrolled = false }) {
                     <Link
                       key={item.to}
                       to={item.to}
-                      className="text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
+                      className="text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {item.label}
@@ -171,7 +171,7 @@ export default function MainNavbar({ isScrolled = false }) {
                       goToSection(item.id)
                       setIsMenuOpen(false)
                     }}
-                    className="text-left text-gray-700 dark:text-gray-300 hover:text-amber-500 transition-colors"
+                    className="text-left text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-colors"
                   >
                     {item.label}
                   </button>
@@ -214,7 +214,7 @@ export default function MainNavbar({ isScrolled = false }) {
                   handleConsult()
                   setIsMenuOpen(false)
                 }}
-                className="bg-amber-500 text-white px-6 py-2 rounded-full hover:bg-amber-600 transition-colors font-medium w-fit"
+                className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 transition-colors font-medium w-fit"
                 type="button"
               >
                 Consultar O.S.

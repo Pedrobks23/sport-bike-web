@@ -242,7 +242,7 @@ export default function Home() {
         <MainNavbar isScrolled={isScrolled} />
 
         {/* Benefits Bar */}
-        <div className="bg-amber-500 dark:bg-amber-600 text-white py-2 overflow-hidden">
+        <div className="bg-blue-500 dark:bg-blue-600 text-white py-2 overflow-hidden">
           <ResponsiveContainer>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 animate-pulse">
               {benefits.map((benefit, index) => (
@@ -260,9 +260,9 @@ export default function Home() {
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-0">
           <div className="absolute inset-0">
             <div className="absolute inset-0 pointer-events-none">
-              <Silk className="h-full w-full" color="#f59e0b" noiseIntensity={0} rotation={0} scale={1.05} speed={0.75} />
+              <Silk className="h-full w-full" color="#3b82f6" noiseIntensity={0} rotation={0} scale={1.05} speed={0.75} />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-400/90 via-amber-500/90 to-amber-600/90 z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/90 via-blue-500/90 to-blue-600/90 z-10"></div>
           </div>
 
           <div className="absolute top-20 right-10 sm:right-20 w-48 h-48 sm:w-72 sm:h-72 bg-white/20 rounded-full blur-xl animate-pulse z-10"></div>
@@ -271,7 +271,7 @@ export default function Home() {
           <div className="relative z-20 container mx-auto px-4 text-center text-white">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
               25 Anos de
-              <span className="block bg-gradient-to-r from-amber-300 to-white bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-blue-300 to-white bg-clip-text text-transparent">
                 Paixão por Bikes
               </span>
             </h1>
@@ -317,7 +317,7 @@ export default function Home() {
 
               <div className="relative max-w-5xl mx-auto">
                 {featuredProducts.length > 0 ? (
-                  <div className="relative overflow-hidden rounded-3xl p-8 shadow-2xl border-2 bg-gradient-to-r from-amber-400 to-amber-500 border-transparent">
+                  <div className="relative overflow-hidden rounded-3xl p-8 shadow-2xl border-2 bg-gradient-to-r from-blue-400 to-blue-500 border-transparent">
                     {featuredProducts[currentProduct] && (
                       <div className="sr-only">{featuredProducts[currentProduct].name}</div>
                     )}
@@ -357,7 +357,7 @@ export default function Home() {
                               `Olá! Tenho interesse na ${featuredProducts[currentProduct].name}. Podem me dar mais informações?`,
                             )
                           }
-                          className="px-6 py-3 rounded-full font-bold transition-colors inline-flex items-center space-x-2 shadow-lg bg-white text-amber-600 hover:bg-gray-100"
+                          className="px-6 py-3 rounded-full font-bold transition-colors inline-flex items-center space-x-2 shadow-lg bg-white text-blue-600 hover:bg-gray-100"
                         >
                           <ShoppingCart className="w-5 h-5" />
                           <span>Tenho Interesse</span>
@@ -394,7 +394,7 @@ export default function Home() {
                       key={index}
                       onClick={() => setCurrentProduct(index)}
                       className={`w-3 h-3 rounded-full transition-all ${
-                        index === currentProduct ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
+                        index === currentProduct ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"
                       }`}
                     />
                   ))}
@@ -405,7 +405,7 @@ export default function Home() {
               <div className="mt-12 flex justify-center">
                 <Link
                   to="/produtos"
-                  className="inline-flex items-center gap-3 rounded-full px-6 py-3 font-semibold shadow-lg hover:scale-105 transform transition-all duration-300 bg-amber-500 text-white hover:bg-amber-600 animate-pulse"
+                  className="inline-flex items-center gap-3 rounded-full px-6 py-3 font-semibold shadow-lg hover:scale-105 transform transition-all duration-300 bg-blue-500 text-white hover:bg-blue-600 animate-pulse"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Ver todos os produtos
@@ -435,7 +435,7 @@ export default function Home() {
                   }
                   className="group bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer"
                 >
-                  <div className="text-amber-500 mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <div className="text-blue-500 mb-4 group-hover:scale-110 transition-transform duration-300">
                     {service.icon}
                   </div>
                   <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">{service.title}</h3>
@@ -470,9 +470,9 @@ export default function Home() {
                   >
                     <span className="font-semibold text-gray-800 dark:text-white">{faq.question}</span>
                     {expandedFaq === index ? (
-                      <ChevronUp className="w-5 h-5 text-amber-500" />
+                      <ChevronUp className="w-5 h-5 text-blue-500" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-amber-500" />
+                      <ChevronDown className="w-5 h-5 text-blue-500" />
                     )}
                   </button>
 
@@ -497,7 +497,7 @@ export default function Home() {
             </div>
 
             <div className="max-w-4xl mx-auto relative">
-              <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-8 text-white shadow-2xl">
+              <div className="bg-gradient-to-r from-blue-400 to-blue-500 rounded-2xl p-8 text-white shadow-2xl">
                 <div className="flex items-center justify-center mb-4">
                   {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
                     <Star key={i} className="w-6 h-6 fill-current" />
@@ -530,7 +530,7 @@ export default function Home() {
                     key={index}
                     onClick={() => setCurrentTestimonial(index)}
                     className={`w-3 h-3 rounded-full transition-all ${
-                      index === currentTestimonial ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600"
+                      index === currentTestimonial ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"
                     }`}
                   />
                 ))}
@@ -578,7 +578,7 @@ export default function Home() {
               <div className="space-y-8">
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
-                    <MapPin className="w-6 h-6 text-amber-500" />
+                    <MapPin className="w-6 h-6 text-blue-500" />
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Endereço</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">R. Ana Bilhar, 1680 - Varjota, Fortaleza - CE</p>
@@ -586,7 +586,7 @@ export default function Home() {
 
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
-                    <Phone className="w-6 h-6 text-amber-500" />
+                    <Phone className="w-6 h-6 text-blue-500" />
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Telefones</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
@@ -598,7 +598,7 @@ export default function Home() {
 
                 <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
                   <div className="flex items-center space-x-4 mb-4">
-                    <Clock className="w-6 h-6 text-amber-500" />
+                    <Clock className="w-6 h-6 text-blue-500" />
                     <h3 className="text-xl font-bold text-gray-800 dark:text-white">Horário</h3>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300">
@@ -665,10 +665,10 @@ export default function Home() {
                     <button
                       key={index}
                       onClick={() => handleOfficeServiceClick(service)}
-                      className="text-left p-4 bg-gray-50 dark:bg-gray-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors border border-gray-200 dark:border-gray-600 hover:border-amber-300 dark:hover:border-amber-600"
+                      className="text-left p-4 bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600"
                     >
                       <div className="flex items-center space-x-3">
-                        <Wrench className="w-5 h-5 text-amber-500" />
+                        <Wrench className="w-5 h-5 text-blue-500" />
                         <span className="text-gray-800 dark:text-gray-200 font-medium">{service}</span>
                       </div>
                     </button>
@@ -731,7 +731,7 @@ export default function Home() {
                     }
                   })
                 }}
-                className="text-amber-500 hover:text-amber-400 transition-colors text-sm"
+                className="text-blue-500 hover:text-blue-400 transition-colors text-sm"
               >
                 Acesso Funcionários
               </button>

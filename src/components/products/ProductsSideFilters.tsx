@@ -44,7 +44,7 @@ export default function ProductsSideFilters({
             type="checkbox"
             checked={selected?.includes(item)}
             onChange={() => toggleFn(item)}
-            className="rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+            className="rounded border-gray-300 text-blue-500 focus:ring-blue-400"
           />
           <span>{item}</span>
         </label>
@@ -58,7 +58,7 @@ export default function ProductsSideFilters({
         <h3 className="text-base font-semibold text-gray-900">Filtros</h3>
         <button
           onClick={onClear}
-          className="text-sm font-medium text-amber-700 hover:text-amber-600"
+          className="text-sm font-medium text-blue-700 hover:text-blue-600"
         >
           Limpar
         </button>
@@ -73,7 +73,7 @@ export default function ProductsSideFilters({
               onClick={() => onCategoryChange(cat)}
               className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
                 selectedCategory === cat
-                  ? "bg-amber-100 text-amber-800"
+                  ? "bg-blue-100 text-blue-800"
                   : "text-gray-700 hover:bg-gray-50"
               }`}
             >
@@ -90,7 +90,7 @@ export default function ProductsSideFilters({
             type="number"
             value={minPrice}
             onChange={(e) => onPriceChange({ ...priceRange, min: parsePrice(e.target.value) })}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-300"
             aria-label="Preço mínimo"
           />
           <span className="text-sm text-gray-500">até</span>
@@ -98,7 +98,7 @@ export default function ProductsSideFilters({
             type="number"
             value={maxPrice}
             onChange={(e) => onPriceChange({ ...priceRange, max: parsePrice(e.target.value) })}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-300"
             aria-label="Preço máximo"
           />
         </div>

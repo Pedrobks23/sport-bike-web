@@ -119,7 +119,7 @@ export default function ProductImagesManager({ value = [], onChange }) {
                 <button
                   type="button"
                   onClick={() => makeCover(idx)}
-                  className="rounded border px-2 py-1 hover:bg-amber-50"
+                  className="rounded border px-2 py-1 hover:bg-blue-50"
                   aria-label="Definir como capa"
                   disabled={idx === 0}
                 >
@@ -136,13 +136,13 @@ export default function ProductImagesManager({ value = [], onChange }) {
               </div>
             </div>
             {idx === 0 && (
-              <span className="absolute left-2 top-2 rounded bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
+              <span className="absolute left-2 top-2 rounded bg-blue-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
                 Capa
               </span>
             )}
           </div>
         ))}
-        <label className="flex h-40 w-40 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 text-sm font-semibold text-gray-600 hover:border-amber-400 hover:text-amber-600">
+        <label className="flex h-40 w-40 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 text-sm font-semibold text-gray-600 hover:border-blue-400 hover:text-blue-600">
           <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={uploading} />
           {uploading ? "Enviando..." : "+ Adicionar"}
         </label>

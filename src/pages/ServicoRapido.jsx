@@ -100,7 +100,7 @@ export default function ServicoRapido(){
         <h1 className="text-2xl font-bold">Serviço Rápido</h1>
       </div>
 
-      {permWarn && <div className="mb-3 text-amber-600 text-sm">Atenção: as regras do Firestore podem estar bloqueando leitura/escrita. Verifique as rules.</div>}
+      {permWarn && <div className="mb-3 text-blue-600 text-sm">Atenção: as regras do Firestore podem estar bloqueando leitura/escrita. Verifique as rules.</div>}
 
       {/* filtros */}
       <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow p-4 mb-4">
@@ -121,7 +121,7 @@ export default function ServicoRapido(){
             </select>
           </div>
           <div className="flex items-end">
-            <button className="w-full rounded-xl px-4 py-2 bg-amber-500 text-white font-medium hover:brightness-95">
+            <button className="w-full rounded-xl px-4 py-2 bg-blue-500 text-white font-medium hover:brightness-95">
               Filtrar
             </button>
           </div>
@@ -129,7 +129,7 @@ export default function ServicoRapido(){
       </div>
 
       <div className="flex justify-end mb-3">
-        <button onClick={()=>{ resetForm(); setOpenModal(true); }} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-amber-500 text-white shadow">
+        <button onClick={()=>{ resetForm(); setOpenModal(true); }} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-blue-500 text-white shadow">
           <Plus size={16}/> Novo Serviço
         </button>
       </div>
@@ -211,7 +211,7 @@ export default function ServicoRapido(){
 
               <div className="flex justify-end gap-2 mt-2">
                 <button type="button" onClick={()=>{setOpenModal(false); resetForm();}} className="rounded-xl border px-4 py-2">Cancelar</button>
-                <button type="submit" className="rounded-xl px-4 py-2 bg-amber-500 text-white">Salvar</button>
+                <button type="submit" className="rounded-xl px-4 py-2 bg-blue-500 text-white">Salvar</button>
               </div>
             </form>
           </div>

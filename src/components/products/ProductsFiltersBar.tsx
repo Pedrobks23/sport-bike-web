@@ -40,7 +40,7 @@ export default function ProductsFiltersBar({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar por nome, categoria ou descrição"
-              className="w-full rounded-xl border border-gray-200 bg-white px-10 py-2 text-sm shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
+              className="w-full rounded-xl border border-gray-200 bg-white px-10 py-2 text-sm shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-300"
               aria-label="Buscar produtos"
             />
           </div>
@@ -52,10 +52,10 @@ export default function ProductsFiltersBar({
                   <button
                     key={cat}
                     onClick={() => onSelectCategory?.(cat)}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
+                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${
                       selectedCategory === cat
-                        ? "border-amber-300 bg-amber-100 text-amber-800"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
+                        ? "border-blue-300 bg-blue-100 text-blue-800"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-blue-200"
                     }`}
                     aria-pressed={selectedCategory === cat}
                   >
@@ -73,10 +73,10 @@ export default function ProductsFiltersBar({
                     <button
                       key={brand}
                       onClick={() => onSelectBrand?.(brand)}
-                      className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
+                      className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${
                         active
-                          ? "border-amber-300 bg-amber-100 text-amber-800"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
+                          ? "border-blue-300 bg-blue-100 text-blue-800"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-blue-200"
                       }`}
                       aria-pressed={active}
                     >
@@ -95,10 +95,10 @@ export default function ProductsFiltersBar({
                     <button
                       key={size}
                       onClick={() => onSelectSize?.(size)}
-                      className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 ${
+                      className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${
                         active
-                          ? "border-amber-300 bg-amber-100 text-amber-800"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-amber-200"
+                          ? "border-blue-300 bg-blue-100 text-blue-800"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-blue-200"
                       }`}
                       aria-pressed={active}
                     >
@@ -114,7 +114,7 @@ export default function ProductsFiltersBar({
             <select
               value={sort}
               onChange={(e) => onSortChange(e.target.value)}
-              className="appearance-none rounded-xl border border-gray-200 bg-white px-3 py-2 pr-8 text-sm font-semibold shadow-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
+              className="appearance-none rounded-xl border border-gray-200 bg-white px-3 py-2 pr-8 text-sm font-semibold shadow-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-300"
               aria-label="Ordenar produtos"
             >
               {sortOptions.map((opt) => (

@@ -56,7 +56,7 @@ function Pagination({ page, totalPages, onChange }) {
             key={p}
             onClick={() => onChange(p)}
             className={`h-9 w-9 rounded-xl text-sm font-semibold transition ${
-              p === page ? "bg-amber-400 text-black" : "text-gray-700 hover:border-gray-300"
+              p === page ? "bg-blue-400 text-black" : "text-gray-700 hover:border-gray-300"
             }`}
             style={{
               border: "1px solid #e5e7eb",

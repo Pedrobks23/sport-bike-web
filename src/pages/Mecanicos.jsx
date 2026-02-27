@@ -52,7 +52,7 @@ export default function Mecanicos() {
             {m.especialidade && (
               <div className="text-sm text-neutral-500 mt-1">{m.especialidade}</div>
             )}
-            <div className="text-xs mt-2 text-amber-600">Ver histórico »</div>
+            <div className="text-xs mt-2 text-blue-600">Ver histórico »</div>
           </button>
         ))}
         {mecanicos.length === 0 && (

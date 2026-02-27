@@ -679,7 +679,7 @@ export default function BudgetBuilder() {
       </div>
       <div className="flex flex-wrap gap-3 text-sm text-neutral-600 dark:text-neutral-300">
         {customerName && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
             <BadgeCheck size={14} /> Cliente: {customerName}
           </span>
         )}
@@ -699,7 +699,7 @@ export default function BudgetBuilder() {
                   {renderItemsTable(bikeItems, true)}
                   <div className="flex justify-end text-sm font-semibold">
                     Total {label}:{" "}
-                    <span className="ml-2 text-amber-600">{currency(groupedTotals[label] || 0)}</span>
+                    <span className="ml-2 text-blue-600">{currency(groupedTotals[label] || 0)}</span>
                   </div>
                 </div>
               ))}
@@ -708,7 +708,7 @@ export default function BudgetBuilder() {
             renderItemsTable(modeItems, false)
           )}
           <div className="flex justify-end text-base font-semibold mt-2">
-            Total: <span className="ml-2 text-amber-600">{currency(displayTotal)}</span>
+            Total: <span className="ml-2 text-blue-600">{currency(displayTotal)}</span>
           </div>
         </div>
       ) : rawText || previewText ? (
@@ -718,7 +718,7 @@ export default function BudgetBuilder() {
             <pre className="text-sm whitespace-pre-wrap text-neutral-700 dark:text-neutral-200 font-mono">{previewText || rawText}</pre>
           </div>
           <div className="flex justify-end text-base font-semibold">
-            Total informado: <span className="ml-2 text-amber-600">{currency(displayTotal)}</span>
+            Total informado: <span className="ml-2 text-blue-600">{currency(displayTotal)}</span>
           </div>
         </div>
       ) : (
@@ -728,7 +728,7 @@ export default function BudgetBuilder() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
@@ -749,7 +749,7 @@ export default function BudgetBuilder() {
                 {isEditing && (
                   <button
                     onClick={handleClear}
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300 dark:bg-amber-900/30"
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-900/30"
                   >
                     <RefreshCcw size={14} /> Novo orçamento
                   </button>
@@ -769,7 +769,7 @@ export default function BudgetBuilder() {
               onClick={() => setMode("list")}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
                 mode === "list"
-                  ? "bg-amber-500 text-white border-amber-500"
+                  ? "bg-blue-500 text-white border-blue-500"
                   : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               }`}
             >
@@ -779,7 +779,7 @@ export default function BudgetBuilder() {
               onClick={() => setMode("paste")}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
                 mode === "paste"
-                  ? "bg-amber-500 text-white border-amber-500"
+                  ? "bg-blue-500 text-white border-blue-500"
                   : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               }`}
             >
@@ -792,7 +792,7 @@ export default function BudgetBuilder() {
                 mode !== "list"
                   ? "border-neutral-200 text-neutral-400 cursor-not-allowed"
                   : groupByBike
-                  ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800"
+                  ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800"
                   : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               }`}
             >
@@ -854,7 +854,7 @@ export default function BudgetBuilder() {
                     />
                     <button
                       onClick={handleAddBike}
-                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-amber-500 text-white hover:bg-amber-600 text-sm"
+                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 text-sm"
                     >
                       <Plus size={16} /> Adicionar bike
                     </button>
@@ -933,7 +933,7 @@ export default function BudgetBuilder() {
                               setIsGeneralItem(checked);
                               if (checked) setSelectedBike("");
                             }}
-                            className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                            className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
                           />
                           Item geral
                         </label>
@@ -961,7 +961,7 @@ export default function BudgetBuilder() {
                     <div className="md:col-span-1 flex items-end">
                       <button
                         onClick={handleAddItem}
-                        className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 shadow"
+                        className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 shadow"
                       >
                         {editingId ? <CheckCircle2 size={16} /> : <Plus size={16} />}
                         <span>{editingId ? "Atualizar" : "Adicionar"}</span>
@@ -1007,7 +1007,7 @@ export default function BudgetBuilder() {
                               </span>
                               <button
                                 onClick={() => handleEditItem(item.id)}
-                                className="text-neutral-500 hover:text-amber-600"
+                                className="text-neutral-500 hover:text-blue-600"
                                 title="Editar"
                               >
                                 <Edit3 size={16} />
@@ -1032,7 +1032,7 @@ export default function BudgetBuilder() {
                         <RefreshCcw size={16} /> Limpar
                       </button>
                       <div className="text-base font-semibold">
-                        Total: <span className="text-amber-600">{currency(displayTotal)}</span>
+                        Total: <span className="text-blue-600">{currency(displayTotal)}</span>
                       </div>
                     </div>
                   </div>
@@ -1049,7 +1049,7 @@ export default function BudgetBuilder() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={parseTextToItems}
-                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white"
+                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Wand2 size={16} /> Gerar pré-visualização
                     </button>
@@ -1081,7 +1081,7 @@ export default function BudgetBuilder() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
                 >
                   <Save size={16} />
                   {saving ? "Salvando..." : isEditing ? "Salvar alterações" : "Salvar orçamento"}
@@ -1105,7 +1105,7 @@ export default function BudgetBuilder() {
                   <RefreshCcw size={16} /> Limpar
                 </button>
                 {feedback && (
-                  <div className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2 border border-amber-100 dark:border-amber-800">
+                  <div className="text-sm text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 border border-blue-100 dark:border-blue-800">
                     {feedback}
                   </div>
                 )}
@@ -1124,7 +1124,7 @@ export default function BudgetBuilder() {
             </div>
             <div className="flex items-center gap-2">
               {isEditing && (
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
                   <Edit3 size={14} /> Editando {budgetCode}
                 </span>
               )}

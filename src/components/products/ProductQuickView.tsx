@@ -190,9 +190,9 @@ export default function ProductQuickView({ product, prefersReducedMotion, onClos
                 )}
                 {product?.installments && <p className="text-sm text-gray-600 dark:text-gray-200">{product.installments}</p>}
                 {rating > 0 && (
-                  <div className="flex items-center gap-1 text-amber-500" aria-label={`Avaliação ${rating} de 5`}>
+                  <div className="flex items-center gap-1 text-blue-500" aria-label={`Avaliação ${rating} de 5`}>
                     {Array.from({ length: 5 }).map((_, idx) => (
-                      <Star key={idx} className={`h-4 w-4 ${idx < rating ? "fill-amber-500" : "stroke-amber-300"}`} />
+                      <Star key={idx} className={`h-4 w-4 ${idx < rating ? "fill-blue-500" : "stroke-blue-300"}`} />
                     ))}
                     <span className="text-xs text-gray-600 dark:text-gray-200">{rating.toFixed(1)}</span>
                   </div>
@@ -220,7 +220,7 @@ export default function ProductQuickView({ product, prefersReducedMotion, onClos
                     <button
                       type="button"
                       onClick={() => setShowAllFeatures((prev) => !prev)}
-                      className="mt-3 text-sm font-semibold text-amber-600 hover:text-amber-700 focus:outline-none"
+                      className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-700 focus:outline-none"
                     >
                       {showAllFeatures ? "Ver menos" : "Ver mais"}
                     </button>
@@ -239,7 +239,7 @@ export default function ProductQuickView({ product, prefersReducedMotion, onClos
             </button>
             <button
               onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:border-amber-400 hover:text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:border-gray-800 dark:text-gray-100"
+              className="flex-1 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:border-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 dark:border-gray-800 dark:text-gray-100"
             >
               Fechar
             </button>
