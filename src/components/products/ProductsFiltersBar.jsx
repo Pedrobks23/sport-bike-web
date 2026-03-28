@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Search, ChevronDown } from "lucide-react"
 
 const sortOptions = [

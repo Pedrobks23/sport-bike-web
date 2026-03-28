@@ -1,4 +1,3 @@
-// @ts-nocheck
 import ProductCard from "./ProductCard"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
