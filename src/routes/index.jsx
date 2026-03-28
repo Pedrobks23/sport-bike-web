@@ -9,7 +9,6 @@ import ServicesManagement from "../pages/ServicesManagement"
 import ReportsManagement from "../pages/ReportsManagement"
 import ReceiptsManagement from "../pages/ReceiptsManagement"
 import ServiceOrdersPage from "../pages/ServiceOrdersPage"
-import ManageReceiptsPage from "../pages/ManageReceiptsPage"
 import NewOrder from "../pages/NewOrder"
 import HomeManagement from "../pages/HomeManagement"
 import NewCustomer from "../pages/NewCustomer"
@@ -17,7 +16,6 @@ import ServicoRapido from "../pages/ServicoRapido"
 import MechanicsManagement from "../pages/MechanicsManagement"
 import HistoricoMecanico from "../pages/HistoricoMecanico"
 import PrivateRoute from "../components/PrivateRoute"
-import Mecanicos from "../pages/Mecanicos"
 import ProductsPublic from "@/pages/ProductsPublic"
 import BudgetBuilder from "../pages/BudgetBuilder"
 
@@ -139,22 +137,6 @@ export const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <ServiceOrdersPage />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/manage-receipts",
-    element: (
-      <PrivateRoute>
-        <ManageReceiptsPage />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/admin/mecanicos",
-    element: (
-      <PrivateRoute>
-        <Mecanicos />
       </PrivateRoute>
     ),
   },

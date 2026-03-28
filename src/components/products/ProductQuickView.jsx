@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useId, useMemo, useState } from "react"
 import { X, MessageCircle, ChevronLeft, ChevronRight, Star } from "lucide-react"
 import { doc, onSnapshot } from "firebase/firestore"
