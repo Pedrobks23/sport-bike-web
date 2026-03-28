@@ -202,9 +202,9 @@ export default function generateWorkshopTagsPDF(ordem) {
         curY += 4
 
         doc.setFont("helvetica", "bold")
-        doc.setFontSize(8)
+        doc.setFontSize(10)
         doc.text(`BIKES DO CLIENTE (${bicicletas.length}):`, x + pad, curY)
-        curY += 4
+        curY += 5
 
         const listLimit = y + tagH - 10
         for (let i = 0; i < bicicletas.length; i++) {
@@ -213,26 +213,16 @@ export default function generateWorkshopTagsPDF(ordem) {
           const bikeDesc = `${b.marca || ""} ${b.modelo || ""} ${b.cor || ""}`.trim()
           if (i === bikeIndex) {
             doc.setFont("helvetica", "bold")
-            doc.setFontSize(8)
+            doc.setFontSize(10)
             doc.text(truncate(`► Bike ${i + 1}: ${bikeDesc}`, innerW), x + pad, curY)
           } else {
-            doc.setFont("helvetica", "normal")
-            doc.setFontSize(8)
+            doc.setFont("helvetica", "bold")
+            doc.setFontSize(10)
             doc.text(truncate(`• Bike ${i + 1}: ${bikeDesc}`, innerW), x + pad, curY)
           }
-          curY += 3.5
+          curY += 5
         }
       }
-
-      // 11. Footer — normal 6pt, fixed text
-      doc.setFont("helvetica", "normal")
-      doc.setFontSize(6)
-      doc.setTextColor(0, 0, 0)
-      doc.text(
-        "✂ CORTE NAS LINHAS TRACEJADAS E PENDURE COM FITA DUREX NO CÂMBIO",
-        x + pad,
-        y + tagH - pad,
-      )
     }
 
     bicicletas.forEach((bike, index) => {
