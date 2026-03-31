@@ -17,7 +17,6 @@ import {
   X,
   ChevronRight,
   Calendar,
-  CheckCircle,
   DollarSign,
   ExternalLink,
 } from "lucide-react";
@@ -26,7 +25,6 @@ import {
   getCustomersCount,
   getBikesInMaintenanceCount,
   getInProgressCount,
-  getReadyForPickupCount,
   getMonthlyRevenue,
   getLatestOrders,
 } from "../services/dashboardService";
@@ -86,7 +84,6 @@ export default function Admin() {
   const [metrics, setMetrics] = useState({
     ordersToday: null,
     inProgress: null,
-    readyForPickup: null,
     customersCount: null,
     bikesMaintenance: null,
     monthlyRevenue: null,
@@ -105,10 +102,9 @@ export default function Admin() {
   useEffect(() => {
     const loadStats = async () => {
       setIsLoading(true);
-      const [r0, r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
+      const [r0, r1, r2, r3, r4, r5] = await Promise.allSettled([
         getOrdersTodayCount(),
         getInProgressCount(),
-        getReadyForPickupCount(),
         getCustomersCount(),
         getBikesInMaintenanceCount(),
         getMonthlyRevenue(),
@@ -117,12 +113,11 @@ export default function Admin() {
       setMetrics({
         ordersToday: r0.status === "fulfilled" ? r0.value : null,
         inProgress: r1.status === "fulfilled" ? r1.value : null,
-        readyForPickup: r2.status === "fulfilled" ? r2.value : null,
-        customersCount: r3.status === "fulfilled" ? r3.value : null,
-        bikesMaintenance: r4.status === "fulfilled" ? r4.value : null,
-        monthlyRevenue: r5.status === "fulfilled" ? r5.value : null,
+        customersCount: r2.status === "fulfilled" ? r2.value : null,
+        bikesMaintenance: r3.status === "fulfilled" ? r3.value : null,
+        monthlyRevenue: r4.status === "fulfilled" ? r4.value : null,
       });
-      if (r6.status === "fulfilled") setLatestOrders(r6.value);
+      if (r5.status === "fulfilled") setLatestOrders(r5.value);
       setIsLoading(false);
     };
     loadStats();
@@ -237,13 +232,6 @@ export default function Admin() {
       icon: <Wrench className="w-5 h-5" />,
       iconBg: "bg-blue-100 dark:bg-blue-900/30",
       iconColor: "text-blue-600 dark:text-blue-400",
-    },
-    {
-      label: "Prontas p/ Retirada",
-      value: metrics.readyForPickup,
-      icon: <CheckCircle className="w-5 h-5" />,
-      iconBg: "bg-green-100 dark:bg-green-900/30",
-      iconColor: "text-green-600 dark:text-green-400",
     },
     {
       label: "Clientes Cadastrados",
@@ -375,18 +363,18 @@ export default function Admin() {
                   {metrics.bikesMaintenance ?? "—"}
                 </span>{" "}
                 bikes na oficina{" • "}
-                <span className="font-semibold text-green-600 dark:text-green-400">
-                  {metrics.readyForPickup ?? "—"}
+                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                  {metrics.inProgress ?? "—"}
                 </span>{" "}
-                prontas para retirada
+                em andamento
               </p>
             )}
           </div>
 
           {/* Section 2 — Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
             {isLoading
-              ? Array.from({ length: 6 }).map((_, i) => <MetricSkeleton key={i} />)
+              ? Array.from({ length: 5 }).map((_, i) => <MetricSkeleton key={i} />)
               : metricCards.map((card, i) => (
                   <div
                     key={i}
