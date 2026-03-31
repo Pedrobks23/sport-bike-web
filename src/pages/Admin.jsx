@@ -16,22 +16,79 @@ import {
   Menu,
   X,
   ChevronRight,
+  Calendar,
+  DollarSign,
+  ExternalLink,
 } from "lucide-react";
 import {
   getOrdersTodayCount,
   getCustomersCount,
   getBikesInMaintenanceCount,
+  getInProgressCount,
+  getMonthlyRevenue,
+  getLatestOrders,
 } from "../services/dashboardService";
 import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
 
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+};
+
+const getFormattedDate = () =>
+  new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+const formatCurrency = (value) => {
+  if (value === null || value === undefined) return "—";
+  return `R$ ${Math.round(value).toLocaleString("pt-BR")}`;
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "—";
+  try {
+    return new Date(dateStr).toLocaleDateString("pt-BR");
+  } catch {
+    return "—";
+  }
+};
+
+const STATUS_COLORS = {
+  Pendente: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  "Em Andamento": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  Pronto: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  Cancelado: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+};
+
+const MetricSkeleton = () => (
+  <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-5 shadow-lg animate-pulse">
+    <div className="flex items-center justify-between mb-3">
+      <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+      <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full" />
+    </div>
+    <div className="h-7 w-14 bg-gray-200 dark:bg-gray-700 rounded" />
+  </div>
+);
+
 export default function Admin() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [ordersToday, setOrdersToday] = useState(0);
-  const [customersCount, setCustomersCount] = useState(0);
-  const [bikesMaintenance, setBikesMaintenance] = useState(0);
-  const [statsError, setStatsError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [metrics, setMetrics] = useState({
+    ordersToday: null,
+    inProgress: null,
+    customersCount: null,
+    bikesMaintenance: null,
+    monthlyRevenue: null,
+  });
+  const [latestOrders, setLatestOrders] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,19 +101,24 @@ export default function Admin() {
 
   useEffect(() => {
     const loadStats = async () => {
-      try {
-        const [o, c, b] = await Promise.all([
-          getOrdersTodayCount(),
-          getCustomersCount(),
-          getBikesInMaintenanceCount(),
-        ]);
-        setOrdersToday(o);
-        setCustomersCount(c);
-        setBikesMaintenance(b);
-      } catch (err) {
-        console.error("Erro ao carregar dados do dashboard:", err);
-        setStatsError("Falha ao carregar dados");
-      }
+      setIsLoading(true);
+      const [r0, r1, r2, r3, r4, r5] = await Promise.allSettled([
+        getOrdersTodayCount(),
+        getInProgressCount(),
+        getCustomersCount(),
+        getBikesInMaintenanceCount(),
+        getMonthlyRevenue(),
+        getLatestOrders(5),
+      ]);
+      setMetrics({
+        ordersToday: r0.status === "fulfilled" ? r0.value : null,
+        inProgress: r1.status === "fulfilled" ? r1.value : null,
+        customersCount: r2.status === "fulfilled" ? r2.value : null,
+        bikesMaintenance: r3.status === "fulfilled" ? r3.value : null,
+        monthlyRevenue: r4.status === "fulfilled" ? r4.value : null,
+      });
+      if (r5.status === "fulfilled") setLatestOrders(r5.value);
+      setIsLoading(false);
     };
     loadStats();
   }, []);
@@ -72,89 +134,6 @@ export default function Admin() {
     }
   };
 
-  const adminModules = [
-    {
-      icon: <Receipt className="w-8 h-8" />,
-      title: "Recibos",
-      description: "Emitir e gerenciar recibos",
-      color: "from-blue-400 to-blue-600",
-      hoverColor: "hover:from-blue-500 hover:to-blue-700",
-      path: "/admin/receipts",
-    },
-    {
-      icon: <ClipboardList className="w-8 h-8" />,
-      title: "Orçamentos",
-      description: "Criar orçamentos rapidamente",
-      color: "from-cyan-400 to-cyan-600",
-      hoverColor: "hover:from-cyan-500 hover:to-cyan-700",
-      path: "/admin/budgets/new",
-    },
-    {
-      icon: <FileText className="w-8 h-8" />,
-      title: "Nova Ordem de Serviço",
-      description: "Criar nova ordem de serviço manualmente",
-      color: "from-green-400 to-green-600",
-      hoverColor: "hover:from-green-500 hover:to-green-700",
-      path: "/admin/orders/new",
-    },
-    {
-      icon: <Wrench className="w-8 h-8" />,
-      title: "Ordens de Serviço",
-      description: "Cadastrar e gerenciar ordens de serviço",
-      color: "from-amber-400 to-amber-600",
-      hoverColor: "hover:from-amber-500 hover:to-amber-700",
-      path: "/admin/orders",
-    },
-    {
-      icon: <Users className="w-8 h-8" />,
-      title: "Clientes",
-      description: "Gerenciar cadastro de clientes",
-      color: "from-purple-400 to-purple-600",
-      hoverColor: "hover:from-purple-500 hover:to-purple-700",
-      path: "/admin/customers",
-    },
-    {
-      icon: <Settings className="w-8 h-8" />,
-      title: "Serviços",
-      description: "Configurar tipos de serviços",
-      color: "from-gray-400 to-gray-600",
-      hoverColor: "hover:from-gray-500 hover:to-gray-700",
-      path: "/admin/services",
-    },
-    {
-      icon: <Hammer className="w-8 h-8" />,
-      title: "Serviço Rápido",
-      description: "Registrar serviço avulso",
-      color: "from-teal-400 to-teal-600",
-      hoverColor: "hover:from-teal-500 hover:to-teal-700",
-      path: "/admin/servico-rapido",
-    },
-    {
-      icon: <UserCog className="w-8 h-8" />,
-      title: "Mecânicos",
-      description: "Gerenciar mecânicos da oficina",
-      color: "from-yellow-400 to-yellow-600",
-      hoverColor: "hover:from-yellow-500 hover:to-yellow-700",
-      path: "/admin/mecanicos",
-    },
-    {
-      icon: <HomeIcon className="w-8 h-8" />,
-      title: "Home",
-      description: "Gerenciar destaques da página inicial",
-      color: "from-red-400 to-red-600",
-      hoverColor: "hover:from-red-500 hover:to-red-700",
-      path: "/admin/home",
-    },
-    {
-      icon: <BarChart3 className="w-8 h-8" />,
-      title: "Relatórios",
-      description: "Visualizar relatórios e estatísticas",
-      color: "from-indigo-400 to-indigo-600",
-      hoverColor: "hover:from-indigo-500 hover:to-indigo-700",
-      path: "/admin/reports",
-    },
-  ];
-
   const handleLogout = async () => {
     if (confirm("Tem certeza que deseja sair?")) {
       try {
@@ -166,13 +145,153 @@ export default function Admin() {
     }
   };
 
-  const handleModuleClick = (path) => {
-    navigate(path);
-  };
+  const adminModules = [
+    {
+      icon: <Receipt className="w-5 h-5" />,
+      title: "Recibos",
+      description: "Emitir e gerenciar recibos",
+      color: "from-blue-400 to-blue-600",
+      path: "/admin/receipts",
+    },
+    {
+      icon: <ClipboardList className="w-5 h-5" />,
+      title: "Orçamentos",
+      description: "Criar orçamentos rapidamente",
+      color: "from-cyan-400 to-cyan-600",
+      path: "/admin/budgets/new",
+    },
+    {
+      icon: <FileText className="w-5 h-5" />,
+      title: "Nova Ordem de Serviço",
+      description: "Criar nova ordem de serviço manualmente",
+      color: "from-green-400 to-green-600",
+      path: "/admin/orders/new",
+    },
+    {
+      icon: <Wrench className="w-5 h-5" />,
+      title: "Ordens de Serviço",
+      description: "Cadastrar e gerenciar ordens de serviço",
+      color: "from-amber-400 to-amber-600",
+      path: "/admin/orders",
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      title: "Clientes",
+      description: "Gerenciar cadastro de clientes",
+      color: "from-purple-400 to-purple-600",
+      path: "/admin/customers",
+    },
+    {
+      icon: <Settings className="w-5 h-5" />,
+      title: "Serviços",
+      description: "Configurar tipos de serviços",
+      color: "from-gray-400 to-gray-600",
+      path: "/admin/services",
+    },
+    {
+      icon: <Hammer className="w-5 h-5" />,
+      title: "Serviço Rápido",
+      description: "Registrar serviço avulso",
+      color: "from-teal-400 to-teal-600",
+      path: "/admin/servico-rapido",
+    },
+    {
+      icon: <UserCog className="w-5 h-5" />,
+      title: "Mecânicos",
+      description: "Gerenciar mecânicos da oficina",
+      color: "from-yellow-400 to-yellow-600",
+      path: "/admin/mecanicos",
+    },
+    {
+      icon: <HomeIcon className="w-5 h-5" />,
+      title: "Home",
+      description: "Gerenciar destaques da página inicial",
+      color: "from-red-400 to-red-600",
+      path: "/admin/home",
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      title: "Relatórios",
+      description: "Visualizar relatórios e estatísticas",
+      color: "from-indigo-400 to-indigo-600",
+      path: "/admin/reports",
+    },
+  ];
+
+  const metricCards = [
+    {
+      label: "Ordens Hoje",
+      value: metrics.ordersToday,
+      icon: <Calendar className="w-5 h-5" />,
+      iconBg: "bg-amber-100 dark:bg-amber-900/30",
+      iconColor: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      label: "Em Andamento",
+      value: metrics.inProgress,
+      icon: <Wrench className="w-5 h-5" />,
+      iconBg: "bg-blue-100 dark:bg-blue-900/30",
+      iconColor: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      label: "Clientes Cadastrados",
+      value: metrics.customersCount,
+      icon: <Users className="w-5 h-5" />,
+      iconBg: "bg-purple-100 dark:bg-purple-900/30",
+      iconColor: "text-purple-600 dark:text-purple-400",
+    },
+    {
+      label: "Bikes na Oficina",
+      value: metrics.bikesMaintenance,
+      icon: <Bike className="w-5 h-5" />,
+      iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+    },
+    {
+      label: "Faturamento do Mês",
+      value: metrics.monthlyRevenue,
+      icon: <DollarSign className="w-5 h-5" />,
+      iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      format: formatCurrency,
+    },
+  ];
+
+  const quickActions = [
+    {
+      label: "Nova OS",
+      icon: <FileText className="w-5 h-5" />,
+      color: "bg-green-500 hover:bg-green-600",
+      path: "/admin/orders/new",
+      external: false,
+    },
+    {
+      label: "Novo Orçamento",
+      icon: <ClipboardList className="w-5 h-5" />,
+      color: "bg-cyan-500 hover:bg-cyan-600",
+      path: "/admin/budgets/new",
+      external: false,
+    },
+    {
+      label: "Consultar OS",
+      icon: <ExternalLink className="w-5 h-5" />,
+      color: "bg-amber-500 hover:bg-amber-600",
+      path: "/consulta",
+      external: true,
+    },
+    {
+      label: "Novo Recibo",
+      icon: <Receipt className="w-5 h-5" />,
+      color: "bg-blue-500 hover:bg-blue-600",
+      path: "/admin/receipts",
+      external: false,
+    },
+  ];
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? "dark" : ""}`}>
       <div className="bg-gradient-to-br from-gray-50 via-amber-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
+        {/* Header */}
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/20 dark:border-gray-700/20 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -226,83 +345,160 @@ export default function Admin() {
             )}
           </div>
         </header>
-        <main className="container mx-auto px-4 py-8">
-          {statsError && (
-            <p className="text-red-500 text-center mb-4">{statsError}</p>
-          )}
-          <div className="mb-12">
-            <div className="bg-gradient-to-r from-amber-400 to-amber-600 rounded-2xl p-8 text-white shadow-2xl">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Bem-vindo ao Dashboard</h2>
-              <p className="text-xl opacity-90 max-w-2xl">Gerencie todos os aspectos da Sport & Bike através desta central administrativa moderna e intuitiva.</p>
+
+        <main className="container mx-auto px-4 py-8 space-y-8">
+          {/* Section 1 — Greeting */}
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+              {getGreeting()}, Sport &amp; Bike
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 capitalize">{getFormattedDate()}</p>
+            {!isLoading && (
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-semibold text-amber-600 dark:text-amber-400">
+                  {metrics.ordersToday ?? "—"}
+                </span>{" "}
+                ordens agendadas hoje{" • "}
+                <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                  {metrics.bikesMaintenance ?? "—"}
+                </span>{" "}
+                bikes na oficina{" • "}
+                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                  {metrics.inProgress ?? "—"}
+                </span>{" "}
+                em andamento
+              </p>
+            )}
+          </div>
+
+          {/* Section 2 — Metric Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, i) => <MetricSkeleton key={i} />)
+              : metricCards.map((card, i) => (
+                  <div
+                    key={i}
+                    className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-5 shadow-lg"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">{card.label}</p>
+                      <div className={`${card.iconBg} p-2 rounded-full ${card.iconColor}`}>
+                        {card.icon}
+                      </div>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-800 dark:text-white">
+                      {card.value === null
+                        ? "—"
+                        : card.format
+                        ? card.format(card.value)
+                        : card.value}
+                    </p>
+                  </div>
+                ))}
+          </div>
+
+          {/* Section 3 — Quick Actions */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Atalhos Rápidos</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {quickActions.map((action, i) => (
+                <button
+                  key={i}
+                  onClick={() =>
+                    action.external ? window.open(action.path, "_blank") : navigate(action.path)
+                  }
+                  className={`${action.color} text-white rounded-2xl p-5 flex items-center space-x-3 shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 w-full`}
+                >
+                  {action.icon}
+                  <span className="font-semibold text-sm md:text-base">{action.label}</span>
+                </button>
+              ))}
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Ordens Hoje</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{ordersToday}</p>
-                </div>
-                <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
-                  <Wrench className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Cadastrados</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{customersCount}</p>
-                </div>
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
-                  <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Bikes em Manutenção</p>
-                  <p className="text-2xl font-bold text-gray-800 dark:text-white">{bikesMaintenance}</p>
-                </div>
-                <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
-                  <Bike className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Módulos do Sistema</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {/* Section 4 — System Modules */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Módulos do Sistema</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {adminModules.map((module, index) => (
-                <div key={index} onClick={() => handleModuleClick(module.path)} className="group cursor-pointer">
-                  <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-                    <div className={`bg-gradient-to-r ${module.color} ${module.hoverColor} p-4 rounded-xl mb-4 text-white group-hover:scale-110 transition-transform duration-300 w-fit`}>
+                <div key={index} onClick={() => navigate(module.path)} className="group cursor-pointer">
+                  <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/40 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-4">
+                    <div
+                      className={`bg-gradient-to-br ${module.color} p-2.5 rounded-full text-white flex-shrink-0`}
+                    >
                       {module.icon}
                     </div>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-2 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                          {module.title}
-                        </h4>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{module.description}</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-amber-500 group-hover:translate-x-1 transition-all duration-300" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors text-sm">
+                        {module.title}
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{module.description}</p>
                     </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-amber-500 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" />
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </main>
-        <footer className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/20 mt-12">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex flex-col md:flex-row items-center justify-between">
-              <div className="flex items-center space-x-2 mb-4 md:mb-0">
-                <Bike className="w-5 h-5 text-amber-500" />
-                <span className="text-gray-600 dark:text-gray-400">© 2025 Sport & Bike - Sistema Administrativo</span>
+
+          {/* Section 5 — Latest Orders */}
+          {latestOrders.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Últimas Ordens</h3>
+                <button
+                  onClick={() => navigate("/admin/orders")}
+                  className="text-sm text-amber-600 dark:text-amber-400 hover:underline"
+                >
+                  Ver todas →
+                </button>
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-500">Versão 2.0 - Última atualização: Janeiro 2025</div>
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl shadow-lg overflow-hidden">
+                <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {latestOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between px-5 py-3.5 hover:bg-amber-50/50 dark:hover:bg-gray-700/30 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3 min-w-0">
+                        <span className="text-sm font-mono font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                          {order.codigo}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {order.clienteNome}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3 flex-shrink-0">
+                        <span
+                          className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                            STATUS_COLORS[order.status] ||
+                            "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {order.status}
+                        </span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">
+                          {formatDate(order.dataCriacao)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+
+        <footer className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/20 mt-8">
+          <div className="container mx-auto px-4 py-5">
+            <div className="flex flex-col md:flex-row items-center justify-between">
+              <div className="flex items-center space-x-2 mb-2 md:mb-0">
+                <Bike className="w-4 h-4 text-amber-500" />
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  © 2025 Sport & Bike - Sistema Administrativo
+                </span>
+              </div>
+              <span className="text-xs text-gray-400 dark:text-gray-500">Versão 2.0</span>
             </div>
           </div>
         </footer>
