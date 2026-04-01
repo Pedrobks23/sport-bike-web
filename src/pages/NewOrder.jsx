@@ -21,6 +21,7 @@ import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import generateWorkshopTagsPDF from "../utils/generateWorkshopTagsPDF";
 import { listMechanics } from "../services/mechanicService";
+import Stepper from "../components/Stepper";
 
 // Ajuste o caminho do logo conforme a estrutura do seu projeto
 const logo = new URL("/assets/Logo.png", import.meta.url).href;
@@ -91,6 +92,14 @@ function NewOrder() {
 
   const [mechanics, setMechanics] = useState([]);
   const [selectedMechanic, setSelectedMechanic] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const wizardSteps = [
+    { id: 1, label: "Cliente", shortLabel: "Cliente" },
+    { id: 2, label: "Bicicletas", shortLabel: "Bikes" },
+    { id: 3, label: "Serviços e Peças", shortLabel: "Serviços" },
+    { id: 4, label: "Agendamento e Revisão", shortLabel: "Revisão" },
+  ];
 
   // -----------------------------
   // EFFECTS
@@ -877,6 +886,43 @@ function NewOrder() {
     }
   }
 
+  function canProceedStep(step) {
+    if (step === 0) return !!clientData;
+    if (step === 1) return selectedBikes.length > 0;
+    if (step === 2) return selectedBikes.length > 0;
+    return !!scheduledDate;
+  }
+
+  function handleNextStep() {
+    if (currentStep < wizardSteps.length - 1 && canProceedStep(currentStep)) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  }
+
+  function handlePreviousStep() {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+    }
+  }
+
+  const selectedBikeObjects = bikes.filter((bike) => selectedBikes.includes(bike.id));
+
+  function getBikeSubtotal(bikeId) {
+    const servicesSubtotal = Object.entries(selectedServices[bikeId] || {}).reduce(
+      (total, [serviceName, quantity]) => {
+        return total + (availableServices[serviceName] || 0) * quantity;
+      },
+      0
+    );
+
+    const partsSubtotal = (selectedParts[bikeId] || []).reduce((total, part) => {
+      const qty = parseInt(part.quantidade) || 1;
+      return total + (parseFloat(part.valor) || 0) * qty;
+    }, 0);
+
+    return servicesSubtotal + partsSubtotal;
+  }
+
   // -----------------------------
   // RENDER DO COMPONENTE
   // -----------------------------
@@ -905,434 +951,434 @@ function NewOrder() {
 
         {/* MAIN */}
         {!createdOrder ? (
-        <main className="container mx-auto px-4 py-8 pb-24">
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
+          <main className="container mx-auto px-4 py-8 pb-24">
+            <Stepper steps={wizardSteps} currentStep={currentStep} />
 
-        {/* SEÇÃO CLIENTE */}
-        <div className="relative z-20 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
-          <h2 className="text-xl font-bold mb-4">Cliente</h2>
-
-          <div className="flex gap-4 mb-4">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={telefone}
-                onChange={handleTelefoneChange}
-                placeholder="Digite o telefone do cliente"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                maxLength={11}
-              />
-              {phoneSuggestions.length > 0 && (
-                <ul className="absolute left-0 w-full bg-white border rounded-lg shadow mt-1 max-h-40 overflow-auto z-50">
-                  {phoneSuggestions.map((s) => (
-                    <li
-                      key={s.telefone}
-                      onMouseDown={() => handleSelectSuggestion(s.telefone)}
-                      className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between"
-                    >
-                      <span>{formatPhone(s.telefone)}</span>
-                      <span className="text-gray-500">{s.nome}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <button
-              onClick={() => searchClient()}
-              disabled={loading || !telefone}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
-            >
-              Buscar
-            </button>
-          </div>
-
-          {/* DADOS DO CLIENTE ENCONTRADO */}
-          {clientData && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-bold mb-2">Dados do Cliente</h3>
-              <p>
-                <strong>Nome:</strong> {clientData.nome}
-              </p>
-              <p>
-                <strong>Telefone:</strong> {clientData.telefone}
-              </p>
-              {clientData.endereco && (
-                <p>
-                  <strong>Endereço:</strong> {clientData.endereco}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* FORMULÁRIO NOVO CLIENTE */}
-          {showClientForm && (
-            <div className="mt-4">
-              <h3 className="font-bold mb-2">Novo Cliente</h3>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={newClient.nome}
-                  onChange={(e) =>
-                    setNewClient((prev) => ({ ...prev, nome: e.target.value }))
-                  }
-                  placeholder="Nome do cliente"
-                  className="w-full px-4 py-2 border rounded-lg"
-                />
-                <input
-                  type="text"
-                  value={newClient.telefone || telefone}
-                  onChange={(e) =>
-                    setNewClient((prev) => ({
-                      ...prev,
-                      telefone: e.target.value.replace(/\D/g, ""),
-                    }))
-                  }
-                  placeholder="Telefone"
-                  className="w-full px-4 py-2 border rounded-lg"
-                  maxLength={11}
-                />
-                <input
-                  type="text"
-                  value={newClient.endereco}
-                  onChange={(e) =>
-                    setNewClient((prev) => ({
-                      ...prev,
-                      endereco: e.target.value,
-                    }))
-                  }
-                  placeholder="Endereço (opcional)"
-                  className="w-full px-4 py-2 border rounded-lg"
-                />
-                <button
-                  onClick={handleCreateClient}
-                  disabled={loading || !newClient.nome || !newClient.telefone}
-                  className="w-full bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
-                >
-                  Cadastrar Cliente
-                </button>
+            {error && (
+              <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
               </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* SEÇÃO BICICLETAS */}
-        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
-          <h2 className="text-xl font-bold mb-4">Bicicletas do Cliente</h2>
+            {currentStep === 0 && (
+              <div className="relative z-20 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
+                <h2 className="text-xl font-bold mb-4">Cliente</h2>
 
-          {bikes.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {bikes.map((bike) => (
-                <div
-                  key={bike.id}
-                  className={`border rounded-lg p-4 ${
-                    selectedBikes.includes(bike.id)
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-300"
-                  } cursor-pointer`}
-                  onClick={() => handleSelectBike(bike.id)}
-                >
-                  <h3 className="font-semibold mb-2">
-                    {bike.marca} - {bike.modelo}
-                  </h3>
-                  <p className="text-sm text-gray-600">Cor: {bike.cor}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-4">
-            <button
-              onClick={() => setShowBikeForm(!showBikeForm)}
-              className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-            >
-              <PlusCircle className="w-5 h-5 mr-2" />
-              Adicionar Bicicleta
-            </button>
-          </div>
-
-          {showBikeForm && (
-            <div className="mt-4 space-y-4">
-              <input
-                type="text"
-                value={newBike.marca}
-                onChange={(e) =>
-                  setNewBike((prev) => ({ ...prev, marca: e.target.value }))
-                }
-                placeholder="Marca"
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                value={newBike.modelo}
-                onChange={(e) =>
-                  setNewBike((prev) => ({ ...prev, modelo: e.target.value }))
-                }
-                placeholder="Modelo"
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <input
-                type="text"
-                value={newBike.cor}
-                onChange={(e) =>
-                  setNewBike((prev) => ({ ...prev, cor: e.target.value }))
-                }
-                placeholder="Cor"
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-              <button
-                onClick={handleAddBike}
-                disabled={loading || !newBike.marca || !newBike.modelo}
-                className="w-full bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
-              >
-                Salvar Bicicleta
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* SEÇÃO SERVIÇOS/PEÇAS - exibe apenas se houver bikes selecionadas */}
-        {selectedBikes.length > 0 && (
-          <>
-            {/* SERVIÇOS */}
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
-              <h2 className="text-xl font-bold mb-4">Serviços</h2>
-              <p className="mb-4 text-sm text-gray-700">
-                Selecione a quantidade de cada serviço para cada bicicleta.
-              </p>
-              {selectedBikes.map((bikeId, index) => {
-                const bikeInfo = bikes.find((b) => b.id === bikeId);
-                if (!bikeInfo) return null;
-
-                return (
-                  <div key={bikeId} className="mb-6 border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">
-                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${
-                        bikeInfo.modelo
-                      } - ${bikeInfo.cor}`}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {Object.entries(availableServices)
-                        .sort((a, b) => a[0].localeCompare(b[0]))
-                        .map(
-                        ([serviceName, price]) => {
-                          const quantity =
-                            selectedServices[bikeId]?.[serviceName] || 0;
-                          return (
-                            <div
-                              key={serviceName}
-                              className="flex items-center border rounded-md p-2"
-                            >
-                              <div className="flex-1">
-                                <p className="font-semibold">{serviceName}</p>
-                                <p className="text-sm text-gray-500">
-                                  R$ {price.toFixed(2)}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleServiceChange(
-                                      bikeId,
-                                      serviceName,
-                                      quantity > 0 ? quantity - 1 : 0
-                                    )
-                                  }
-                                  className="px-2 py-1 border rounded hover:bg-gray-100"
-                                >
-                                  -
-                                </button>
-                                <span>{quantity}</span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleServiceChange(
-                                      bikeId,
-                                      serviceName,
-                                      quantity + 1
-                                    )
-                                  }
-                                  className="px-2 py-1 border rounded hover:bg-gray-100"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        }
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* PEÇAS */}
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
-              <h2 className="text-xl font-bold mb-4">Peças</h2>
-              {selectedBikes.map((bikeId, index) => {
-                const bikeInfo = bikes.find((b) => b.id === bikeId);
-                if (!bikeInfo) return null;
-
-                // array de peças já adicionadas a esta bike
-                const bikeParts = selectedParts[bikeId] || [];
-                const partForm = newPart[bikeId] || { nome: "", valor: "" };
-
-                return (
-                  <div key={bikeId} className="mb-6 border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">
-                      {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${
-                        bikeInfo.modelo
-                      } - ${bikeInfo.cor}`}
-                    </h3>
-
-                    {/* Listar peças já adicionadas */}
-                    {bikeParts.length > 0 && (
-                      <div className="mb-4">
-                        <p className="font-bold">Peças já adicionadas:</p>
-                        <ul className="space-y-2">
-                          {bikeParts.map((part, idx) => (
-                            <li
-                              key={idx}
-                              className="flex justify-between items-center border rounded p-2"
-                            >
-                              <div>
-                                {part.nome} - {parseFloat(part.valor).toFixed(2)}
-                                {" "}({part.quantidade || 1}x)
-                              </div>
-                              <button
-                                onClick={() => handleRemovePart(bikeId, idx)}
-                                className="text-red-500 hover:text-red-700 text-sm"
-                              >
-                                Remover
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                <div className="flex gap-4 mb-4">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={telefone}
+                      onChange={handleTelefoneChange}
+                      placeholder="Digite o telefone do cliente"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      maxLength={11}
+                    />
+                    {phoneSuggestions.length > 0 && (
+                      <ul className="absolute left-0 w-full bg-white border rounded-lg shadow mt-1 max-h-40 overflow-auto z-50">
+                        {phoneSuggestions.map((s) => (
+                          <li
+                            key={s.telefone}
+                            onMouseDown={() => handleSelectSuggestion(s.telefone)}
+                            className="px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between"
+                          >
+                            <span>{formatPhone(s.telefone)}</span>
+                            <span className="text-gray-500">{s.nome}</span>
+                          </li>
+                        ))}
+                      </ul>
                     )}
+                  </div>
+                  <button
+                    onClick={() => searchClient()}
+                    disabled={loading || !telefone}
+                    className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    Buscar
+                  </button>
+                </div>
 
-                    {/* Formulário para adicionar nova peça */}
-                    <div className="mt-2 space-y-2 border p-3 rounded">
+                {clientData && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <h3 className="font-bold mb-2 dark:text-white">Dados do Cliente</h3>
+                    <p className="dark:text-gray-200">
+                      <strong>Nome:</strong> {clientData.nome}
+                    </p>
+                    <p className="dark:text-gray-200">
+                      <strong>Telefone:</strong> {clientData.telefone}
+                    </p>
+                    {clientData.endereco && (
+                      <p className="dark:text-gray-200">
+                        <strong>Endereço:</strong> {clientData.endereco}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {showClientForm && (
+                  <div className="mt-4">
+                    <h3 className="font-bold mb-2 dark:text-white">Novo Cliente</h3>
+                    <div className="space-y-4">
                       <input
                         type="text"
-                        placeholder="Nome da Peça"
-                        className="w-full px-3 py-2 border rounded"
-                        value={partForm.nome || ""}
+                        value={newClient.nome}
                         onChange={(e) =>
-                          handleNewPartChange(bikeId, "nome", e.target.value)
+                          setNewClient((prev) => ({ ...prev, nome: e.target.value }))
                         }
+                        placeholder="Nome do cliente"
+                        className="w-full px-4 py-2 border rounded-lg"
                       />
                       <input
-                        type="number"
-                        placeholder="Valor da Peça (R$)"
-                        className="w-full px-3 py-2 border rounded"
-                        min="0"
-                        step="0.01"
-                        value={partForm.valor || ""}
+                        type="text"
+                        value={newClient.telefone || telefone}
                         onChange={(e) =>
-                          handleNewPartChange(bikeId, "valor", e.target.value)
+                          setNewClient((prev) => ({
+                            ...prev,
+                            telefone: e.target.value.replace(/\D/g, ""),
+                          }))
                         }
+                        placeholder="Telefone"
+                        className="w-full px-4 py-2 border rounded-lg"
+                        maxLength={11}
                       />
                       <input
-                        type="number"
-                        placeholder="Quantidade"
-                        className="w-full px-3 py-2 border rounded"
-                        min="1"
-                        value={partForm.quantidade || ""}
+                        type="text"
+                        value={newClient.endereco}
                         onChange={(e) =>
-                          handleNewPartChange(bikeId, "quantidade", e.target.value)
+                          setNewClient((prev) => ({
+                            ...prev,
+                            endereco: e.target.value,
+                          }))
                         }
+                        placeholder="Endereço (opcional)"
+                        className="w-full px-4 py-2 border rounded-lg"
                       />
                       <button
-                        onClick={() => handleAddPart(bikeId)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        onClick={handleCreateClient}
+                        disabled={loading || !newClient.nome || !newClient.telefone}
+                        className="w-full bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
                       >
-                        Adicionar Peça
+                        Cadastrar Cliente
                       </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+                )}
+              </div>
+            )}
 
-        {/* SEÇÃO AGENDAMENTO E OBSERVAÇÕES (apenas se houver bikes selecionadas) */}
-        {selectedBikes.length > 0 && (
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
-            <h2 className="text-xl font-bold mb-4">Agendamento</h2>
-            <div className="mb-4">
-              <label
-                htmlFor="scheduledDate"
-                className="font-semibold block mb-2"
+            {currentStep === 1 && (
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
+                <h2 className="text-xl font-bold mb-4 dark:text-white">Bicicletas do Cliente</h2>
+
+                {bikes.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {bikes.map((bike) => (
+                      <div
+                        key={bike.id}
+                        className={`border rounded-lg p-4 ${
+                          selectedBikes.includes(bike.id)
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                            : "border-gray-300 dark:border-gray-600"
+                        } cursor-pointer`}
+                        onClick={() => handleSelectBike(bike.id)}
+                      >
+                        <h3 className="font-semibold mb-2 dark:text-white">
+                          {bike.marca} - {bike.modelo}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Cor: {bike.cor}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <button
+                    onClick={() => setShowBikeForm(!showBikeForm)}
+                    className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                  >
+                    <PlusCircle className="w-5 h-5 mr-2" />
+                    Adicionar Bicicleta
+                  </button>
+                </div>
+
+                {showBikeForm && (
+                  <div className="mt-4 space-y-4">
+                    <input
+                      type="text"
+                      value={newBike.marca}
+                      onChange={(e) =>
+                        setNewBike((prev) => ({ ...prev, marca: e.target.value }))
+                      }
+                      placeholder="Marca"
+                      className="w-full px-4 py-2 border rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      value={newBike.modelo}
+                      onChange={(e) =>
+                        setNewBike((prev) => ({ ...prev, modelo: e.target.value }))
+                      }
+                      placeholder="Modelo"
+                      className="w-full px-4 py-2 border rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      value={newBike.cor}
+                      onChange={(e) =>
+                        setNewBike((prev) => ({ ...prev, cor: e.target.value }))
+                      }
+                      placeholder="Cor"
+                      className="w-full px-4 py-2 border rounded-lg"
+                    />
+                    <button
+                      onClick={handleAddBike}
+                      disabled={loading || !newBike.marca || !newBike.modelo}
+                      className="w-full bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      Salvar Bicicleta
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <>
+                <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
+                  <h2 className="text-xl font-bold mb-4 dark:text-white">Serviços e Peças</h2>
+                  <p className="mb-4 text-sm text-gray-700 dark:text-gray-300">
+                    Selecione a quantidade de serviços e adicione peças para cada bicicleta.
+                  </p>
+                  {selectedBikes.map((bikeId, index) => {
+                    const bikeInfo = bikes.find((b) => b.id === bikeId);
+                    if (!bikeInfo) return null;
+
+                    const bikeParts = selectedParts[bikeId] || [];
+                    const partForm = newPart[bikeId] || { nome: "", valor: "" };
+
+                    return (
+                      <div key={bikeId} className="mb-6 border rounded-lg p-4 dark:border-gray-600">
+                        <h3 className="font-semibold mb-2 dark:text-white">
+                          {`Bicicleta ${index + 1}: ${bikeInfo.marca} - ${bikeInfo.modelo} - ${bikeInfo.cor}`}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                          {Object.entries(availableServices)
+                            .sort((a, b) => a[0].localeCompare(b[0]))
+                            .map(([serviceName, price]) => {
+                              const quantity = selectedServices[bikeId]?.[serviceName] || 0;
+                              return (
+                                <div
+                                  key={serviceName}
+                                  className="flex items-center border rounded-md p-2 dark:border-gray-600"
+                                >
+                                  <div className="flex-1">
+                                    <p className="font-semibold dark:text-white">{serviceName}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-300">
+                                      R$ {price.toFixed(2)}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleServiceChange(
+                                          bikeId,
+                                          serviceName,
+                                          quantity > 0 ? quantity - 1 : 0
+                                        )
+                                      }
+                                      className="px-2 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="dark:text-white">{quantity}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleServiceChange(bikeId, serviceName, quantity + 1)
+                                      }
+                                      className="px-2 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+
+                        {bikeParts.length > 0 && (
+                          <div className="mb-4">
+                            <p className="font-bold dark:text-white">Peças já adicionadas:</p>
+                            <ul className="space-y-2 mt-2">
+                              {bikeParts.map((part, idx) => (
+                                <li
+                                  key={idx}
+                                  className="flex justify-between items-center border rounded p-2 dark:border-gray-600 dark:text-gray-200"
+                                >
+                                  <div>
+                                    {part.nome} - {parseFloat(part.valor).toFixed(2)} ({part.quantidade || 1}x)
+                                  </div>
+                                  <button
+                                    onClick={() => handleRemovePart(bikeId, idx)}
+                                    className="text-red-500 hover:text-red-700 text-sm"
+                                  >
+                                    Remover
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <div className="mt-2 space-y-2 border p-3 rounded dark:border-gray-600">
+                          <input
+                            type="text"
+                            placeholder="Nome da Peça"
+                            className="w-full px-3 py-2 border rounded"
+                            value={partForm.nome || ""}
+                            onChange={(e) => handleNewPartChange(bikeId, "nome", e.target.value)}
+                          />
+                          <input
+                            type="number"
+                            placeholder="Valor da Peça (R$)"
+                            className="w-full px-3 py-2 border rounded"
+                            min="0"
+                            step="0.01"
+                            value={partForm.valor || ""}
+                            onChange={(e) => handleNewPartChange(bikeId, "valor", e.target.value)}
+                          />
+                          <input
+                            type="number"
+                            placeholder="Quantidade"
+                            className="w-full px-3 py-2 border rounded"
+                            min="1"
+                            value={partForm.quantidade || ""}
+                            onChange={(e) =>
+                              handleNewPartChange(bikeId, "quantidade", e.target.value)
+                            }
+                          />
+                          <button
+                            onClick={() => handleAddPart(bikeId)}
+                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                          >
+                            Adicionar Peça
+                          </button>
+                        </div>
+
+                        <div className="mt-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-900/60">
+                          <p className="font-semibold dark:text-gray-100">
+                            Subtotal da bike: R$ {getBikeSubtotal(bikeId).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {currentStep === 3 && (
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 rounded-2xl p-6 shadow-xl mb-6">
+                <h2 className="text-xl font-bold mb-4 dark:text-white">Agendamento e Revisão</h2>
+                <div className="mb-4">
+                  <label htmlFor="scheduledDate" className="font-semibold block mb-2 dark:text-white">
+                    Data de Agendamento
+                  </label>
+                  <input
+                    type="date"
+                    id="scheduledDate"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    className="px-4 py-2 border rounded-lg w-full"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="mechanic" className="font-semibold block mb-2 dark:text-white">
+                    Mecânico
+                  </label>
+                  <select
+                    id="mechanic"
+                    value={selectedMechanic}
+                    onChange={(e) => setSelectedMechanic(e.target.value)}
+                    className="px-4 py-2 border rounded-lg w-full"
+                  >
+                    <option value="">Selecione um mecânico</option>
+                    {mechanics.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="observacoes" className="font-semibold block mb-2 dark:text-white">
+                    Observações (opcional)
+                  </label>
+                  <textarea
+                    id="observacoes"
+                    value={observacoes}
+                    onChange={(e) => setObservacoes(e.target.value)}
+                    rows={4}
+                    className="px-4 py-2 border rounded-lg w-full"
+                    placeholder="Ex: Descrever observações adicionais ou peças solicitadas"
+                  />
+                </div>
+
+                <div className="mb-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-900/60">
+                  <h3 className="font-semibold text-lg mb-2 dark:text-white">Resumo da Ordem</h3>
+                  {clientData && (
+                    <p className="text-sm dark:text-gray-200 mb-2">
+                      <strong>Cliente:</strong> {clientData.nome} ({clientData.telefone})
+                    </p>
+                  )}
+                  <div className="space-y-2 mb-3">
+                    {selectedBikeObjects.map((bike, idx) => (
+                      <div key={bike.id} className="text-sm dark:text-gray-200 border-b pb-2 dark:border-gray-700">
+                        <p>
+                          <strong>Bike {idx + 1}:</strong> {bike.marca} - {bike.modelo} - {bike.cor}
+                        </p>
+                        <p>
+                          Serviços selecionados: {Object.values(selectedServices[bike.id] || {}).reduce((a, b) => a + b, 0)}
+                        </p>
+                        <p>Peças adicionadas: {(selectedParts[bike.id] || []).length}</p>
+                        <p>Subtotal: R$ {getBikeSubtotal(bike.id).toFixed(2)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xl font-bold text-green-600">R$ {orderTotal.toFixed(2)}</p>
+                </div>
+
+                <button
+                  onClick={handleCreateOrder}
+                  disabled={loading}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Criar Ordem de Serviço
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3">
+              <button
+                onClick={handlePreviousStep}
+                disabled={currentStep === 0}
+                className="px-5 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
               >
-                Data de Agendamento
-              </label>
-              <input
-                type="date"
-                id="scheduledDate"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-                className="px-4 py-2 border rounded-lg w-full"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="mechanic" className="font-semibold block mb-2">
-                Mecânico
-              </label>
-              <select
-                id="mechanic"
-                value={selectedMechanic}
-                onChange={(e) => setSelectedMechanic(e.target.value)}
-                className="px-4 py-2 border rounded-lg w-full"
+                Voltar
+              </button>
+              <button
+                onClick={handleNextStep}
+                disabled={currentStep === wizardSteps.length - 1 || !canProceedStep(currentStep)}
+                className="px-5 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
               >
-                <option value="">Selecione um mecânico</option>
-                {mechanics.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nome}
-                  </option>
-                ))}
-              </select>
+                Avançar
+              </button>
             </div>
-
-            <div className="mb-4">
-              <label htmlFor="observacoes" className="font-semibold block mb-2">
-                Observações (opcional)
-              </label>
-              <textarea
-                id="observacoes"
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                rows={4}
-                className="px-4 py-2 border rounded-lg w-full"
-                placeholder="Ex: Descrever observações adicionais ou peças solicitadas"
-              />
-            </div>
-
-            <div className="mb-4">
-              <h3 className="font-semibold text-lg">Total da Ordem:</h3>
-              <p className="text-xl font-bold text-green-600">
-                R$ {orderTotal.toFixed(2)}
-              </p>
-            </div>
-
-            <button
-              onClick={handleCreateOrder}
-              disabled={loading}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              Criar Ordem de Serviço
-            </button>
-          </div>
-        )}
-      </main>
+          </main>
         ) : (
       <main className="container mx-auto px-4 py-8 pb-24">
         <h2 className="text-2xl font-bold mb-4">Ordem criada com sucesso!</h2>
