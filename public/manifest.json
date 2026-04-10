@@ -1,6 +1,6 @@
 {
-  "name": "Sport Bike",
-  "short_name": "SportBike",
+  "name": "Bike Shop",
+  "short_name": "BikeShop",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
